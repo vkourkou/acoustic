@@ -1,4 +1,4 @@
-#include "InputFileParser.h"
+#include <InputFileParser.h>
 #include <gtest/gtest.h>
 #include <sstream>
 #include <string>
@@ -243,5 +243,153 @@ TEST_F(InputFileParserTest, LineNumberWithEmptyLines) {
     
     ++parser; // "Third"
     EXPECT_EQ(5, parser.getLineNumber());
+}
+
+// Test tokenization - basic single word
+TEST_F(InputFileParserTest, TokenizationBasicSingleWord) {
+    std::istringstream iss("Hello");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ("Hello", tokens[0]);
+}
+
+// Test tokenization - multiple words with spaces
+TEST_F(InputFileParserTest, TokenizationMultipleWordsSpaces) {
+    std::istringstream iss("Hello World Test");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ("Hello", tokens[0]);
+    EXPECT_EQ("World", tokens[1]);
+    EXPECT_EQ("Test", tokens[2]);
+}
+
+// Test tokenization - multiple words with tabs
+TEST_F(InputFileParserTest, TokenizationMultipleWordsTabs) {
+    std::istringstream iss("Hello\tWorld\tTest");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ("Hello", tokens[0]);
+    EXPECT_EQ("World", tokens[1]);
+    EXPECT_EQ("Test", tokens[2]);
+}
+
+// Test tokenization - mixed spaces and tabs
+TEST_F(InputFileParserTest, TokenizationMixedSpacesAndTabs) {
+    std::istringstream iss("Hello\t World  Test");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ("Hello", tokens[0]);
+    EXPECT_EQ("World", tokens[1]);
+    EXPECT_EQ("Test", tokens[2]);
+}
+
+// Test tokenization - multiple spaces/tabs between tokens
+TEST_F(InputFileParserTest, TokenizationMultipleDelimiters) {
+    std::istringstream iss("Hello    World\t\tTest");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ("Hello", tokens[0]);
+    EXPECT_EQ("World", tokens[1]);
+    EXPECT_EQ("Test", tokens[2]);
+}
+
+// Test tokenization - empty line (no tokens)
+TEST_F(InputFileParserTest, TokenizationEmptyLine) {
+    std::istringstream iss("");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    EXPECT_EQ(0, tokens.size());
+}
+
+// Test tokenization - line with only spaces/tabs (no tokens)
+TEST_F(InputFileParserTest, TokenizationOnlyWhitespace) {
+    std::istringstream iss("   \t\t  ");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    EXPECT_EQ(0, tokens.size());
+}
+
+// Test tokenization - tokens with special characters
+TEST_F(InputFileParserTest, TokenizationSpecialCharacters) {
+    std::istringstream iss("Hello! World@ Test#");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ("Hello!", tokens[0]);
+    EXPECT_EQ("World@", tokens[1]);
+    EXPECT_EQ("Test#", tokens[2]);
+}
+
+// Test tokenization - tokens across multiple lines
+TEST_F(InputFileParserTest, TokenizationMultipleLines) {
+    std::istringstream iss("Line1 Token1 Token2\nLine2 Token3 Token4");
+    InputFileParser parser(iss);
+    
+    // First line
+    const std::vector<std::string>& tokens1 = parser.getTokens();
+    ASSERT_EQ(3, tokens1.size());
+    EXPECT_EQ("Line1", tokens1[0]);
+    EXPECT_EQ("Token1", tokens1[1]);
+    EXPECT_EQ("Token2", tokens1[2]);
+    
+    // Second line
+    ++parser;
+    const std::vector<std::string>& tokens2 = parser.getTokens();
+    ASSERT_EQ(3, tokens2.size());
+    EXPECT_EQ("Line2", tokens2[0]);
+    EXPECT_EQ("Token3", tokens2[1]);
+    EXPECT_EQ("Token4", tokens2[2]);
+}
+
+// Test tokenization - tokens after EOF (should be empty)
+TEST_F(InputFileParserTest, TokenizationAfterEOF) {
+    std::istringstream iss("Hello World");
+    InputFileParser parser(iss);
+    
+    // First line has tokens
+    const std::vector<std::string>& tokens1 = parser.getTokens();
+    ASSERT_EQ(2, tokens1.size());
+    
+    // Try to read past EOF
+    ++parser;
+    const std::vector<std::string>& tokens2 = parser.getTokens();
+    EXPECT_EQ(0, tokens2.size());
+}
+
+// Test tokenization - single token with leading/trailing whitespace
+TEST_F(InputFileParserTest, TokenizationWhitespacePadding) {
+    std::istringstream iss("  Hello  ");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ("Hello", tokens[0]);
+}
+
+// Test tokenization - complex example with many tokens
+TEST_F(InputFileParserTest, TokenizationComplex) {
+    std::istringstream iss("  Command   arg1\targ2  arg3\t arg4  ");
+    InputFileParser parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(5, tokens.size());
+    EXPECT_EQ("Command", tokens[0]);
+    EXPECT_EQ("arg1", tokens[1]);
+    EXPECT_EQ("arg2", tokens[2]);
+    EXPECT_EQ("arg3", tokens[3]);
+    EXPECT_EQ("arg4", tokens[4]);
 }
 

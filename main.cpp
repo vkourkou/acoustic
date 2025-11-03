@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include "InputFileParser.h"
+#include <InputFileParser.h>
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
     
     std::cout << "=== Total lines: " << lineCount << " ===" << std::endl;
     
-    file.close();
     return 0;
 }
+
 
 
