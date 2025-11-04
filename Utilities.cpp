@@ -1,5 +1,6 @@
 #include <Utilities.h>
 #include <stdexcept>
+#include <cctype>
 
 namespace Utilities {
 
@@ -14,13 +15,19 @@ convertTo<size_t>(const std::string& str) {
     }
     
     try {
-        // Check for negative sign
-        if (str[0] == '-') {
+        // Check for negative sign or leading whitespace
+        if (str[0] == '-' || std::isspace(static_cast<unsigned char>(str[0]))) {
             return std::nullopt;
         }
         
-        // Convert using stol
-        long longVal = std::stol(str);
+        // Convert using stol and check if entire string was consumed
+        size_t pos = 0;
+        long longVal = std::stol(str, &pos);
+        
+        // Check if entire string was consumed
+        if (pos != str.length()) {
+            return std::nullopt;
+        }
         
         // Check if result is negative
         if (longVal < 0) {
@@ -48,8 +55,20 @@ convertTo<long>(const std::string& str) {
     }
     
     try {
-        // Convert using stol
-        long value = std::stol(str);
+        // Check for leading whitespace
+        if (std::isspace(static_cast<unsigned char>(str[0]))) {
+            return std::nullopt;
+        }
+        
+        // Convert using stol and check if entire string was consumed
+        size_t pos = 0;
+        long value = std::stol(str, &pos);
+        
+        // Check if entire string was consumed
+        if (pos != str.length()) {
+            return std::nullopt;
+        }
+        
         return value;
     } catch (const std::invalid_argument&) {
         return std::nullopt;
@@ -69,8 +88,20 @@ convertTo<float>(const std::string& str) {
     }
     
     try {
-        // Convert using stof
-        float value = std::stof(str);
+        // Check for leading whitespace
+        if (std::isspace(static_cast<unsigned char>(str[0]))) {
+            return std::nullopt;
+        }
+        
+        // Convert using stof and check if entire string was consumed
+        size_t pos = 0;
+        float value = std::stof(str, &pos);
+        
+        // Check if entire string was consumed
+        if (pos != str.length()) {
+            return std::nullopt;
+        }
+        
         return value;
     } catch (const std::invalid_argument&) {
         return std::nullopt;
