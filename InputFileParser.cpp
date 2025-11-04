@@ -6,7 +6,10 @@ InputFileParser::InputFileParser(std::istream& stream)
     operator++();
 }
 
-void InputFileParser::operator++() {
+// -----------------------------------------------------------------------------
+
+void
+InputFileParser::operator++() {
     // Check both isValid() and stream_.good() before doing anything
     // Allow first read if lineNumber_ is 0 (initial state, haven't read yet)
     if (!stream_.good() || (!isValid() && lineNumber_ > 0)) {
@@ -31,23 +34,38 @@ void InputFileParser::operator++() {
     }
 }
 
-bool InputFileParser::isValid() const {
+// -----------------------------------------------------------------------------
+
+bool
+InputFileParser::isValid() const {
     return m_isValid;
 }
 
-size_t InputFileParser::getLineNumber() const {
+// -----------------------------------------------------------------------------
+
+size_t
+InputFileParser::getLineNumber() const {
     return lineNumber_;
 }
 
-const std::string& InputFileParser::getLine() const {
+// -----------------------------------------------------------------------------
+
+const std::string&
+InputFileParser::getLine() const {
     return bufferedLine_;
 }
 
-const std::vector<std::string>& InputFileParser::getTokens() const {
+// -----------------------------------------------------------------------------
+
+const std::vector<std::string>&
+InputFileParser::getTokens() const {
     return m_vTokens;
 }
 
-void InputFileParser::trim(std::string& str) const {
+// -----------------------------------------------------------------------------
+
+void
+InputFileParser::trim(std::string& str) const {
     size_t first = str.find_first_not_of(" \t\n\r");
     if (first == std::string::npos) {
         str.clear();
@@ -57,7 +75,10 @@ void InputFileParser::trim(std::string& str) const {
     str = str.substr(first, (last - first + 1));
 }
 
-void InputFileParser::tokenize(const std::string& str) {
+// -----------------------------------------------------------------------------
+
+void
+InputFileParser::tokenize(const std::string& str) {
     m_vTokens.clear();
     
     if (str.empty()) {

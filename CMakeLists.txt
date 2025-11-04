@@ -7,7 +7,7 @@ project(AcousticProject
 )
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -39,11 +39,15 @@ include_directories(${CMAKE_SOURCE_DIR})
 set(SOURCES
     main.cpp
     InputFileParser.cpp
+    InputCompiler.cpp
+    Utilities.cpp
 )
 
 # Header files
 set(HEADERS
     InputFileParser.h
+    InputCompiler.h
+    Utilities.h
 )
 
 # Create executable
@@ -108,6 +112,8 @@ file(GLOB_RECURSE TEST_SOURCES "${CMAKE_SOURCE_DIR}/*_test.cpp")
 add_executable(ut
     ${TEST_SOURCES}
     InputFileParser.cpp
+    InputCompiler.cpp
+    Utilities.cpp
 )
 
 target_link_libraries(ut
