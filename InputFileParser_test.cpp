@@ -3,6 +3,8 @@
 #include <sstream>
 #include <string>
 
+using Input::InputFileParser;
+
 // Test fixture for InputFileParser tests
 class InputFileParserTest : public ::testing::Test {
 protected:

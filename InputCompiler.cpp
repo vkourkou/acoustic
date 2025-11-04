@@ -2,6 +2,8 @@
 #include <cctype>
 #include <stdexcept>
 
+namespace Input {
+
 InputCompiler::InputCompiler() : m_nX(0), m_nXSet(false) {
 }
 
@@ -73,4 +75,23 @@ InputCompiler::caseInsensitiveEquals(const std::string& a, const std::string& b)
     
     return true;
 }
+
+// -----------------------------------------------------------------------------
+
+bool
+GridStatement::process(const std::vector<std::string>& tokens) {
+    // Empty implementation
+    return false;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+BBoxStatement::process(const std::vector<std::string>& tokens) {
+    // Empty implementation
+
+    return tokens.empty();
+}
+
+} // namespace Input
 

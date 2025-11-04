@@ -20,7 +20,7 @@ main(int argc, char* argv[]) {
     // Iterate through lines one at a time
     // First line is already read during construction
     size_t lineCount = 0;
-    for (InputFileParser parser(file); parser.isValid(); ++parser) {
+    for (Input::InputFileParser parser(file); parser.isValid(); ++parser) {
         const std::string& line = parser.getLine();
         std::cout << "Line " << parser.getLineNumber() << ": " << line << std::endl;
         lineCount++;

@@ -5,6 +5,8 @@
 #include <istream>
 #include <vector>
 
+namespace Input {
+
 class InputFileParser {
 public:
     // Constructor that takes an input stream reference
@@ -42,6 +44,8 @@ private:
     // Helper method to tokenize a string by spaces and tabs
     void tokenize(const std::string& str);
 };
+
+} // namespace Input
 
 #endif // INPUT_FILE_PARSER_H
 

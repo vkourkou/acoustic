@@ -1,5 +1,7 @@
 #include <InputFileParser.h>
 
+namespace Input {
+
 InputFileParser::InputFileParser(std::istream& stream)
     : stream_(stream), lineNumber_(0), m_isValid(false) {
     // Read the first line during construction
@@ -108,4 +110,6 @@ InputFileParser::tokenize(const std::string& str) {
         }
     }
 }
+
+} // namespace Input
 
