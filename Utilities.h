@@ -4,7 +4,19 @@
 #include <string>
 #include <optional>
 
+// Typedef for float dimension type
+typedef float Dimension_t;
+
+// Typedef for frequency type
+typedef float Frequency_t;
+
+// Typedef for amplitude type
+typedef float Amplitude_t;
+
 namespace Utilities {
+
+// Case-insensitive string comparison
+bool caseInsensitiveEquals(const std::string& a, const std::string& b);
 
 // Template function to convert string to type T
 template<typename T>

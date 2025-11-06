@@ -10,18 +10,27 @@ namespace Input {
 
 // Enumerator for statement types
 enum class StatementType {
-    GRID = 0,
+    SOURCE = 0,
     BBOX = 1,
     MAX = 2
 };
 
-// Grid statement class
-class GridStatement {
+// Source statement class
+class SourceStatement {
 public:
-    GridStatement() = default;
-    ~GridStatement() = default;
+    SourceStatement() = default;
+    ~SourceStatement() = default;
     
     bool process(const std::vector<std::string>& tokens);
+    
+    Frequency_t getFreq() const;
+    Amplitude_t getAmplitude() const;
+    
+    bool isValid() const;
+
+private:
+    Frequency_t m_Freq{0};
+    Amplitude_t m_Amplitude{0};
 };
 
 // BBox statement class
@@ -31,11 +40,24 @@ public:
     ~BBoxStatement() = default;
     
     bool process(const std::vector<std::string>& tokens);
+    
+    Dimension_t getXMin() const;
+    Dimension_t getXMax() const;
+    Dimension_t getYMin() const;
+    Dimension_t getYMax() const;
+    
+    bool isValid() const;
+
+private:
+    Dimension_t m_XMin{0};
+    Dimension_t m_XMax{0};
+    Dimension_t m_YMin{0};
+    Dimension_t m_YMax{0};
 };
 
-// Class to hold a tuple of GridStatement and BBoxStatement
+// Class to hold a tuple of SourceStatement and BBoxStatement
 class StatementCnt {
-    std::tuple<GridStatement, BBoxStatement> m_statements;
+    std::tuple<SourceStatement, BBoxStatement> m_statements;
 public:
     StatementCnt() = default;
     ~StatementCnt() = default;

@@ -1,6 +1,7 @@
 #include <InputCompiler.h>
 #include <cctype>
 #include <stdexcept>
+#include <iostream>
 
 namespace Input {
 
@@ -79,18 +80,183 @@ InputCompiler::caseInsensitiveEquals(const std::string& a, const std::string& b)
 // -----------------------------------------------------------------------------
 
 bool
-GridStatement::process(const std::vector<std::string>& tokens) {
-    // Empty implementation
-    return false;
+SourceStatement::process(const std::vector<std::string>& tokens) {
+    // Must have exactly 5 tokens: 1 for "Source" and 2 pairs (4 tokens)
+    if (tokens.size() != 5) {
+        return false;
+    }
+    
+    // Check if first token is "Source" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[0], "Source")) {
+        return false;
+    }
+
+    // Process tokens in pairs starting from index 1
+    for (size_t i = 1; i < tokens.size(); i += 2) {
+        // Need at least two tokens for a pair
+        
+        const std::string& key = tokens[i];
+        const std::string& value = tokens[i + 1];
+        
+        // Check for Freq or Frequency
+        if (Utilities::caseInsensitiveEquals(key, "Frequency")) {
+            auto convertedValue = Utilities::convertTo<Frequency_t>(value);
+            if (convertedValue.has_value()) {
+                m_Freq = convertedValue.value();
+            }
+        }
+        // Check for Amplitude
+        else if (Utilities::caseInsensitiveEquals(key, "Amplitude")) {
+            auto convertedValue = Utilities::convertTo<Amplitude_t>(value);
+            if (convertedValue.has_value()) {
+                m_Amplitude = convertedValue.value();
+            }
+        }
+    }
+    
+    return isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+SourceStatement::isValid() const
+{
+    // Check that frequency is positive
+    if (m_Freq <= 0.0f) {
+        std::cout << "Invalid Source: Frequency (" << m_Freq << ") must be positive" << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+Frequency_t
+SourceStatement::getFreq() const
+{
+    return m_Freq;
+}
+
+// -----------------------------------------------------------------------------
+
+Amplitude_t
+SourceStatement::getAmplitude() const
+{
+    return m_Amplitude;
 }
 
 // -----------------------------------------------------------------------------
 
 bool
 BBoxStatement::process(const std::vector<std::string>& tokens) {
-    // Empty implementation
+    // Check if there's at least one token
+   // Must have exactly 9 tokens: 1 for "BBox" and 4 pairs (8 tokens)
+   if (tokens.size() != 9) {
+    return false;
+    }   
+    
+    // Check if first token is "BBox" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[0], "BBox")) {
+        return false;
+    }
 
-    return tokens.empty();
+    // Process tokens in pairs starting from index 1
+    for (size_t i = 1; i < tokens.size(); i += 2) {
+        // Need at least two tokens for a pair
+        if (i + 1 >= tokens.size()) {
+            break;
+        }
+        
+        const std::string& key = tokens[i];
+        const std::string& value = tokens[i + 1];
+        
+        // Check for XMin
+        if (Utilities::caseInsensitiveEquals(key, "XMin")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_XMin = convertedValue.value();
+            }
+        }
+        // Check for XMax
+        else if (Utilities::caseInsensitiveEquals(key, "XMax")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_XMax = convertedValue.value();
+            }
+        }
+        // Check for YMin
+        else if (Utilities::caseInsensitiveEquals(key, "YMin")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_YMin = convertedValue.value();
+            }
+        }
+        // Check for YMax
+        else if (Utilities::caseInsensitiveEquals(key, "YMax")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_YMax = convertedValue.value();
+            }
+        }
+    }
+    
+    return isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+BBoxStatement::isValid() const
+{
+    bool valid = true;
+    
+    // Check XMin < XMax
+    if (m_XMin >= m_XMax) {
+        std::cout << "Invalid BBox: XMin (" << m_XMin << ") >= XMax (" << m_XMax << ")" << std::endl;
+        valid = false;
+    }
+    
+    // Check YMin < YMax
+    if (m_YMin >= m_YMax) {
+        std::cout << "Invalid BBox: YMin (" << m_YMin << ") >= YMax (" << m_YMax << ")" << std::endl;
+        valid = false;
+    }
+    
+    return valid;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+BBoxStatement::getXMin() const
+{
+    return m_XMin;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+BBoxStatement::getXMax() const
+{
+    return m_XMax;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+BBoxStatement::getYMin() const
+{
+    return m_YMin;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+BBoxStatement::getYMax() const
+{
+    return m_YMax;
 }
 
 } // namespace Input

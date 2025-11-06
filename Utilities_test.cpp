@@ -240,3 +240,66 @@ TEST_F(UtilitiesTest, ConvertToFloat_VerySmallNumbers) {
     EXPECT_FLOAT_EQ(-0.000001f, result.value());
 }
 
+// -----------------------------------------------------------------------------
+
+// Test caseInsensitiveEquals with identical strings (same case)
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_IdenticalSameCase) {
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("Hello", "Hello"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("WORLD", "WORLD"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("test123", "test123"));
+}
+
+// Test caseInsensitiveEquals with identical strings (different case)
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_IdenticalDifferentCase) {
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("Hello", "HELLO"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("HELLO", "hello"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("World", "wORLD"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("BBox", "bbox"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("bbox", "BBOX"));
+}
+
+// Test caseInsensitiveEquals with mixed case strings
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_MixedCase) {
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("HeLlO", "hElLo"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("XMin", "xmin"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("XmIn", "xMiN"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("BbOx", "bBoX"));
+}
+
+// Test caseInsensitiveEquals with different strings (should return false)
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_DifferentStrings) {
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("Hello", "World"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("test", "testing"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("BBox", "Source"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("XMin", "XMax"));
+}
+
+// Test caseInsensitiveEquals with different length strings (should return false)
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_DifferentLength) {
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("Hello", "Hel"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("test", "test123"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("", "Hello"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("BBox", "BBoxX"));
+}
+
+// Test caseInsensitiveEquals with empty strings
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_EmptyStrings) {
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("", ""));
+}
+
+// Test caseInsensitiveEquals with single character strings
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_SingleCharacter) {
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("A", "a"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("Z", "z"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("A", "B"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("a", "A"));
+}
+
+// Test caseInsensitiveEquals with strings containing numbers and special characters
+TEST_F(UtilitiesTest, CaseInsensitiveEquals_WithNumbersAndSpecialChars) {
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("Test123", "test123"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("XMin_1", "xmin_1"));
+    EXPECT_FALSE(Utilities::caseInsensitiveEquals("Test123", "test456"));
+    EXPECT_TRUE(Utilities::caseInsensitiveEquals("Hello_World", "HELLO_WORLD"));
+}
+
