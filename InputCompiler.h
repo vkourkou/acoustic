@@ -15,6 +15,10 @@ enum class StatementType {
     MAX = 2
 };
 
+std::string getString(StatementType type);
+
+StatementType getStatementType(const std::string& str);
+
 // Source statement class
 class SourceStatement {
 public:
@@ -84,22 +88,20 @@ public:
     ~InputCompiler() = default;
     
     // Process a line of tokens
-    // Returns true if the line was successfully processed, false otherwise
-    bool processLine(const std::vector<std::string>& tokens);
-    
-    // Get the value of m_nX
-    size_t getNX() const;
-    
-    // Check if m_nX has been set
-    bool hasNX() const;
+    // Returns the StatementType if successfully processed, StatementType::MAX otherwise
+    StatementType processLine(const std::vector<std::string>& tokens);
 
-private:
-    size_t m_nX;
-    bool m_nXSet;
+    // Get a const reference to a statement based on StatementType
+    template<StatementType type>
+    constexpr const auto& getStatement() const {
+        return m_statementCnt.get<type>();
+    }
     
-    // Helper method to check if string is case-insensitive equal
-    bool caseInsensitiveEquals(const std::string& a, const std::string& b) const;
+private:
+    StatementCnt m_statementCnt;
 };
+
+// -----------------------------------------------------------------------------
 
 } // namespace Input
 

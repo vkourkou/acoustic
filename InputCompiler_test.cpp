@@ -611,3 +611,381 @@ TEST_F(SourceStatementTest, Process_MultipleCalls) {
     EXPECT_FLOAT_EQ(1.0f, source.getAmplitude());
 }
 
+// -----------------------------------------------------------------------------
+
+// Test fixture for StatementType utility function tests
+class StatementTypeTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test getString with SOURCE
+TEST_F(StatementTypeTest, GetString_Source) {
+    std::string result = Input::getString(Input::StatementType::SOURCE);
+    EXPECT_EQ("Source", result);
+}
+
+// Test getString with BBOX
+TEST_F(StatementTypeTest, GetString_BBox) {
+    std::string result = Input::getString(Input::StatementType::BBOX);
+    EXPECT_EQ("BBox", result);
+}
+
+// Test getString with MAX
+TEST_F(StatementTypeTest, GetString_Max) {
+    std::string result = Input::getString(Input::StatementType::MAX);
+    EXPECT_EQ("Max", result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getStatementType with "Source" (exact case)
+TEST_F(StatementTypeTest, GetStatementType_Source_ExactCase) {
+    Input::StatementType result = Input::getStatementType("Source");
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+}
+
+// Test getStatementType with "source" (lowercase)
+TEST_F(StatementTypeTest, GetStatementType_Source_Lowercase) {
+    Input::StatementType result = Input::getStatementType("source");
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+}
+
+// Test getStatementType with "SOURCE" (uppercase)
+TEST_F(StatementTypeTest, GetStatementType_Source_Uppercase) {
+    Input::StatementType result = Input::getStatementType("SOURCE");
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+}
+
+// Test getStatementType with "SoUrCe" (mixed case)
+TEST_F(StatementTypeTest, GetStatementType_Source_MixedCase) {
+    Input::StatementType result = Input::getStatementType("SoUrCe");
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getStatementType with "BBox" (exact case)
+TEST_F(StatementTypeTest, GetStatementType_BBox_ExactCase) {
+    Input::StatementType result = Input::getStatementType("BBox");
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+}
+
+// Test getStatementType with "bbox" (lowercase)
+TEST_F(StatementTypeTest, GetStatementType_BBox_Lowercase) {
+    Input::StatementType result = Input::getStatementType("bbox");
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+}
+
+// Test getStatementType with "BBOX" (uppercase)
+TEST_F(StatementTypeTest, GetStatementType_BBox_Uppercase) {
+    Input::StatementType result = Input::getStatementType("BBOX");
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+}
+
+// Test getStatementType with "BbOx" (mixed case)
+TEST_F(StatementTypeTest, GetStatementType_BBox_MixedCase) {
+    Input::StatementType result = Input::getStatementType("BbOx");
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getStatementType with invalid string
+TEST_F(StatementTypeTest, GetStatementType_InvalidString) {
+    Input::StatementType result = Input::getStatementType("Invalid");
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test getStatementType with empty string
+TEST_F(StatementTypeTest, GetStatementType_EmptyString) {
+    Input::StatementType result = Input::getStatementType("");
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test getStatementType with "Unknown"
+TEST_F(StatementTypeTest, GetStatementType_Unknown) {
+    Input::StatementType result = Input::getStatementType("Unknown");
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test getStatementType with "SourceX" (similar but not exact)
+TEST_F(StatementTypeTest, GetStatementType_SimilarButNotExact) {
+    Input::StatementType result = Input::getStatementType("SourceX");
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test round-trip: getString then getStatementType
+TEST_F(StatementTypeTest, RoundTrip_Source) {
+    std::string str = Input::getString(Input::StatementType::SOURCE);
+    Input::StatementType result = Input::getStatementType(str);
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+}
+
+// Test round-trip: getString then getStatementType for BBox
+TEST_F(StatementTypeTest, RoundTrip_BBox) {
+    std::string str = Input::getString(Input::StatementType::BBOX);
+    Input::StatementType result = Input::getStatementType(str);
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for InputCompiler tests
+class InputCompilerTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+    
+    Input::InputCompiler compiler;
+};
+
+// -----------------------------------------------------------------------------
+
+// Test processLine with valid Source tokens
+TEST_F(InputCompilerTest, ProcessLine_ValidSource) {
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+    
+    // Verify the statement values using getStatement
+    const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
+    EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
+    EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+}
+
+// Test processLine with valid BBox tokens
+TEST_F(InputCompilerTest, ProcessLine_ValidBBox) {
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+    
+    // Verify the statement values using getStatement
+    const auto& bbox = compiler.getStatement<Input::StatementType::BBOX>();
+    EXPECT_FLOAT_EQ(1.0f, bbox.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, bbox.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, bbox.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, bbox.getYMax());
+}
+
+// Test processLine with case-insensitive Source
+TEST_F(InputCompilerTest, ProcessLine_CaseInsensitiveSource) {
+    std::vector<std::string> tokens = {"source", "Frequency", "2000.0", "Amplitude", "0.75"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+    
+    const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
+    EXPECT_FLOAT_EQ(2000.0f, source.getFreq());
+    EXPECT_FLOAT_EQ(0.75f, source.getAmplitude());
+}
+
+// Test processLine with case-insensitive BBox
+TEST_F(InputCompilerTest, ProcessLine_CaseInsensitiveBBox) {
+    std::vector<std::string> tokens = {"bbox", "XMin", "10.5", "XMax", "20.5", "YMin", "30.5", "YMax", "40.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+    
+    const auto& bbox = compiler.getStatement<Input::StatementType::BBOX>();
+    EXPECT_FLOAT_EQ(10.5f, bbox.getXMin());
+    EXPECT_FLOAT_EQ(20.5f, bbox.getXMax());
+    EXPECT_FLOAT_EQ(30.5f, bbox.getYMin());
+    EXPECT_FLOAT_EQ(40.5f, bbox.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test processLine with empty tokens
+TEST_F(InputCompilerTest, ProcessLine_EmptyTokens) {
+    std::vector<std::string> tokens;
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with comment
+TEST_F(InputCompilerTest, ProcessLine_Comment) {
+    std::vector<std::string> tokens = {"//", "This", "is", "a", "comment"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with comment (full comment syntax)
+TEST_F(InputCompilerTest, ProcessLine_FullComment) {
+    std::vector<std::string> tokens = {"//", "Comment", "line"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with invalid statement type
+TEST_F(InputCompilerTest, ProcessLine_InvalidStatementType) {
+    std::vector<std::string> tokens = {"Invalid", "param1", "value1"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Source but wrong number of tokens
+TEST_F(InputCompilerTest, ProcessLine_Source_WrongTokenCount) {
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with BBox but wrong number of tokens
+TEST_F(InputCompilerTest, ProcessLine_BBox_WrongTokenCount) {
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "2.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Source but invalid frequency (zero)
+TEST_F(InputCompilerTest, ProcessLine_Source_InvalidFrequency) {
+    std::vector<std::string> tokens = {"Source", "Frequency", "0.0", "Amplitude", "0.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Source but invalid frequency (negative)
+TEST_F(InputCompilerTest, ProcessLine_Source_NegativeFrequency) {
+    std::vector<std::string> tokens = {"Source", "Frequency", "-1000.0", "Amplitude", "0.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with BBox but invalid dimensions (XMin >= XMax)
+TEST_F(InputCompilerTest, ProcessLine_BBox_InvalidDimensions) {
+    std::vector<std::string> tokens = {"BBox", "XMin", "2.0", "XMax", "1.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with BBox but invalid dimensions (YMin >= YMax)
+TEST_F(InputCompilerTest, ProcessLine_BBox_InvalidYDimensions) {
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "4.0", "YMax", "3.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test processLine with multiple Source calls (should update values)
+TEST_F(InputCompilerTest, ProcessLine_MultipleSourceCalls) {
+    std::vector<std::string> tokens1 = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    Input::StatementType result1 = compiler.processLine(tokens1);
+    EXPECT_EQ(Input::StatementType::SOURCE, result1);
+    
+    const auto& source1 = compiler.getStatement<Input::StatementType::SOURCE>();
+    EXPECT_FLOAT_EQ(1000.0f, source1.getFreq());
+    EXPECT_FLOAT_EQ(0.5f, source1.getAmplitude());
+    
+    std::vector<std::string> tokens2 = {"Source", "Frequency", "2000.0", "Amplitude", "1.0"};
+    Input::StatementType result2 = compiler.processLine(tokens2);
+    EXPECT_EQ(Input::StatementType::SOURCE, result2);
+    
+    const auto& source2 = compiler.getStatement<Input::StatementType::SOURCE>();
+    EXPECT_FLOAT_EQ(2000.0f, source2.getFreq());
+    EXPECT_FLOAT_EQ(1.0f, source2.getAmplitude());
+}
+
+// Test processLine with multiple BBox calls (should update values)
+TEST_F(InputCompilerTest, ProcessLine_MultipleBBoxCalls) {
+    std::vector<std::string> tokens1 = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    Input::StatementType result1 = compiler.processLine(tokens1);
+    EXPECT_EQ(Input::StatementType::BBOX, result1);
+    
+    const auto& bbox1 = compiler.getStatement<Input::StatementType::BBOX>();
+    EXPECT_FLOAT_EQ(1.0f, bbox1.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, bbox1.getXMax());
+    
+    std::vector<std::string> tokens2 = {"BBox", "XMin", "10.0", "XMax", "20.0", "YMin", "30.0", "YMax", "40.0"};
+    Input::StatementType result2 = compiler.processLine(tokens2);
+    EXPECT_EQ(Input::StatementType::BBOX, result2);
+    
+    const auto& bbox2 = compiler.getStatement<Input::StatementType::BBOX>();
+    EXPECT_FLOAT_EQ(10.0f, bbox2.getXMin());
+    EXPECT_FLOAT_EQ(20.0f, bbox2.getXMax());
+    EXPECT_FLOAT_EQ(30.0f, bbox2.getYMin());
+    EXPECT_FLOAT_EQ(40.0f, bbox2.getYMax());
+}
+
+// Test processLine with different parameter order for Source
+TEST_F(InputCompilerTest, ProcessLine_Source_DifferentParameterOrder) {
+    std::vector<std::string> tokens = {"Source", "Amplitude", "0.75", "Frequency", "1500.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+    
+    const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
+    EXPECT_FLOAT_EQ(1500.0f, source.getFreq());
+    EXPECT_FLOAT_EQ(0.75f, source.getAmplitude());
+}
+
+// Test processLine with different parameter order for BBox
+TEST_F(InputCompilerTest, ProcessLine_BBox_DifferentParameterOrder) {
+    std::vector<std::string> tokens = {"BBox", "YMax", "40.0", "XMin", "10.0", "YMin", "30.0", "XMax", "20.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+    
+    const auto& bbox = compiler.getStatement<Input::StatementType::BBOX>();
+    EXPECT_FLOAT_EQ(10.0f, bbox.getXMin());
+    EXPECT_FLOAT_EQ(20.0f, bbox.getXMax());
+    EXPECT_FLOAT_EQ(30.0f, bbox.getYMin());
+    EXPECT_FLOAT_EQ(40.0f, bbox.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test processLine with case-insensitive parameter names for Source
+TEST_F(InputCompilerTest, ProcessLine_Source_CaseInsensitiveParameters) {
+    std::vector<std::string> tokens = {"Source", "frequency", "2500.0", "amplitude", "0.9"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::SOURCE, result);
+    
+    const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
+    EXPECT_FLOAT_EQ(2500.0f, source.getFreq());
+    EXPECT_FLOAT_EQ(0.9f, source.getAmplitude());
+}
+
+// Test processLine with case-insensitive parameter names for BBox
+TEST_F(InputCompilerTest, ProcessLine_BBox_CaseInsensitiveParameters) {
+    std::vector<std::string> tokens = {"BBox", "xmin", "5.0", "xmax", "15.0", "ymin", "25.0", "ymax", "35.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::BBOX, result);
+    
+    const auto& bbox = compiler.getStatement<Input::StatementType::BBOX>();
+    EXPECT_FLOAT_EQ(5.0f, bbox.getXMin());
+    EXPECT_FLOAT_EQ(15.0f, bbox.getXMax());
+    EXPECT_FLOAT_EQ(25.0f, bbox.getYMin());
+    EXPECT_FLOAT_EQ(35.0f, bbox.getYMax());
+}
+
