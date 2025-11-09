@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <InputFileParser.h>
+#include <InputCompiler.h>
 
 int
 main(int argc, char* argv[]) {
@@ -20,9 +20,13 @@ main(int argc, char* argv[]) {
     // Iterate through lines one at a time
     // First line is already read during construction
     size_t lineCount = 0;
-    for (Input::InputFileParser parser(file); parser.isValid(); ++parser) {
-        const std::string& line = parser.getLine();
-        std::cout << "Line " << parser.getLineNumber() << ": " << line << std::endl;
+    Input::FileParser fileParser(file);
+    for (Input::FileParser::const_iterator iter(fileParser); iter.isValid(); ++iter) {
+        const std::string& line = iter.getLine();
+        std::cout << "Line " << iter.getLineNumber() << ": " << line << std::endl;
+        if (iter.getType() == Input::StatementType::MAX) {
+            std::cerr << "Error in line " << iter.getLineNumber() << std::endl;
+        }
         lineCount++;
     }
     

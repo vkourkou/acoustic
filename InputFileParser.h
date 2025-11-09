@@ -7,14 +7,14 @@
 
 namespace Input {
 
-class InputFileParser {
+class InputFileTokenizer {
 public:
     // Constructor that takes an input stream reference
     // The caller is responsible for managing the stream's lifetime
-    explicit InputFileParser(std::istream& stream);
+    explicit InputFileTokenizer(std::istream& stream);
     
     // Destructor
-    ~InputFileParser() = default;
+    ~InputFileTokenizer() = default;
     
     // Prefix increment operator - advances to next line (only if stream is valid)
     void operator++();
@@ -48,4 +48,5 @@ private:
 } // namespace Input
 
 #endif // INPUT_FILE_PARSER_H
+
 

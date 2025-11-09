@@ -3,10 +3,10 @@
 #include <sstream>
 #include <string>
 
-using Input::InputFileParser;
+using Input::InputFileTokenizer;
 
-// Test fixture for InputFileParser tests
-class InputFileParserTest : public ::testing::Test {
+// Test fixture for InputFileTokenizer tests
+class InputFileTokenizerTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Setup code if needed
@@ -18,9 +18,9 @@ protected:
 };
 
 // Test basic line reading
-TEST_F(InputFileParserTest, BasicLineReading) {
+TEST_F(InputFileTokenizerTest, BasicLineReading) {
     std::istringstream iss("Hello World");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line = parser.getLine();
@@ -29,9 +29,9 @@ TEST_F(InputFileParserTest, BasicLineReading) {
 }
 
 // Test multiple lines
-TEST_F(InputFileParserTest, MultipleLines) {
+TEST_F(InputFileTokenizerTest, MultipleLines) {
     std::istringstream iss("Line 1\nLine 2\nLine 3");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line1 = parser.getLine();
@@ -50,9 +50,9 @@ TEST_F(InputFileParserTest, MultipleLines) {
 }
 
 // Test empty lines
-TEST_F(InputFileParserTest, EmptyLines) {
+TEST_F(InputFileTokenizerTest, EmptyLines) {
     std::istringstream iss("\n\n");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line1 = parser.getLine();
@@ -66,9 +66,9 @@ TEST_F(InputFileParserTest, EmptyLines) {
 }
 
 // Test whitespace trimming
-TEST_F(InputFileParserTest, WhitespaceTrimming) {
+TEST_F(InputFileTokenizerTest, WhitespaceTrimming) {
     std::istringstream iss("  Hello World  \n\tTabbed Line\t");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line1 = parser.getLine();
@@ -82,9 +82,9 @@ TEST_F(InputFileParserTest, WhitespaceTrimming) {
 }
 
 // Test line with only whitespace (should return empty string after trim)
-TEST_F(InputFileParserTest, WhitespaceOnlyLines) {
+TEST_F(InputFileTokenizerTest, WhitespaceOnlyLines) {
     std::istringstream iss("   \n\t\t\n  ");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line1 = parser.getLine();
@@ -98,9 +98,9 @@ TEST_F(InputFileParserTest, WhitespaceOnlyLines) {
 }
 
 // Test line number tracking
-TEST_F(InputFileParserTest, LineNumberTracking) {
+TEST_F(InputFileTokenizerTest, LineNumberTracking) {
     std::istringstream iss("Line 1\nLine 2\nLine 3\nLine 4");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     EXPECT_EQ(1, parser.getLineNumber());
@@ -116,9 +116,9 @@ TEST_F(InputFileParserTest, LineNumberTracking) {
 }
 
 // Test end of stream
-TEST_F(InputFileParserTest, EndOfStream) {
+TEST_F(InputFileTokenizerTest, EndOfStream) {
     std::istringstream iss("Single Line");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line1 = parser.getLine();
@@ -133,9 +133,9 @@ TEST_F(InputFileParserTest, EndOfStream) {
 }
 
 // Test empty stream
-TEST_F(InputFileParserTest, EmptyStream) {
+TEST_F(InputFileTokenizerTest, EmptyStream) {
     std::istringstream iss("");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // Empty stream - no line read during construction
     const std::string& line = parser.getLine();
@@ -144,9 +144,9 @@ TEST_F(InputFileParserTest, EmptyStream) {
 }
 
 // Test isValid() with good stream
-TEST_F(InputFileParserTest, IsValidWithGoodStream) {
+TEST_F(InputFileTokenizerTest, IsValidWithGoodStream) {
     std::istringstream iss("Test line");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     EXPECT_TRUE(parser.isValid());
     // First line is read during construction
@@ -158,9 +158,9 @@ TEST_F(InputFileParserTest, IsValidWithGoodStream) {
 }
 
 // Test isValid() after reading all lines
-TEST_F(InputFileParserTest, IsValidAfterEOF) {
+TEST_F(InputFileTokenizerTest, IsValidAfterEOF) {
     std::istringstream iss("One line");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     EXPECT_TRUE(parser.isValid()); // First line was successfully read during construction
     EXPECT_EQ(1, parser.getLineNumber());
     ++parser; // Try to read past EOF
@@ -174,9 +174,9 @@ TEST_F(InputFileParserTest, IsValidAfterEOF) {
 }
 
 // Test mixed content with various line endings
-TEST_F(InputFileParserTest, MixedContent) {
+TEST_F(InputFileTokenizerTest, MixedContent) {
     std::istringstream iss("Line 1\nLine 2\n  Padded Line  \nLine 4");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     EXPECT_EQ("Line 1", parser.getLine());
@@ -196,9 +196,9 @@ TEST_F(InputFileParserTest, MixedContent) {
 }
 
 // Test reading after stream becomes invalid
-TEST_F(InputFileParserTest, ReadingAfterStreamInvalid) {
+TEST_F(InputFileTokenizerTest, ReadingAfterStreamInvalid) {
     std::istringstream iss("Valid line");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line = parser.getLine();
@@ -213,9 +213,9 @@ TEST_F(InputFileParserTest, ReadingAfterStreamInvalid) {
 }
 
 // Test with special characters
-TEST_F(InputFileParserTest, SpecialCharacters) {
+TEST_F(InputFileTokenizerTest, SpecialCharacters) {
     std::istringstream iss("Line with !@#$%^&*()\nLine with tabs\tand spaces");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     const std::string& line1 = parser.getLine();
@@ -227,9 +227,9 @@ TEST_F(InputFileParserTest, SpecialCharacters) {
 }
 
 // Test line number accuracy with empty lines
-TEST_F(InputFileParserTest, LineNumberWithEmptyLines) {
+TEST_F(InputFileTokenizerTest, LineNumberWithEmptyLines) {
     std::istringstream iss("First\n\nSecond\n\nThird");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line is read during construction
     EXPECT_EQ(1, parser.getLineNumber()); // "First"
@@ -248,9 +248,9 @@ TEST_F(InputFileParserTest, LineNumberWithEmptyLines) {
 }
 
 // Test tokenization - basic single word
-TEST_F(InputFileParserTest, TokenizationBasicSingleWord) {
+TEST_F(InputFileTokenizerTest, TokenizationBasicSingleWord) {
     std::istringstream iss("Hello");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(1, tokens.size());
@@ -258,9 +258,9 @@ TEST_F(InputFileParserTest, TokenizationBasicSingleWord) {
 }
 
 // Test tokenization - multiple words with spaces
-TEST_F(InputFileParserTest, TokenizationMultipleWordsSpaces) {
+TEST_F(InputFileTokenizerTest, TokenizationMultipleWordsSpaces) {
     std::istringstream iss("Hello World Test");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(3, tokens.size());
@@ -270,9 +270,9 @@ TEST_F(InputFileParserTest, TokenizationMultipleWordsSpaces) {
 }
 
 // Test tokenization - multiple words with tabs
-TEST_F(InputFileParserTest, TokenizationMultipleWordsTabs) {
+TEST_F(InputFileTokenizerTest, TokenizationMultipleWordsTabs) {
     std::istringstream iss("Hello\tWorld\tTest");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(3, tokens.size());
@@ -282,9 +282,9 @@ TEST_F(InputFileParserTest, TokenizationMultipleWordsTabs) {
 }
 
 // Test tokenization - mixed spaces and tabs
-TEST_F(InputFileParserTest, TokenizationMixedSpacesAndTabs) {
+TEST_F(InputFileTokenizerTest, TokenizationMixedSpacesAndTabs) {
     std::istringstream iss("Hello\t World  Test");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(3, tokens.size());
@@ -294,9 +294,9 @@ TEST_F(InputFileParserTest, TokenizationMixedSpacesAndTabs) {
 }
 
 // Test tokenization - multiple spaces/tabs between tokens
-TEST_F(InputFileParserTest, TokenizationMultipleDelimiters) {
+TEST_F(InputFileTokenizerTest, TokenizationMultipleDelimiters) {
     std::istringstream iss("Hello    World\t\tTest");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(3, tokens.size());
@@ -306,27 +306,27 @@ TEST_F(InputFileParserTest, TokenizationMultipleDelimiters) {
 }
 
 // Test tokenization - empty line (no tokens)
-TEST_F(InputFileParserTest, TokenizationEmptyLine) {
+TEST_F(InputFileTokenizerTest, TokenizationEmptyLine) {
     std::istringstream iss("");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     EXPECT_EQ(0, tokens.size());
 }
 
 // Test tokenization - line with only spaces/tabs (no tokens)
-TEST_F(InputFileParserTest, TokenizationOnlyWhitespace) {
+TEST_F(InputFileTokenizerTest, TokenizationOnlyWhitespace) {
     std::istringstream iss("   \t\t  ");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     EXPECT_EQ(0, tokens.size());
 }
 
 // Test tokenization - tokens with special characters
-TEST_F(InputFileParserTest, TokenizationSpecialCharacters) {
+TEST_F(InputFileTokenizerTest, TokenizationSpecialCharacters) {
     std::istringstream iss("Hello! World@ Test#");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(3, tokens.size());
@@ -336,9 +336,9 @@ TEST_F(InputFileParserTest, TokenizationSpecialCharacters) {
 }
 
 // Test tokenization - tokens across multiple lines
-TEST_F(InputFileParserTest, TokenizationMultipleLines) {
+TEST_F(InputFileTokenizerTest, TokenizationMultipleLines) {
     std::istringstream iss("Line1 Token1 Token2\nLine2 Token3 Token4");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line
     const std::vector<std::string>& tokens1 = parser.getTokens();
@@ -357,9 +357,9 @@ TEST_F(InputFileParserTest, TokenizationMultipleLines) {
 }
 
 // Test tokenization - tokens after EOF (should be empty)
-TEST_F(InputFileParserTest, TokenizationAfterEOF) {
+TEST_F(InputFileTokenizerTest, TokenizationAfterEOF) {
     std::istringstream iss("Hello World");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     // First line has tokens
     const std::vector<std::string>& tokens1 = parser.getTokens();
@@ -372,9 +372,9 @@ TEST_F(InputFileParserTest, TokenizationAfterEOF) {
 }
 
 // Test tokenization - single token with leading/trailing whitespace
-TEST_F(InputFileParserTest, TokenizationWhitespacePadding) {
+TEST_F(InputFileTokenizerTest, TokenizationWhitespacePadding) {
     std::istringstream iss("  Hello  ");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(1, tokens.size());
@@ -382,9 +382,9 @@ TEST_F(InputFileParserTest, TokenizationWhitespacePadding) {
 }
 
 // Test tokenization - complex example with many tokens
-TEST_F(InputFileParserTest, TokenizationComplex) {
+TEST_F(InputFileTokenizerTest, TokenizationComplex) {
     std::istringstream iss("  Command   arg1\targ2  arg3\t arg4  ");
-    InputFileParser parser(iss);
+    InputFileTokenizer parser(iss);
     
     const std::vector<std::string>& tokens = parser.getTokens();
     ASSERT_EQ(5, tokens.size());

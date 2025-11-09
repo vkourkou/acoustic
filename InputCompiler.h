@@ -2,8 +2,10 @@
 #define INPUT_COMPILER_H
 
 #include <string>
+#include <istream>
 #include <vector>
 #include <tuple>
+#include <InputFileParser.h>
 #include <Utilities.h>
 
 namespace Input {
@@ -99,6 +101,40 @@ public:
     
 private:
     StatementCnt m_statementCnt;
+};
+
+class FileParser {
+public:
+    explicit FileParser(std::istream& stream);
+    ~FileParser() = default;
+
+    class const_iterator {
+    public:
+        explicit const_iterator(FileParser& parser);
+        ~const_iterator() = default;
+
+        bool isValid() const;
+        void operator++();
+        StatementType getType() const;
+        size_t getLineNumber() const;
+        const std::string& getLine() const;
+
+        template<StatementType type>
+        constexpr const auto& getStatement() const {
+            return m_CompilerRef.getStatement<type>();
+        }
+
+    private:
+        InputFileTokenizer& m_Tokenizer;
+        InputCompiler& m_CompilerRef;
+        StatementType m_Type;
+
+        void compileCurrentLine();
+    };
+
+private:
+    InputFileTokenizer m_Tokeninzer;
+    InputCompiler m_Compiler;
 };
 
 // -----------------------------------------------------------------------------

@@ -2,7 +2,7 @@
 
 namespace Input {
 
-InputFileParser::InputFileParser(std::istream& stream)
+InputFileTokenizer::InputFileTokenizer(std::istream& stream)
     : stream_(stream), lineNumber_(0), m_isValid(false) {
     // Read the first line during construction
     operator++();
@@ -11,7 +11,7 @@ InputFileParser::InputFileParser(std::istream& stream)
 // -----------------------------------------------------------------------------
 
 void
-InputFileParser::operator++() {
+InputFileTokenizer::operator++() {
     // Check both isValid() and stream_.good() before doing anything
     // Allow first read if lineNumber_ is 0 (initial state, haven't read yet)
     if (!stream_.good() || (!isValid() && lineNumber_ > 0)) {
@@ -39,35 +39,35 @@ InputFileParser::operator++() {
 // -----------------------------------------------------------------------------
 
 bool
-InputFileParser::isValid() const {
+InputFileTokenizer::isValid() const {
     return m_isValid;
 }
 
 // -----------------------------------------------------------------------------
 
 size_t
-InputFileParser::getLineNumber() const {
+InputFileTokenizer::getLineNumber() const {
     return lineNumber_;
 }
 
 // -----------------------------------------------------------------------------
 
 const std::string&
-InputFileParser::getLine() const {
+InputFileTokenizer::getLine() const {
     return bufferedLine_;
 }
 
 // -----------------------------------------------------------------------------
 
 const std::vector<std::string>&
-InputFileParser::getTokens() const {
+InputFileTokenizer::getTokens() const {
     return m_vTokens;
 }
 
 // -----------------------------------------------------------------------------
 
 void
-InputFileParser::trim(std::string& str) const {
+InputFileTokenizer::trim(std::string& str) const {
     size_t first = str.find_first_not_of(" \t\n\r");
     if (first == std::string::npos) {
         str.clear();
@@ -80,7 +80,7 @@ InputFileParser::trim(std::string& str) const {
 // -----------------------------------------------------------------------------
 
 void
-InputFileParser::tokenize(const std::string& str) {
+InputFileTokenizer::tokenize(const std::string& str) {
     m_vTokens.clear();
     
     if (str.empty()) {

@@ -80,6 +80,73 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
 
 // -----------------------------------------------------------------------------
 
+FileParser::FileParser(std::istream& stream)
+    :
+    m_Tokeninzer(stream),
+    m_Compiler()
+{
+}
+
+// -----------------------------------------------------------------------------
+
+FileParser::const_iterator::const_iterator(FileParser& parser)
+    : m_Tokenizer(parser.m_Tokeninzer),
+      m_CompilerRef(parser.m_Compiler),
+      m_Type(StatementType::MAX) {
+    compileCurrentLine();
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+FileParser::const_iterator::isValid() const {
+    return m_Tokenizer.isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+StatementType
+FileParser::const_iterator::getType() const {
+    return m_Type;
+}
+
+// -----------------------------------------------------------------------------
+
+size_t
+FileParser::const_iterator::getLineNumber() const {
+    return m_Tokenizer.getLineNumber();
+}
+
+// -----------------------------------------------------------------------------
+
+const std::string&
+FileParser::const_iterator::getLine() const {
+    return m_Tokenizer.getLine();
+}
+
+// -----------------------------------------------------------------------------
+
+void
+FileParser::const_iterator::operator++() {
+    ++m_Tokenizer;
+    compileCurrentLine();
+}
+
+// -----------------------------------------------------------------------------
+
+void
+FileParser::const_iterator::compileCurrentLine() {
+    if (!m_Tokenizer.isValid()) {
+        m_Type = StatementType::MAX;
+        return;
+    }
+
+    const std::vector<std::string>& tokens = m_Tokenizer.getTokens();
+    m_Type = m_CompilerRef.processLine(tokens);
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 SourceStatement::process(const std::vector<std::string>& tokens) {
     // Must have exactly 5 tokens: 1 for "Source" and 2 pairs (4 tokens)
