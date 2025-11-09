@@ -5,6 +5,8 @@
 
 using Input::BBoxStatement;
 using Input::SourceStatement;
+using Input::FileParser;
+using Input::StatementType;
 
 // Test fixture for BBoxStatement tests
 class BBoxStatementTest : public ::testing::Test {
@@ -988,4 +990,83 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_CaseInsensitiveParameters) {
     EXPECT_FLOAT_EQ(25.0f, bbox.getYMin());
     EXPECT_FLOAT_EQ(35.0f, bbox.getYMax());
 }
+
+
+class FileParserTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+    }
+
+    void TearDown() override {
+    }
+};
+
+
+
+// -----------------------------------------------------------------------------
+
+TEST_F(FileParserTest, ValidLinesProduceStatements) {
+    std::istringstream iss(
+        "Source Frequency 100 Amplitude 50\n"
+        "BBox XMin 0 XMax 10 YMin 0 YMax 20\n"
+    );
+
+    FileParser parser(iss);
+    std::vector<StatementType> types;
+
+    for (FileParser::const_iterator iter(parser); iter.isValid(); ++iter) {
+        types.push_back(iter.getType());
+        EXPECT_NE(StatementType::MAX, iter.getType());
+        if (iter.getType() == StatementType::SOURCE) {
+            const auto& source = iter.getStatement<StatementType::SOURCE>();
+            EXPECT_TRUE(source.isValid());
+            EXPECT_FLOAT_EQ(100.0f, source.getFreq());
+            EXPECT_FLOAT_EQ(50.0f, source.getAmplitude());
+        } else if (iter.getType() == StatementType::BBOX) {
+            const auto& bbox = iter.getStatement<StatementType::BBOX>();
+            EXPECT_TRUE(bbox.isValid());
+            EXPECT_FLOAT_EQ(0.0f, bbox.getXMin());
+            EXPECT_FLOAT_EQ(10.0f, bbox.getXMax());
+            EXPECT_FLOAT_EQ(0.0f, bbox.getYMin());
+            EXPECT_FLOAT_EQ(20.0f, bbox.getYMax());
+        }
+    }
+
+    ASSERT_EQ(2u, types.size());
+    EXPECT_EQ(StatementType::SOURCE, types[0]);
+    EXPECT_EQ(StatementType::BBOX, types[1]);
+}
+
+// -----------------------------------------------------------------------------
+
+TEST_F(FileParserTest, MixedLinesYieldMaxAndValid) {
+    std::istringstream iss(
+        "Invalid line\n"
+        "// Comment line\n"
+        "\n"
+        "Source Frequency 10 Amplitude 5\n"
+    );
+
+    FileParser parser(iss);
+    std::vector<StatementType> types;
+    std::vector<size_t> lineNumbers;
+
+    for (FileParser::const_iterator iter(parser); iter.isValid(); ++iter) {
+        types.push_back(iter.getType());
+        lineNumbers.push_back(iter.getLineNumber());
+    }
+
+    ASSERT_EQ(4u, types.size());
+    EXPECT_EQ(StatementType::MAX, types[0]);
+    EXPECT_EQ(StatementType::MAX, types[1]);
+    EXPECT_EQ(StatementType::MAX, types[2]);
+    EXPECT_EQ(StatementType::SOURCE, types[3]);
+
+    ASSERT_EQ(4u, lineNumbers.size());
+    EXPECT_EQ(1u, lineNumbers[0]);
+    EXPECT_EQ(2u, lineNumbers[1]);
+    EXPECT_EQ(3u, lineNumbers[2]);
+    EXPECT_EQ(4u, lineNumbers[3]);
+}
+
 
