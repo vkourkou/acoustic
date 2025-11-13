@@ -220,9 +220,9 @@ SourceStatement::getAmplitude() const
 bool
 BBoxStatement::process(const std::vector<std::string>& tokens) {
     // Check if there's at least one token
-   // Must have exactly 9 tokens: 1 for "BBox" and 4 pairs (8 tokens)
-   if (tokens.size() != 9) {
-    return false;
+    // Must have exactly 9 tokens: 1 for "BBox" and 4 pairs (8 tokens)
+    if (tokens.size() != 9) {
+        return false;
     }   
     
     // Check if first token is "BBox" (case insensitive)
