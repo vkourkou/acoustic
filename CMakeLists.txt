@@ -38,6 +38,8 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Source files
 set(SOURCES
     main.cpp
+    Runner.cpp
+    InputCnt.cpp
     InputFileParser.cpp
     InputCompiler.cpp
     Utilities.cpp
@@ -45,6 +47,8 @@ set(SOURCES
 
 # Header files
 set(HEADERS
+    Runner.h
+    InputCnt.h
     InputFileParser.h
     InputCompiler.h
     Utilities.h
