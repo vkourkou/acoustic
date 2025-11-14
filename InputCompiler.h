@@ -24,6 +24,10 @@ std::string getString(StatementType type);
 
 StatementType getStatementType(const std::string& str);
 
+// Template function to get StatementType from statement class type
+template<typename StatementClass>
+constexpr StatementType getStatementType();
+
 // Source statement class
 class SourceStatement {
 public:
@@ -173,6 +177,34 @@ private:
     InputFileTokenizer m_Tokeninzer;
     InputCompiler m_Compiler;
 };
+
+// -----------------------------------------------------------------------------
+
+
+// Template specializations for getStatementType<StatementClass>()
+template<>
+inline constexpr StatementType
+getStatementType<SourceStatement>() {
+    return StatementType::SOURCE;
+}
+
+template<>
+inline constexpr StatementType
+getStatementType<BBoxStatement>() {
+    return StatementType::BBOX;
+}
+
+template<>
+inline constexpr StatementType
+getStatementType<VelocityStatement>() {
+    return StatementType::VELOCITY;
+}
+
+template<>
+inline constexpr StatementType
+getStatementType<MaxResolutionStatement>() {
+    return StatementType::MAXRESOLUTION;
+}
 
 // -----------------------------------------------------------------------------
 
