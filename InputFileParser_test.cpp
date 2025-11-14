@@ -395,3 +395,132 @@ TEST_F(InputFileTokenizerTest, TokenizationComplex) {
     EXPECT_EQ("arg4", tokens[4]);
 }
 
+// -----------------------------------------------------------------------------
+
+// Test tokenization - comment line with "//" only
+TEST_F(InputFileTokenizerTest, TokenizationCommentOnly) {
+    std::istringstream iss("//");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ("//", tokens[0]);
+}
+
+// Test tokenization - comment line with "//" and text
+TEST_F(InputFileTokenizerTest, TokenizationCommentWithText) {
+    std::istringstream iss("// This is a comment");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ("//", tokens[0]);
+    EXPECT_EQ("This is a comment", tokens[1]);
+}
+
+// Test tokenization - comment line with "//" and text (no space after //)
+TEST_F(InputFileTokenizerTest, TokenizationCommentWithTextNoSpace) {
+    std::istringstream iss("//Comment");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ("//", tokens[0]);
+    EXPECT_EQ("Comment", tokens[1]);
+}
+
+// Test tokenization - comment line with "//" and leading spaces after //
+TEST_F(InputFileTokenizerTest, TokenizationCommentWithLeadingSpaces) {
+    std::istringstream iss("//   Comment with spaces");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ("//", tokens[0]);
+    EXPECT_EQ("Comment with spaces", tokens[1]);  // Leading spaces should be trimmed
+}
+
+// Test tokenization - comment line with "//" and tabs after //
+TEST_F(InputFileTokenizerTest, TokenizationCommentWithTabs) {
+    std::istringstream iss("//\t\tComment with tabs");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ("//", tokens[0]);
+    EXPECT_EQ("Comment with tabs", tokens[1]);  // Leading tabs should be trimmed
+}
+
+// Test tokenization - comment line with only whitespace after //
+TEST_F(InputFileTokenizerTest, TokenizationCommentWithOnlyWhitespace) {
+    std::istringstream iss("//   \t\t  ");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());  // Only "//" token, rest is empty after trimming
+    EXPECT_EQ("//", tokens[0]);
+}
+
+// Test tokenization - comment lines mixed with regular lines
+TEST_F(InputFileTokenizerTest, TokenizationCommentMixedWithRegular) {
+    std::istringstream iss("// Comment line\nRegular line\n// Another comment");
+    InputFileTokenizer parser(iss);
+    
+    // First line - comment
+    const std::vector<std::string>& tokens1 = parser.getTokens();
+    ASSERT_EQ(2, tokens1.size());
+    EXPECT_EQ("//", tokens1[0]);
+    EXPECT_EQ("Comment line", tokens1[1]);
+    
+    // Second line - regular
+    ++parser;
+    const std::vector<std::string>& tokens2 = parser.getTokens();
+    ASSERT_EQ(2, tokens2.size());
+    EXPECT_EQ("Regular", tokens2[0]);
+    EXPECT_EQ("line", tokens2[1]);
+    
+    // Third line - comment
+    ++parser;
+    const std::vector<std::string>& tokens3 = parser.getTokens();
+    ASSERT_EQ(2, tokens3.size());
+    EXPECT_EQ("//", tokens3[0]);
+    EXPECT_EQ("Another comment", tokens3[1]);
+}
+
+// Test tokenization - comment line with leading whitespace before //
+TEST_F(InputFileTokenizerTest, TokenizationCommentWithLeadingWhitespace) {
+    std::istringstream iss("  // Comment with leading spaces");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ("//", tokens[0]);
+    EXPECT_EQ("Comment with leading spaces", tokens[1]);  // Leading spaces before // are trimmed by trim()
+}
+
+// Test tokenization - multiple comment lines
+TEST_F(InputFileTokenizerTest, TokenizationMultipleComments) {
+    std::istringstream iss("// First comment\n// Second comment\n// Third comment");
+    InputFileTokenizer parser(iss);
+    
+    // First comment
+    const std::vector<std::string>& tokens1 = parser.getTokens();
+    ASSERT_EQ(2, tokens1.size());
+    EXPECT_EQ("//", tokens1[0]);
+    EXPECT_EQ("First comment", tokens1[1]);
+    
+    // Second comment
+    ++parser;
+    const std::vector<std::string>& tokens2 = parser.getTokens();
+    ASSERT_EQ(2, tokens2.size());
+    EXPECT_EQ("//", tokens2[0]);
+    EXPECT_EQ("Second comment", tokens2[1]);
+    
+    // Third comment
+    ++parser;
+    const std::vector<std::string>& tokens3 = parser.getTokens();
+    ASSERT_EQ(2, tokens3.size());
+    EXPECT_EQ("//", tokens3[0]);
+    EXPECT_EQ("Third comment", tokens3[1]);
+}
+

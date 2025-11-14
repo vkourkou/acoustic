@@ -87,6 +87,27 @@ InputFileTokenizer::tokenize(const std::string& str) {
         return;
     }
     
+    // Check if line starts with "//" - if so, make "//" by itself a token
+    // and add the rest of the line as another token
+    if (str.length() >= 2 && str[0] == '/' && str[1] == '/') {
+        m_vTokens.push_back("//");
+        // Add the rest of the line (after "//") as a token
+        if (str.length() > 2) {
+            std::string restOfLine = str.substr(2);
+            // Trim leading whitespace from the rest of the line
+            size_t first = restOfLine.find_first_not_of(" \t");
+            if (first != std::string::npos) {
+                restOfLine = restOfLine.substr(first);
+            } else {
+                restOfLine.clear();
+            }
+            if (!restOfLine.empty()) {
+                m_vTokens.push_back(restOfLine);
+            }
+        }
+        return;
+    }
+    
     size_t start = 0;
     size_t pos = 0;
     
