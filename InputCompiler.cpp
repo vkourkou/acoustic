@@ -14,6 +14,7 @@ getString(StatementType type) {
         case StatementType::BBOX: return "BBox";
         case StatementType::VELOCITY: return "Velocity";
         case StatementType::MAXRESOLUTION: return "MaxResolution";
+        case StatementType::COMMENT: return "//";
         case StatementType::MAX: return "Max";
         default: return "INVALID";
     }
@@ -35,6 +36,9 @@ getStatementType(const std::string& str) {
     else if (Utilities::caseInsensitiveEquals(str, "MaxResolution")) {
         return StatementType::MAXRESOLUTION;
     }
+    else if (str == "//") {
+        return StatementType::COMMENT;
+    }
     else {
         return StatementType::MAX;
     }
@@ -53,14 +57,8 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
         return StatementType::MAX;
     }
     
-    // Check if first token is a comment (starts with //)
-    const std::string& firstToken = tokens[0];
-    if (firstToken.length() >= 2 && firstToken[0] == '/' && firstToken[1] == '/') {
-        // It's a comment, return MAX
-        return StatementType::MAX;
-    }
-    
     // Get StatementType from first token
+    const std::string& firstToken = tokens[0];
     StatementType type = getStatementType(firstToken);
     
     // If invalid type, return MAX
@@ -81,6 +79,10 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
     }
     else if (type == StatementType::MAXRESOLUTION) {
         success = m_statementCnt.process<StatementType::MAXRESOLUTION>(tokens);
+    }
+    else if (type == StatementType::COMMENT) {
+        // Comments don't need processing, they're always valid
+        success = true;
     }
     else {
         success = false;

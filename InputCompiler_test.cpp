@@ -1450,7 +1450,7 @@ TEST_F(InputCompilerTest, ProcessLine_Comment) {
     std::vector<std::string> tokens = {"//", "This", "is", "a", "comment"};
     
     Input::StatementType result = compiler.processLine(tokens);
-    EXPECT_EQ(Input::StatementType::MAX, result);
+    EXPECT_EQ(Input::StatementType::COMMENT, result);
 }
 
 // Test processLine with comment (full comment syntax)
@@ -1458,7 +1458,7 @@ TEST_F(InputCompilerTest, ProcessLine_FullComment) {
     std::vector<std::string> tokens = {"//", "Comment", "line"};
     
     Input::StatementType result = compiler.processLine(tokens);
-    EXPECT_EQ(Input::StatementType::MAX, result);
+    EXPECT_EQ(Input::StatementType::COMMENT, result);
 }
 
 // Test processLine with invalid statement type
@@ -1876,7 +1876,7 @@ TEST_F(FileParserTest, MixedLinesYieldMaxAndValid) {
 
     ASSERT_EQ(4u, types.size());
     EXPECT_EQ(StatementType::MAX, types[0]);
-    EXPECT_EQ(StatementType::MAX, types[1]);
+    EXPECT_EQ(StatementType::COMMENT, types[1]);
     EXPECT_EQ(StatementType::MAX, types[2]);
     EXPECT_EQ(StatementType::SOURCE, types[3]);
 

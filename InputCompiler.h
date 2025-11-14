@@ -16,7 +16,8 @@ enum class StatementType {
     BBOX = 1,
     VELOCITY = 2,
     MAXRESOLUTION = 3,
-    MAX = 4
+    COMMENT = 4,
+    MAX = 5
 };
 
 std::string getString(StatementType type);
