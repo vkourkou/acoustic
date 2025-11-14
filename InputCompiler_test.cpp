@@ -278,6 +278,15 @@ TEST_F(BBoxStatementTest, Process_InvalidValue) {
     EXPECT_FLOAT_EQ(4.0f, bbox.getYMax());
 }
 
+// Test process with unknown parameter name (should fail due to else clause)
+TEST_F(BBoxStatementTest, Process_UnknownParameterName) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "Unknown", "4.0"};
+    
+    bool result = bbox.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because "Unknown" is not a recognized parameter
+}
+
 // -----------------------------------------------------------------------------
 
 // Test accessors with default values (before processing)
@@ -558,6 +567,15 @@ TEST_F(SourceStatementTest, Process_InvalidAmplitudeValue) {
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.0f, source.getAmplitude());  // Amplitude remains default
+}
+
+// Test process with unknown parameter name (should fail due to else clause)
+TEST_F(SourceStatementTest, Process_UnknownParameterName) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Unknown", "0.5"};
+    
+    bool result = source.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because "Unknown" is not a recognized parameter
 }
 
 // -----------------------------------------------------------------------------
@@ -1075,6 +1093,15 @@ TEST_F(MaxResolutionStatementTest, Process_InvalidTemporalValue) {
     EXPECT_FLOAT_EQ(0.0f, maxRes.getTemporal());  // Temporal remains default
 }
 
+// Test process with unknown parameter name (should fail due to else clause)
+TEST_F(MaxResolutionStatementTest, Process_UnknownParameterName) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Unknown", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because "Unknown" is not a recognized parameter
+}
+
 // -----------------------------------------------------------------------------
 
 // Test accessors with default values (before processing)
@@ -1581,6 +1608,30 @@ TEST_F(InputCompilerTest, ProcessLine_MaxResolution_NegativeSpatial) {
 // Test processLine with MaxResolution but zero Temporal (should fail validation)
 TEST_F(InputCompilerTest, ProcessLine_MaxResolution_ZeroTemporal) {
     std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "0.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Source but unknown parameter name (should fail due to else clause)
+TEST_F(InputCompilerTest, ProcessLine_Source_UnknownParameterName) {
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Unknown", "0.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with BBox but unknown parameter name (should fail due to else clause)
+TEST_F(InputCompilerTest, ProcessLine_BBox_UnknownParameterName) {
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "Unknown", "4.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with MaxResolution but unknown parameter name (should fail due to else clause)
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_UnknownParameterName) {
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Unknown", "2.0"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::MAX, result);

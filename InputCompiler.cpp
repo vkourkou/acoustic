@@ -82,6 +82,9 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
     else if (type == StatementType::MAXRESOLUTION) {
         success = m_statementCnt.process<StatementType::MAXRESOLUTION>(tokens);
     }
+    else {
+        success = false;
+    }
     
     // If processing failed, return MAX
     if (!success) {
@@ -194,6 +197,9 @@ SourceStatement::process(const std::vector<std::string>& tokens) {
                 m_Amplitude = convertedValue.value();
             }
         }
+        else {
+            return false;
+        }
     }
     
     return isValid();
@@ -281,6 +287,9 @@ BBoxStatement::process(const std::vector<std::string>& tokens) {
             if (convertedValue.has_value()) {
                 m_YMax = convertedValue.value();
             }
+        }
+        else {
+            return false;
         }
     }
     
@@ -426,6 +435,9 @@ MaxResolutionStatement::process(const std::vector<std::string>& tokens) {
             if (convertedValue.has_value()) {
                 m_Temporal = convertedValue.value();
             }
+        }
+        else {
+            return false;
         }
     }
     
