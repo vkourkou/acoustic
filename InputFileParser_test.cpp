@@ -49,19 +49,16 @@ TEST_F(InputFileTokenizerTest, MultipleLines) {
     EXPECT_EQ(3, parser.getLineNumber());
 }
 
-// Test empty lines
+// Test empty lines (should be skipped)
 TEST_F(InputFileTokenizerTest, EmptyLines) {
     std::istringstream iss("\n\n");
     InputFileTokenizer parser(iss);
     
-    // First line is read during construction
-    const std::string& line1 = parser.getLine();
-    EXPECT_EQ("", line1);
-    EXPECT_EQ(1, parser.getLineNumber());
-    
-    ++parser;
-    const std::string& line2 = parser.getLine();
-    EXPECT_EQ("", line2);
+    // Empty lines are skipped, so we should be at EOF immediately
+    EXPECT_FALSE(parser.isValid());
+    const std::string& line = parser.getLine();
+    EXPECT_EQ("", line);
+    // Line number should be 2 (both empty lines were read and skipped)
     EXPECT_EQ(2, parser.getLineNumber());
 }
 
@@ -81,20 +78,18 @@ TEST_F(InputFileTokenizerTest, WhitespaceTrimming) {
     EXPECT_EQ(2, parser.getLineNumber());
 }
 
-// Test line with only whitespace (should return empty string after trim)
+// Test line with only whitespace (should be skipped after trim)
 TEST_F(InputFileTokenizerTest, WhitespaceOnlyLines) {
     std::istringstream iss("   \n\t\t\n  ");
     InputFileTokenizer parser(iss);
     
-    // First line is read during construction
-    const std::string& line1 = parser.getLine();
-    EXPECT_EQ("", line1);
-    EXPECT_EQ(1, parser.getLineNumber());
-    
-    ++parser;
-    const std::string& line2 = parser.getLine();
-    EXPECT_EQ("", line2);
-    EXPECT_EQ(2, parser.getLineNumber());
+    // Whitespace-only lines are trimmed to empty and then skipped
+    // All lines are empty, so we should be at EOF immediately
+    EXPECT_FALSE(parser.isValid());
+    const std::string& line = parser.getLine();
+    EXPECT_EQ("", line);
+    // Line number should be 3 (all three whitespace-only lines were read and skipped)
+    EXPECT_EQ(3, parser.getLineNumber());
 }
 
 // Test line number tracking
@@ -226,25 +221,25 @@ TEST_F(InputFileTokenizerTest, SpecialCharacters) {
     EXPECT_EQ("Line with tabs\tand spaces", line2);
 }
 
-// Test line number accuracy with empty lines
+// Test line number accuracy with empty lines (empty lines are skipped but counted)
 TEST_F(InputFileTokenizerTest, LineNumberWithEmptyLines) {
     std::istringstream iss("First\n\nSecond\n\nThird");
     InputFileTokenizer parser(iss);
     
     // First line is read during construction
     EXPECT_EQ(1, parser.getLineNumber()); // "First"
+    EXPECT_EQ("First", parser.getLine());
     
-    ++parser; // Empty
-    EXPECT_EQ(2, parser.getLineNumber());
+    ++parser; // Skips empty line (line 2), reads "Second" (line 3)
+    EXPECT_EQ(3, parser.getLineNumber()); // Line number includes the skipped empty line
+    EXPECT_EQ("Second", parser.getLine());
     
-    ++parser; // "Second"
-    EXPECT_EQ(3, parser.getLineNumber());
+    ++parser; // Skips empty line (line 4), reads "Third" (line 5)
+    EXPECT_EQ(5, parser.getLineNumber()); // Line number includes the skipped empty line
+    EXPECT_EQ("Third", parser.getLine());
     
-    ++parser; // Empty
-    EXPECT_EQ(4, parser.getLineNumber());
-    
-    ++parser; // "Third"
-    EXPECT_EQ(5, parser.getLineNumber());
+    ++parser; // EOF
+    EXPECT_FALSE(parser.isValid());
 }
 
 // Test tokenization - basic single word

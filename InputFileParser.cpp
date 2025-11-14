@@ -21,19 +21,26 @@ InputFileTokenizer::operator++() {
         return;
     }
     
-    if (std::getline(stream_, bufferedLine_)) {
-        lineNumber_++;
+    // Keep reading lines until we find a non-empty line or reach EOF
+    while (std::getline(stream_, bufferedLine_)) {
+        lineNumber_++;  // Increment line number for every line read (including empty lines)
         // Trim the line in place
         trim(bufferedLine_);
-        // Tokenize the line
-        tokenize(bufferedLine_);
-        m_isValid = true;  // Previous getline was successful
-    } else {
-        // No more lines, clear the buffer
-        bufferedLine_.clear();
-        m_vTokens.clear();
-        m_isValid = false;  // Previous getline failed
+        
+        // If line is not empty, process it and return
+        if (!bufferedLine_.empty()) {
+            // Tokenize the line
+            tokenize(bufferedLine_);
+            m_isValid = true;  // Previous getline was successful
+            return;
+        }
+        // If line is empty, continue to next line
     }
+    
+    // No more lines, clear the buffer
+    bufferedLine_.clear();
+    m_vTokens.clear();
+    m_isValid = false;  // Previous getline failed
 }
 
 // -----------------------------------------------------------------------------

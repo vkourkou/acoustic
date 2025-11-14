@@ -1874,17 +1874,16 @@ TEST_F(FileParserTest, MixedLinesYieldMaxAndValid) {
         lineNumbers.push_back(iter.getLineNumber());
     }
 
-    ASSERT_EQ(4u, types.size());
-    EXPECT_EQ(StatementType::MAX, types[0]);
-    EXPECT_EQ(StatementType::COMMENT, types[1]);
-    EXPECT_EQ(StatementType::MAX, types[2]);
-    EXPECT_EQ(StatementType::SOURCE, types[3]);
+    // Empty line (line 3) is skipped, so we only get 3 items
+    ASSERT_EQ(3u, types.size());
+    EXPECT_EQ(StatementType::MAX, types[0]);      // Line 1: Invalid line
+    EXPECT_EQ(StatementType::COMMENT, types[1]);  // Line 2: Comment
+    EXPECT_EQ(StatementType::SOURCE, types[2]);   // Line 4: Source (line 3 empty, skipped)
 
-    ASSERT_EQ(4u, lineNumbers.size());
-    EXPECT_EQ(1u, lineNumbers[0]);
-    EXPECT_EQ(2u, lineNumbers[1]);
-    EXPECT_EQ(3u, lineNumbers[2]);
-    EXPECT_EQ(4u, lineNumbers[3]);
+    ASSERT_EQ(3u, lineNumbers.size());
+    EXPECT_EQ(1u, lineNumbers[0]);  // Line 1
+    EXPECT_EQ(2u, lineNumbers[1]);  // Line 2
+    EXPECT_EQ(4u, lineNumbers[2]);  // Line 4 (line 3 was skipped but counted in line number)
 }
 
 
