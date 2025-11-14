@@ -1,5 +1,6 @@
 #include <Runner.h>
 #include <iostream>
+#include <cassert>
 
 // -----------------------------------------------------------------------------
 
@@ -11,17 +12,37 @@ Runner::parseInput(std::istream& IS) {
         
         if (type == Input::StatementType::SOURCE) {
             const Input::SourceStatement& source = iter.getStatement<Input::StatementType::SOURCE>();
-            if (!m_InputCnt.setSource(source)) {
-                return false;
-            }
-        } else if (type == Input::StatementType::BBOX) {
-            const Input::BBoxStatement& bbox = iter.getStatement<Input::StatementType::BBOX>();
-            if (!m_InputCnt.setBBox(bbox)) {
+            if (!m_InputCnt.set(source)) {
                 return false;
             }
         }
+        else if (type == Input::StatementType::BBOX) {
+            const Input::BBoxStatement& bbox = iter.getStatement<Input::StatementType::BBOX>();
+            if (!m_InputCnt.set(bbox)) {
+                return false;
+            }
+        }
+        else if (type == Input::StatementType::VELOCITY) {
+            const Input::VelocityStatement& velocity = iter.getStatement<Input::StatementType::VELOCITY>();
+            if (!m_InputCnt.set(velocity)) {
+                return false;
+            }
+        }
+        else if (type == Input::StatementType::MAXRESOLUTION) {
+            const Input::MaxResolutionStatement& maxRes = iter.getStatement<Input::StatementType::MAXRESOLUTION>();
+            if (!m_InputCnt.set(maxRes)) {
+                return false;
+            }
+        }
+        else if (type == Input::StatementType::COMMENT) {
+            // Comments are ignored, continue processing
+        }
         else if (type == Input::StatementType::MAX) {
             std::cerr << "Error in line " << iter.getLineNumber() << std::endl;
+            return false;
+        }
+        else {
+            assert(false);
             return false;
         }
     }
