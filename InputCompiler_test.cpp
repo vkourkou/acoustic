@@ -5,6 +5,7 @@
 
 using Input::BBoxStatement;
 using Input::SourceStatement;
+using Input::VelocityStatement;
 using Input::FileParser;
 using Input::StatementType;
 
@@ -615,6 +616,208 @@ TEST_F(SourceStatementTest, Process_MultipleCalls) {
 
 // -----------------------------------------------------------------------------
 
+// Test fixture for VelocityStatement tests
+class VelocityStatementTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test process with valid Velocity tokens (2 tokens total)
+TEST_F(VelocityStatementTest, Process_ValidVelocity) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "130.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(130.0f, velocity.getVelocity());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive Velocity (lowercase)
+TEST_F(VelocityStatementTest, Process_CaseInsensitiveVelocity) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"velocity", "130.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(130.0f, velocity.getVelocity());
+}
+
+// Test process with case-insensitive Velocity (mixed case)
+TEST_F(VelocityStatementTest, Process_CaseInsensitiveVelocityMixed) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"VeLoCiTy", "130.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(130.0f, velocity.getVelocity());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid first token (not Velocity)
+TEST_F(VelocityStatementTest, Process_InvalidFirstToken) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Source", "130.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with empty tokens
+TEST_F(VelocityStatementTest, Process_EmptyTokens) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens;
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong number of tokens (less than 2)
+TEST_F(VelocityStatementTest, Process_TooFewTokens) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with wrong number of tokens (more than 2)
+TEST_F(VelocityStatementTest, Process_TooManyTokens) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "130.0", "Extra"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with negative values (should fail validation)
+TEST_F(VelocityStatementTest, Process_NegativeValues) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "-130.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because velocity is negative
+    
+    // Values may still be set, but process should return false
+    EXPECT_FLOAT_EQ(-130.0f, velocity.getVelocity());
+}
+
+// Test process with zero value (should fail validation)
+TEST_F(VelocityStatementTest, Process_ZeroValue) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "0.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because velocity is zero
+    
+    // Values may still be set, but process should return false
+    EXPECT_FLOAT_EQ(0.0f, velocity.getVelocity());
+}
+
+// Test process with large values
+TEST_F(VelocityStatementTest, Process_LargeValues) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "1000000.0"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1000000.0f, velocity.getVelocity());
+}
+
+// Test process with decimal values
+TEST_F(VelocityStatementTest, Process_DecimalValues) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "123.456"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(123.456f, velocity.getVelocity());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid value (non-numeric string)
+TEST_F(VelocityStatementTest, Process_InvalidValue) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "invalid"};
+    
+    bool result = velocity.process(tokens);
+    EXPECT_FALSE(result);
+    
+    // Velocity should remain uninitialized (default value 0.0)
+    EXPECT_FLOAT_EQ(0.0f, velocity.getVelocity());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessors with default values (before processing)
+TEST_F(VelocityStatementTest, Accessors_DefaultValues) {
+    VelocityStatement velocity;
+    
+    // Before processing, value should be uninitialized (default float value is 0.0)
+    EXPECT_FLOAT_EQ(0.0f, velocity.getVelocity());
+}
+
+// Test accessors after processing
+TEST_F(VelocityStatementTest, Accessors_AfterProcessing) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "250.5"};
+    
+    velocity.process(tokens);
+    
+    EXPECT_FLOAT_EQ(250.5f, velocity.getVelocity());
+}
+
+// Test accessors are const
+TEST_F(VelocityStatementTest, Accessors_Const) {
+    const VelocityStatement velocity;
+    
+    // Should compile - accessors are const
+    Velocity_t vel = velocity.getVelocity();
+    
+    EXPECT_FLOAT_EQ(0.0f, vel);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test multiple process calls (should update values)
+TEST_F(VelocityStatementTest, Process_MultipleCalls) {
+    VelocityStatement velocity;
+    
+    std::vector<std::string> tokens1 = {"Velocity", "130.0"};
+    bool result1 = velocity.process(tokens1);
+    EXPECT_TRUE(result1);
+    
+    EXPECT_FLOAT_EQ(130.0f, velocity.getVelocity());
+    
+    std::vector<std::string> tokens2 = {"Velocity", "200.0"};
+    bool result2 = velocity.process(tokens2);
+    EXPECT_TRUE(result2);
+    
+    EXPECT_FLOAT_EQ(200.0f, velocity.getVelocity());
+}
+
+// -----------------------------------------------------------------------------
+
 // Test fixture for StatementType utility function tests
 class StatementTypeTest : public ::testing::Test {
 protected:
@@ -639,6 +842,12 @@ TEST_F(StatementTypeTest, GetString_Source) {
 TEST_F(StatementTypeTest, GetString_BBox) {
     std::string result = Input::getString(Input::StatementType::BBOX);
     EXPECT_EQ("BBox", result);
+}
+
+// Test getString with VELOCITY
+TEST_F(StatementTypeTest, GetString_Velocity) {
+    std::string result = Input::getString(Input::StatementType::VELOCITY);
+    EXPECT_EQ("Velocity", result);
 }
 
 // Test getString with MAX
@@ -701,6 +910,32 @@ TEST_F(StatementTypeTest, GetStatementType_BBox_MixedCase) {
 
 // -----------------------------------------------------------------------------
 
+// Test getStatementType with "Velocity" (exact case)
+TEST_F(StatementTypeTest, GetStatementType_Velocity_ExactCase) {
+    Input::StatementType result = Input::getStatementType("Velocity");
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
+}
+
+// Test getStatementType with "velocity" (lowercase)
+TEST_F(StatementTypeTest, GetStatementType_Velocity_Lowercase) {
+    Input::StatementType result = Input::getStatementType("velocity");
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
+}
+
+// Test getStatementType with "VELOCITY" (uppercase)
+TEST_F(StatementTypeTest, GetStatementType_Velocity_Uppercase) {
+    Input::StatementType result = Input::getStatementType("VELOCITY");
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
+}
+
+// Test getStatementType with "VeLoCiTy" (mixed case)
+TEST_F(StatementTypeTest, GetStatementType_Velocity_MixedCase) {
+    Input::StatementType result = Input::getStatementType("VeLoCiTy");
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
+}
+
+// -----------------------------------------------------------------------------
+
 // Test getStatementType with invalid string
 TEST_F(StatementTypeTest, GetStatementType_InvalidString) {
     Input::StatementType result = Input::getStatementType("Invalid");
@@ -739,6 +974,13 @@ TEST_F(StatementTypeTest, RoundTrip_BBox) {
     std::string str = Input::getString(Input::StatementType::BBOX);
     Input::StatementType result = Input::getStatementType(str);
     EXPECT_EQ(Input::StatementType::BBOX, result);
+}
+
+// Test round-trip: getString then getStatementType for Velocity
+TEST_F(StatementTypeTest, RoundTrip_Velocity) {
+    std::string str = Input::getString(Input::StatementType::VELOCITY);
+    Input::StatementType result = Input::getStatementType(str);
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
 }
 
 // -----------------------------------------------------------------------------
@@ -895,6 +1137,61 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_InvalidYDimensions) {
     EXPECT_EQ(Input::StatementType::MAX, result);
 }
 
+// Test processLine with valid Velocity tokens
+TEST_F(InputCompilerTest, ProcessLine_ValidVelocity) {
+    std::vector<std::string> tokens = {"Velocity", "130.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
+    
+    // Verify the statement values using getStatement
+    const auto& velocity = compiler.getStatement<Input::StatementType::VELOCITY>();
+    EXPECT_FLOAT_EQ(130.0f, velocity.getVelocity());
+}
+
+// Test processLine with case-insensitive Velocity
+TEST_F(InputCompilerTest, ProcessLine_CaseInsensitiveVelocity) {
+    std::vector<std::string> tokens = {"velocity", "250.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::VELOCITY, result);
+    
+    const auto& velocity = compiler.getStatement<Input::StatementType::VELOCITY>();
+    EXPECT_FLOAT_EQ(250.5f, velocity.getVelocity());
+}
+
+// Test processLine with Velocity but wrong number of tokens
+TEST_F(InputCompilerTest, ProcessLine_Velocity_WrongTokenCount) {
+    std::vector<std::string> tokens = {"Velocity", "130.0", "Extra"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Velocity but invalid value
+TEST_F(InputCompilerTest, ProcessLine_Velocity_InvalidValue) {
+    std::vector<std::string> tokens = {"Velocity", "invalid"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Velocity but negative value (should fail validation)
+TEST_F(InputCompilerTest, ProcessLine_Velocity_NegativeValue) {
+    std::vector<std::string> tokens = {"Velocity", "-130.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Velocity but zero value (should fail validation)
+TEST_F(InputCompilerTest, ProcessLine_Velocity_ZeroValue) {
+    std::vector<std::string> tokens = {"Velocity", "0.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
 // -----------------------------------------------------------------------------
 
 // Test processLine with multiple Source calls (should update values)
@@ -935,6 +1232,23 @@ TEST_F(InputCompilerTest, ProcessLine_MultipleBBoxCalls) {
     EXPECT_FLOAT_EQ(20.0f, bbox2.getXMax());
     EXPECT_FLOAT_EQ(30.0f, bbox2.getYMin());
     EXPECT_FLOAT_EQ(40.0f, bbox2.getYMax());
+}
+
+// Test processLine with multiple Velocity calls (should update values)
+TEST_F(InputCompilerTest, ProcessLine_MultipleVelocityCalls) {
+    std::vector<std::string> tokens1 = {"Velocity", "130.0"};
+    Input::StatementType result1 = compiler.processLine(tokens1);
+    EXPECT_EQ(Input::StatementType::VELOCITY, result1);
+    
+    const auto& velocity1 = compiler.getStatement<Input::StatementType::VELOCITY>();
+    EXPECT_FLOAT_EQ(130.0f, velocity1.getVelocity());
+    
+    std::vector<std::string> tokens2 = {"Velocity", "200.0"};
+    Input::StatementType result2 = compiler.processLine(tokens2);
+    EXPECT_EQ(Input::StatementType::VELOCITY, result2);
+    
+    const auto& velocity2 = compiler.getStatement<Input::StatementType::VELOCITY>();
+    EXPECT_FLOAT_EQ(200.0f, velocity2.getVelocity());
 }
 
 // Test processLine with different parameter order for Source

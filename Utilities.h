@@ -13,6 +13,8 @@ typedef float Frequency_t;
 // Typedef for amplitude type
 typedef float Amplitude_t;
 
+typedef float Velocity_t;
+
 namespace Utilities {
 
 // Case-insensitive string comparison

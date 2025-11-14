@@ -12,6 +12,7 @@ getString(StatementType type) {
     switch (type) {
         case StatementType::SOURCE: return "Source";
         case StatementType::BBOX: return "BBox";
+        case StatementType::VELOCITY: return "Velocity";
         case StatementType::MAX: return "Max";
         default: return "INVALID";
     }
@@ -26,6 +27,9 @@ getStatementType(const std::string& str) {
     }
     else if (Utilities::caseInsensitiveEquals(str, "BBox")) {
         return StatementType::BBOX;
+    }
+    else if (Utilities::caseInsensitiveEquals(str, "Velocity")) {
+        return StatementType::VELOCITY;
     }
     else {
         return StatementType::MAX;
@@ -67,6 +71,9 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
     }
     else if (type == StatementType::BBOX) {
         success = m_statementCnt.process<StatementType::BBOX>(tokens);
+    }
+    else if (type == StatementType::VELOCITY) {
+        success = m_statementCnt.process<StatementType::VELOCITY>(tokens);
     }
     
     // If processing failed, return MAX
@@ -325,6 +332,54 @@ Dimension_t
 BBoxStatement::getYMax() const
 {
     return m_YMax;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+VelocityStatement::process(const std::vector<std::string>& tokens) {
+    // Must have exactly 2 tokens: "Velocity" and the value
+    if (tokens.size() != 2) {
+        return false;
+    }
+    
+    // Check if first token is "Velocity" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[0], "Velocity")) {
+        return false;
+    }
+    
+    // Convert the second token to double
+    auto convertedValue = Utilities::convertTo<Velocity_t>(tokens[1]);
+    if (convertedValue.has_value()) {
+        m_Velocity = convertedValue.value();
+    }
+    else {
+        return false;
+    }
+    
+    return isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+VelocityStatement::isValid() const
+{
+    // Velocity must be positive
+    if (m_Velocity <= 0.0f) {
+        std::cout << "Invalid Velocity: Velocity (" << m_Velocity << ") must be positive" << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+Velocity_t
+VelocityStatement::getVelocity() const
+{
+    return m_Velocity;
 }
 
 } // namespace Input

@@ -14,7 +14,8 @@ namespace Input {
 enum class StatementType {
     SOURCE = 0,
     BBOX = 1,
-    MAX = 2
+    VELOCITY = 2,
+    MAX = 3
 };
 
 std::string getString(StatementType type);
@@ -61,9 +62,25 @@ private:
     Dimension_t m_YMax{0};
 };
 
-// Class to hold a tuple of SourceStatement and BBoxStatement
+// Velocity statement class
+class VelocityStatement {
+public:
+    VelocityStatement() = default;
+    ~VelocityStatement() = default;
+    
+    bool process(const std::vector<std::string>& tokens);
+    
+    Velocity_t getVelocity() const;
+    
+    bool isValid() const;
+
+private:
+    Velocity_t m_Velocity{0};
+};
+
+// Class to hold a tuple of SourceStatement, BBoxStatement, and VelocityStatement
 class StatementCnt {
-    std::tuple<SourceStatement, BBoxStatement> m_statements;
+    std::tuple<SourceStatement, BBoxStatement, VelocityStatement> m_statements;
 public:
     StatementCnt() = default;
     ~StatementCnt() = default;
