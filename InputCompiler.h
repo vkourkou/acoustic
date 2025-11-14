@@ -15,7 +15,8 @@ enum class StatementType {
     SOURCE = 0,
     BBOX = 1,
     VELOCITY = 2,
-    MAX = 3
+    MAXRESOLUTION = 3,
+    MAX = 4
 };
 
 std::string getString(StatementType type);
@@ -78,9 +79,27 @@ private:
     Velocity_t m_Velocity{0};
 };
 
-// Class to hold a tuple of SourceStatement, BBoxStatement, and VelocityStatement
+// MaxResolution statement class
+class MaxResolutionStatement {
+public:
+    MaxResolutionStatement() = default;
+    ~MaxResolutionStatement() = default;
+    
+    bool process(const std::vector<std::string>& tokens);
+    
+    float getSpatial() const;
+    float getTemporal() const;
+    
+    bool isValid() const;
+
+private:
+    float m_Spatial{0};
+    float m_Temporal{0};
+};
+
+// Class to hold a tuple of SourceStatement, BBoxStatement, VelocityStatement, and MaxResolutionStatement
 class StatementCnt {
-    std::tuple<SourceStatement, BBoxStatement, VelocityStatement> m_statements;
+    std::tuple<SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement> m_statements;
 public:
     StatementCnt() = default;
     ~StatementCnt() = default;

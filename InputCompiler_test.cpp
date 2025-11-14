@@ -6,6 +6,7 @@
 using Input::BBoxStatement;
 using Input::SourceStatement;
 using Input::VelocityStatement;
+using Input::MaxResolutionStatement;
 using Input::FileParser;
 using Input::StatementType;
 
@@ -818,6 +819,319 @@ TEST_F(VelocityStatementTest, Process_MultipleCalls) {
 
 // -----------------------------------------------------------------------------
 
+// Test fixture for MaxResolutionStatement tests
+class MaxResolutionStatementTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test process with valid MaxResolution tokens (5 tokens total)
+TEST_F(MaxResolutionStatementTest, Process_ValidMaxResolution) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive MaxResolution (lowercase)
+TEST_F(MaxResolutionStatementTest, Process_CaseInsensitiveMaxResolution) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"maxresolution", "Spatial", "1.0", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// Test process with case-insensitive MaxResolution (mixed case)
+TEST_F(MaxResolutionStatementTest, Process_CaseInsensitiveMaxResolutionMixed) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaXrEsOlUtIoN", "Spatial", "1.0", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive parameter names
+TEST_F(MaxResolutionStatementTest, Process_CaseInsensitiveParameters) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "spatial", "1.0", "temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// Test process with mixed case parameter names
+TEST_F(MaxResolutionStatementTest, Process_MixedCaseParameters) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "SpAtIaL", "1.0", "TeMpOrAl", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid first token (not MaxResolution)
+TEST_F(MaxResolutionStatementTest, Process_InvalidFirstToken) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"Source", "Spatial", "1.0", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with empty tokens
+TEST_F(MaxResolutionStatementTest, Process_EmptyTokens) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens;
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong number of tokens (less than 5)
+TEST_F(MaxResolutionStatementTest, Process_TooFewTokens) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with wrong number of tokens (more than 5)
+TEST_F(MaxResolutionStatementTest, Process_TooManyTokens) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0", "Extra"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with exactly 4 tokens (missing one)
+TEST_F(MaxResolutionStatementTest, Process_Exactly4Tokens) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with negative Spatial value (should fail validation)
+TEST_F(MaxResolutionStatementTest, Process_NegativeSpatial) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "-1.0", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because Spatial is negative
+    
+    // Values may still be set, but process should return false
+    EXPECT_FLOAT_EQ(-1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// Test process with zero Spatial value (should fail validation)
+TEST_F(MaxResolutionStatementTest, Process_ZeroSpatial) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "0.0", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because Spatial is zero
+    
+    EXPECT_FLOAT_EQ(0.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// Test process with negative Temporal value (should fail validation)
+TEST_F(MaxResolutionStatementTest, Process_NegativeTemporal) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "-2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because Temporal is negative
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(-2.0f, maxRes.getTemporal());
+}
+
+// Test process with zero Temporal value (should fail validation)
+TEST_F(MaxResolutionStatementTest, Process_ZeroTemporal) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "0.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because Temporal is zero
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(0.0f, maxRes.getTemporal());
+}
+
+// Test process with both negative values (should fail validation)
+TEST_F(MaxResolutionStatementTest, Process_BothNegative) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "-1.0", "Temporal", "-2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because both are negative
+    
+    EXPECT_FLOAT_EQ(-1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(-2.0f, maxRes.getTemporal());
+}
+
+// Test process with large values
+TEST_F(MaxResolutionStatementTest, Process_LargeValues) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1000.0", "Temporal", "2000.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1000.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2000.0f, maxRes.getTemporal());
+}
+
+// Test process with decimal values
+TEST_F(MaxResolutionStatementTest, Process_DecimalValues) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.5", "Temporal", "2.75"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.5f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.75f, maxRes.getTemporal());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with different parameter order
+TEST_F(MaxResolutionStatementTest, Process_DifferentParameterOrder) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Temporal", "2.0", "Spatial", "1.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid value (non-numeric string for Spatial)
+TEST_F(MaxResolutionStatementTest, Process_InvalidSpatialValue) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "invalid", "Temporal", "2.0"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because Spatial is not set (remains 0.0) and isValid() fails
+    
+    // Spatial should remain uninitialized (default value 0.0)
+    // Temporal should be set correctly
+    EXPECT_FLOAT_EQ(0.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// Test process with invalid value (non-numeric string for Temporal, but valid Spatial)
+TEST_F(MaxResolutionStatementTest, Process_InvalidTemporalValue) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "invalid"};
+    
+    bool result = maxRes.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because Temporal is not set (remains 0.0) and isValid() fails
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(0.0f, maxRes.getTemporal());  // Temporal remains default
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessors with default values (before processing)
+TEST_F(MaxResolutionStatementTest, Accessors_DefaultValues) {
+    MaxResolutionStatement maxRes;
+    
+    // Before processing, values should be uninitialized (default float value is 0.0)
+    EXPECT_FLOAT_EQ(0.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(0.0f, maxRes.getTemporal());
+}
+
+// Test accessors after processing
+TEST_F(MaxResolutionStatementTest, Accessors_AfterProcessing) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "10.5", "Temporal", "20.5"};
+    
+    maxRes.process(tokens);
+    
+    EXPECT_FLOAT_EQ(10.5f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(20.5f, maxRes.getTemporal());
+}
+
+// Test accessors are const
+TEST_F(MaxResolutionStatementTest, Accessors_Const) {
+    const MaxResolutionStatement maxRes;
+    
+    // Should compile - accessors are const
+    float spatial = maxRes.getSpatial();
+    float temporal = maxRes.getTemporal();
+    
+    EXPECT_FLOAT_EQ(0.0f, spatial);
+    EXPECT_FLOAT_EQ(0.0f, temporal);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test multiple process calls (should update values)
+TEST_F(MaxResolutionStatementTest, Process_MultipleCalls) {
+    MaxResolutionStatement maxRes;
+    
+    std::vector<std::string> tokens1 = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0"};
+    bool result1 = maxRes.process(tokens1);
+    EXPECT_TRUE(result1);
+    
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+    
+    std::vector<std::string> tokens2 = {"MaxResolution", "Spatial", "10.0", "Temporal", "20.0"};
+    bool result2 = maxRes.process(tokens2);
+    EXPECT_TRUE(result2);
+    
+    EXPECT_FLOAT_EQ(10.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(20.0f, maxRes.getTemporal());
+}
+
+// -----------------------------------------------------------------------------
+
 // Test fixture for StatementType utility function tests
 class StatementTypeTest : public ::testing::Test {
 protected:
@@ -848,6 +1162,12 @@ TEST_F(StatementTypeTest, GetString_BBox) {
 TEST_F(StatementTypeTest, GetString_Velocity) {
     std::string result = Input::getString(Input::StatementType::VELOCITY);
     EXPECT_EQ("Velocity", result);
+}
+
+// Test getString with MAXRESOLUTION
+TEST_F(StatementTypeTest, GetString_MaxResolution) {
+    std::string result = Input::getString(Input::StatementType::MAXRESOLUTION);
+    EXPECT_EQ("MaxResolution", result);
 }
 
 // Test getString with MAX
@@ -936,6 +1256,32 @@ TEST_F(StatementTypeTest, GetStatementType_Velocity_MixedCase) {
 
 // -----------------------------------------------------------------------------
 
+// Test getStatementType with "MaxResolution" (exact case)
+TEST_F(StatementTypeTest, GetStatementType_MaxResolution_ExactCase) {
+    Input::StatementType result = Input::getStatementType("MaxResolution");
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+}
+
+// Test getStatementType with "maxresolution" (lowercase)
+TEST_F(StatementTypeTest, GetStatementType_MaxResolution_Lowercase) {
+    Input::StatementType result = Input::getStatementType("maxresolution");
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+}
+
+// Test getStatementType with "MAXRESOLUTION" (uppercase)
+TEST_F(StatementTypeTest, GetStatementType_MaxResolution_Uppercase) {
+    Input::StatementType result = Input::getStatementType("MAXRESOLUTION");
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+}
+
+// Test getStatementType with "MaXrEsOlUtIoN" (mixed case)
+TEST_F(StatementTypeTest, GetStatementType_MaxResolution_MixedCase) {
+    Input::StatementType result = Input::getStatementType("MaXrEsOlUtIoN");
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+}
+
+// -----------------------------------------------------------------------------
+
 // Test getStatementType with invalid string
 TEST_F(StatementTypeTest, GetStatementType_InvalidString) {
     Input::StatementType result = Input::getStatementType("Invalid");
@@ -981,6 +1327,13 @@ TEST_F(StatementTypeTest, RoundTrip_Velocity) {
     std::string str = Input::getString(Input::StatementType::VELOCITY);
     Input::StatementType result = Input::getStatementType(str);
     EXPECT_EQ(Input::StatementType::VELOCITY, result);
+}
+
+// Test round-trip: getString then getStatementType for MaxResolution
+TEST_F(StatementTypeTest, RoundTrip_MaxResolution) {
+    std::string str = Input::getString(Input::StatementType::MAXRESOLUTION);
+    Input::StatementType result = Input::getStatementType(str);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
 }
 
 // -----------------------------------------------------------------------------
@@ -1176,6 +1529,63 @@ TEST_F(InputCompilerTest, ProcessLine_Velocity_InvalidValue) {
     EXPECT_EQ(Input::StatementType::MAX, result);
 }
 
+// Test processLine with valid MaxResolution tokens
+TEST_F(InputCompilerTest, ProcessLine_ValidMaxResolution) {
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+    
+    // Verify the statement values using getStatement
+    const auto& maxRes = compiler.getStatement<Input::StatementType::MAXRESOLUTION>();
+    EXPECT_FLOAT_EQ(1.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes.getTemporal());
+}
+
+// Test processLine with case-insensitive MaxResolution
+TEST_F(InputCompilerTest, ProcessLine_CaseInsensitiveMaxResolution) {
+    std::vector<std::string> tokens = {"maxresolution", "Spatial", "10.5", "Temporal", "20.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+    
+    const auto& maxRes = compiler.getStatement<Input::StatementType::MAXRESOLUTION>();
+    EXPECT_FLOAT_EQ(10.5f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(20.5f, maxRes.getTemporal());
+}
+
+// Test processLine with MaxResolution but wrong number of tokens
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_WrongTokenCount) {
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0", "Extra"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with MaxResolution but invalid value
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_InvalidValue) {
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "invalid", "Temporal", "2.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with MaxResolution but negative Spatial (should fail validation)
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_NegativeSpatial) {
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "-1.0", "Temporal", "2.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with MaxResolution but zero Temporal (should fail validation)
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_ZeroTemporal) {
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "0.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
 // Test processLine with Velocity but negative value (should fail validation)
 TEST_F(InputCompilerTest, ProcessLine_Velocity_NegativeValue) {
     std::vector<std::string> tokens = {"Velocity", "-130.0"};
@@ -1251,6 +1661,25 @@ TEST_F(InputCompilerTest, ProcessLine_MultipleVelocityCalls) {
     EXPECT_FLOAT_EQ(200.0f, velocity2.getVelocity());
 }
 
+// Test processLine with multiple MaxResolution calls (should update values)
+TEST_F(InputCompilerTest, ProcessLine_MultipleMaxResolutionCalls) {
+    std::vector<std::string> tokens1 = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0"};
+    Input::StatementType result1 = compiler.processLine(tokens1);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result1);
+    
+    const auto& maxRes1 = compiler.getStatement<Input::StatementType::MAXRESOLUTION>();
+    EXPECT_FLOAT_EQ(1.0f, maxRes1.getSpatial());
+    EXPECT_FLOAT_EQ(2.0f, maxRes1.getTemporal());
+    
+    std::vector<std::string> tokens2 = {"MaxResolution", "Spatial", "10.0", "Temporal", "20.0"};
+    Input::StatementType result2 = compiler.processLine(tokens2);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result2);
+    
+    const auto& maxRes2 = compiler.getStatement<Input::StatementType::MAXRESOLUTION>();
+    EXPECT_FLOAT_EQ(10.0f, maxRes2.getSpatial());
+    EXPECT_FLOAT_EQ(20.0f, maxRes2.getTemporal());
+}
+
 // Test processLine with different parameter order for Source
 TEST_F(InputCompilerTest, ProcessLine_Source_DifferentParameterOrder) {
     std::vector<std::string> tokens = {"Source", "Amplitude", "0.75", "Frequency", "1500.0"};
@@ -1275,6 +1704,18 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_DifferentParameterOrder) {
     EXPECT_FLOAT_EQ(20.0f, bbox.getXMax());
     EXPECT_FLOAT_EQ(30.0f, bbox.getYMin());
     EXPECT_FLOAT_EQ(40.0f, bbox.getYMax());
+}
+
+// Test processLine with different parameter order for MaxResolution
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_DifferentParameterOrder) {
+    std::vector<std::string> tokens = {"MaxResolution", "Temporal", "20.0", "Spatial", "10.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+    
+    const auto& maxRes = compiler.getStatement<Input::StatementType::MAXRESOLUTION>();
+    EXPECT_FLOAT_EQ(10.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(20.0f, maxRes.getTemporal());
 }
 
 // -----------------------------------------------------------------------------
@@ -1303,6 +1744,18 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_CaseInsensitiveParameters) {
     EXPECT_FLOAT_EQ(15.0f, bbox.getXMax());
     EXPECT_FLOAT_EQ(25.0f, bbox.getYMin());
     EXPECT_FLOAT_EQ(35.0f, bbox.getYMax());
+}
+
+// Test processLine with case-insensitive parameter names for MaxResolution
+TEST_F(InputCompilerTest, ProcessLine_MaxResolution_CaseInsensitiveParameters) {
+    std::vector<std::string> tokens = {"MaxResolution", "spatial", "5.0", "temporal", "15.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAXRESOLUTION, result);
+    
+    const auto& maxRes = compiler.getStatement<Input::StatementType::MAXRESOLUTION>();
+    EXPECT_FLOAT_EQ(5.0f, maxRes.getSpatial());
+    EXPECT_FLOAT_EQ(15.0f, maxRes.getTemporal());
 }
 
 

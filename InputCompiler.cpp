@@ -13,6 +13,7 @@ getString(StatementType type) {
         case StatementType::SOURCE: return "Source";
         case StatementType::BBOX: return "BBox";
         case StatementType::VELOCITY: return "Velocity";
+        case StatementType::MAXRESOLUTION: return "MaxResolution";
         case StatementType::MAX: return "Max";
         default: return "INVALID";
     }
@@ -30,6 +31,9 @@ getStatementType(const std::string& str) {
     }
     else if (Utilities::caseInsensitiveEquals(str, "Velocity")) {
         return StatementType::VELOCITY;
+    }
+    else if (Utilities::caseInsensitiveEquals(str, "MaxResolution")) {
+        return StatementType::MAXRESOLUTION;
     }
     else {
         return StatementType::MAX;
@@ -74,6 +78,9 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
     }
     else if (type == StatementType::VELOCITY) {
         success = m_statementCnt.process<StatementType::VELOCITY>(tokens);
+    }
+    else if (type == StatementType::MAXRESOLUTION) {
+        success = m_statementCnt.process<StatementType::MAXRESOLUTION>(tokens);
     }
     
     // If processing failed, return MAX
@@ -380,6 +387,84 @@ Velocity_t
 VelocityStatement::getVelocity() const
 {
     return m_Velocity;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+MaxResolutionStatement::process(const std::vector<std::string>& tokens) {
+    // Must have exactly 5 tokens: "MaxResolution", "Spatial", value, "Temporal", value
+    if (tokens.size() != 5) {
+        return false;
+    }
+    
+    // Check if first token is "MaxResolution" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[0], "MaxResolution")) {
+        return false;
+    }
+    
+    // Process tokens in pairs starting from index 1
+    for (size_t i = 1; i < tokens.size(); i += 2) {
+        // Need at least two tokens for a pair
+        if (i + 1 >= tokens.size()) {
+            break;
+        }
+        
+        const std::string& key = tokens[i];
+        const std::string& value = tokens[i + 1];
+        
+        // Check for Spatial
+        if (Utilities::caseInsensitiveEquals(key, "Spatial")) {
+            auto convertedValue = Utilities::convertTo<float>(value);
+            if (convertedValue.has_value()) {
+                m_Spatial = convertedValue.value();
+            }
+        }
+        // Check for Temporal
+        else if (Utilities::caseInsensitiveEquals(key, "Temporal")) {
+            auto convertedValue = Utilities::convertTo<float>(value);
+            if (convertedValue.has_value()) {
+                m_Temporal = convertedValue.value();
+            }
+        }
+    }
+    
+    return isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+MaxResolutionStatement::isValid() const
+{
+    // Both Spatial and Temporal must be positive
+    if (m_Spatial <= 0.0f) {
+        std::cout << "Invalid MaxResolution: Spatial (" << m_Spatial << ") must be positive" << std::endl;
+        return false;
+    }
+    
+    if (m_Temporal <= 0.0f) {
+        std::cout << "Invalid MaxResolution: Temporal (" << m_Temporal << ") must be positive" << std::endl;
+        return false;
+    }
+    
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+float
+MaxResolutionStatement::getSpatial() const
+{
+    return m_Spatial;
+}
+
+// -----------------------------------------------------------------------------
+
+float
+MaxResolutionStatement::getTemporal() const
+{
+    return m_Temporal;
 }
 
 } // namespace Input
