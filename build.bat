@@ -85,7 +85,7 @@ if errorlevel 1 (
 
 echo.
 echo Build successful!
-echo Executable location: build\%BUILD_TYPE%\bin\program.exe
+echo Executable location: build\%BUILD_TYPE%\bin\acoustic.exe
 echo Unit test executable location: build\%BUILD_TYPE%\bin\ut.exe
 cd ..
 goto :end

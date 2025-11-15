@@ -59,7 +59,7 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
 # Set target properties
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    OUTPUT_NAME "program"
+    OUTPUT_NAME "acoustic"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug/bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release/bin"
     RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/RelWithDebInfo/bin"
