@@ -4,6 +4,8 @@
 #include <InputCompiler.h>
 #include <tuple>
 #include <type_traits>
+#include <ostream>
+#include <utility>
 
 namespace input {
 
@@ -16,6 +18,11 @@ private:
     template<typename T>
     constexpr T& get() {
         return const_cast<T&>(static_cast<const InputCnt*>(this)->get<T>());
+    }
+
+    template<std::size_t... I>
+    void saveImpl(std::ostream& OS, std::index_sequence<I...>) const {
+        ((std::get<I>(m_statements).save(OS), OS << "\n"), ...);
     }
     
 public:
@@ -42,8 +49,7 @@ public:
         return std::get<static_cast<size_t>(type)>(m_statements);
     }
     
-    
-
+    void save(std::ostream& OS) const;
 
 };
 

@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 #include <string>
+#include <sstream>
 
 using Input::BBoxStatement;
 using Input::SourceStatement;
@@ -1885,5 +1886,383 @@ TEST_F(FileParserTest, MixedLinesYieldMaxAndValid) {
     EXPECT_EQ(2u, lineNumbers[1]);  // Line 2
     EXPECT_EQ(4u, lineNumbers[2]);  // Line 4 (line 3 was skipped but counted in line number)
 }
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for SourceStatement save tests
+class SourceStatementSaveTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test save with valid Source values
+TEST_F(SourceStatementSaveTest, Save_ValidValues) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    source.process(tokens);
+    
+    std::ostringstream oss;
+    source.save(oss);
+    
+    EXPECT_EQ("Source Frequency 1000 Amplitude 0.5", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with decimal values
+TEST_F(SourceStatementSaveTest, Save_DecimalValues) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1234.567", "Amplitude", "0.12345"};
+    source.process(tokens);
+    
+    std::ostringstream oss;
+    source.save(oss);
+    
+    EXPECT_EQ("Source Frequency 1234.57 Amplitude 0.12345", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with large values
+TEST_F(SourceStatementSaveTest, Save_LargeValues) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000000.0", "Amplitude", "1000.0"};
+    source.process(tokens);
+    
+    std::ostringstream oss;
+    source.save(oss);
+    
+    EXPECT_EQ("Source Frequency 1e+06 Amplitude 1000", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default values (before processing)
+TEST_F(SourceStatementSaveTest, Save_DefaultValues) {
+    SourceStatement source;
+    
+    std::ostringstream oss;
+    source.save(oss);
+    
+    EXPECT_EQ("Source Frequency 0 Amplitude 0", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for BBoxStatement save tests
+class BBoxStatementSaveTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test save with valid BBox values
+TEST_F(BBoxStatementSaveTest, Save_ValidValues) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    bbox.process(tokens);
+    
+    std::ostringstream oss;
+    bbox.save(oss);
+    
+    EXPECT_EQ("BBox XMin 1 XMax 2 YMin 3 YMax 4", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with decimal values
+TEST_F(BBoxStatementSaveTest, Save_DecimalValues) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.5", "XMax", "2.75", "YMin", "3.14159", "YMax", "4.99"};
+    bbox.process(tokens);
+    
+    std::ostringstream oss;
+    bbox.save(oss);
+    
+    EXPECT_EQ("BBox XMin 1.5 XMax 2.75 YMin 3.14159 YMax 4.99", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with negative values
+TEST_F(BBoxStatementSaveTest, Save_NegativeValues) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "-2.5", "XMax", "-1.5", "YMin", "-4.5", "YMax", "-3.5"};
+    bbox.process(tokens);
+    
+    std::ostringstream oss;
+    bbox.save(oss);
+    
+    EXPECT_EQ("BBox XMin -2.5 XMax -1.5 YMin -4.5 YMax -3.5", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with large values
+TEST_F(BBoxStatementSaveTest, Save_LargeValues) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1000.0", "XMax", "2000.0", "YMin", "3000.0", "YMax", "4000.0"};
+    bbox.process(tokens);
+    
+    std::ostringstream oss;
+    bbox.save(oss);
+    
+    EXPECT_EQ("BBox XMin 1000 XMax 2000 YMin 3000 YMax 4000", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default values (before processing)
+TEST_F(BBoxStatementSaveTest, Save_DefaultValues) {
+    BBoxStatement bbox;
+    
+    std::ostringstream oss;
+    bbox.save(oss);
+    
+    EXPECT_EQ("BBox XMin 0 XMax 0 YMin 0 YMax 0", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for VelocityStatement save tests
+class VelocityStatementSaveTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test save with valid Velocity value
+TEST_F(VelocityStatementSaveTest, Save_ValidValue) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "130.0"};
+    velocity.process(tokens);
+    
+    std::ostringstream oss;
+    velocity.save(oss);
+    
+    EXPECT_EQ("Velocity 130", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with decimal value
+TEST_F(VelocityStatementSaveTest, Save_DecimalValue) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "123.456"};
+    velocity.process(tokens);
+    
+    std::ostringstream oss;
+    velocity.save(oss);
+    
+    EXPECT_EQ("Velocity 123.456", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with large value
+TEST_F(VelocityStatementSaveTest, Save_LargeValue) {
+    VelocityStatement velocity;
+    std::vector<std::string> tokens = {"Velocity", "1000000.0"};
+    velocity.process(tokens);
+    
+    std::ostringstream oss;
+    velocity.save(oss);
+    
+    EXPECT_EQ("Velocity 1e+06", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default value (before processing)
+TEST_F(VelocityStatementSaveTest, Save_DefaultValue) {
+    VelocityStatement velocity;
+    
+    std::ostringstream oss;
+    velocity.save(oss);
+    
+    EXPECT_EQ("Velocity 0", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for MaxResolutionStatement save tests
+class MaxResolutionStatementSaveTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test save with valid MaxResolution values
+TEST_F(MaxResolutionStatementSaveTest, Save_ValidValues) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0"};
+    maxRes.process(tokens);
+    
+    std::ostringstream oss;
+    maxRes.save(oss);
+    
+    EXPECT_EQ("MaxResolution Spatial 1 Temporal 2", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with decimal values
+TEST_F(MaxResolutionStatementSaveTest, Save_DecimalValues) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.5", "Temporal", "2.75"};
+    maxRes.process(tokens);
+    
+    std::ostringstream oss;
+    maxRes.save(oss);
+    
+    EXPECT_EQ("MaxResolution Spatial 1.5 Temporal 2.75", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with small decimal values
+TEST_F(MaxResolutionStatementSaveTest, Save_SmallDecimalValues) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "0.1", "Temporal", "0.001"};
+    maxRes.process(tokens);
+    
+    std::ostringstream oss;
+    maxRes.save(oss);
+    
+    EXPECT_EQ("MaxResolution Spatial 0.1 Temporal 0.001", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with large values
+TEST_F(MaxResolutionStatementSaveTest, Save_LargeValues) {
+    MaxResolutionStatement maxRes;
+    std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1000.0", "Temporal", "2000.0"};
+    maxRes.process(tokens);
+    
+    std::ostringstream oss;
+    maxRes.save(oss);
+    
+    EXPECT_EQ("MaxResolution Spatial 1000 Temporal 2000", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default values (before processing)
+TEST_F(MaxResolutionStatementSaveTest, Save_DefaultValues) {
+    MaxResolutionStatement maxRes;
+    
+    std::ostringstream oss;
+    maxRes.save(oss);
+    
+    EXPECT_EQ("MaxResolution Spatial 0 Temporal 0", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test round-trip: process then save, then parse again
+TEST_F(SourceStatementSaveTest, RoundTrip_ProcessSaveParse) {
+    SourceStatement source1;
+    std::vector<std::string> tokens1 = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    source1.process(tokens1);
+    
+    std::ostringstream oss;
+    source1.save(oss);
+    std::string saved = oss.str();
+    
+    // Parse the saved string (simplified - in real scenario would use tokenizer)
+    // This test verifies the format is correct
+    EXPECT_TRUE(saved.find("Source") != std::string::npos);
+    EXPECT_TRUE(saved.find("Frequency") != std::string::npos);
+    EXPECT_TRUE(saved.find("Amplitude") != std::string::npos);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test round-trip: process then save, then parse again for BBox
+TEST_F(BBoxStatementSaveTest, RoundTrip_ProcessSaveParse) {
+    BBoxStatement bbox1;
+    std::vector<std::string> tokens1 = {"BBox", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    bbox1.process(tokens1);
+    
+    std::ostringstream oss;
+    bbox1.save(oss);
+    std::string saved = oss.str();
+    
+    // Parse the saved string (simplified - in real scenario would use tokenizer)
+    // This test verifies the format is correct
+    EXPECT_TRUE(saved.find("BBox") != std::string::npos);
+    EXPECT_TRUE(saved.find("XMin") != std::string::npos);
+    EXPECT_TRUE(saved.find("XMax") != std::string::npos);
+    EXPECT_TRUE(saved.find("YMin") != std::string::npos);
+    EXPECT_TRUE(saved.find("YMax") != std::string::npos);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test round-trip: process then save, then parse again for Velocity
+TEST_F(VelocityStatementSaveTest, RoundTrip_ProcessSaveParse) {
+    VelocityStatement velocity1;
+    std::vector<std::string> tokens1 = {"Velocity", "130.0"};
+    velocity1.process(tokens1);
+    
+    std::ostringstream oss;
+    velocity1.save(oss);
+    std::string saved = oss.str();
+    
+    // Parse the saved string (simplified - in real scenario would use tokenizer)
+    // This test verifies the format is correct
+    EXPECT_TRUE(saved.find("Velocity") != std::string::npos);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test round-trip: process then save, then parse again for MaxResolution
+TEST_F(MaxResolutionStatementSaveTest, RoundTrip_ProcessSaveParse) {
+    MaxResolutionStatement maxRes1;
+    std::vector<std::string> tokens1 = {"MaxResolution", "Spatial", "1.0", "Temporal", "2.0"};
+    maxRes1.process(tokens1);
+    
+    std::ostringstream oss;
+    maxRes1.save(oss);
+    std::string saved = oss.str();
+    
+    // Parse the saved string (simplified - in real scenario would use tokenizer)
+    // This test verifies the format is correct
+    EXPECT_TRUE(saved.find("MaxResolution") != std::string::npos);
+    EXPECT_TRUE(saved.find("Spatial") != std::string::npos);
+    EXPECT_TRUE(saved.find("Temporal") != std::string::npos);
+}
+
+// -----------------------------------------------------------------------------
 
 

@@ -3,6 +3,7 @@
 
 #include <string>
 #include <istream>
+#include <ostream>
 #include <vector>
 #include <tuple>
 #include <InputFileParser.h>
@@ -40,6 +41,8 @@ public:
     Amplitude_t getAmplitude() const;
     
     bool isValid() const;
+    
+    void save(std::ostream& OS) const;
 
 private:
     Frequency_t m_Freq{0};
@@ -60,6 +63,8 @@ public:
     Dimension_t getYMax() const;
     
     bool isValid() const;
+    
+    void save(std::ostream& OS) const;
 
 private:
     Dimension_t m_XMin{0};
@@ -79,6 +84,8 @@ public:
     Velocity_t getVelocity() const;
     
     bool isValid() const;
+    
+    void save(std::ostream& OS) const;
 
 private:
     Velocity_t m_Velocity{0};
@@ -96,6 +103,8 @@ public:
     float getTemporal() const;
     
     bool isValid() const;
+    
+    void save(std::ostream& OS) const;
 
 private:
     float m_Spatial{0};

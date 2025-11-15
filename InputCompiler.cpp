@@ -239,6 +239,14 @@ SourceStatement::getAmplitude() const
 
 // -----------------------------------------------------------------------------
 
+void
+SourceStatement::save(std::ostream& OS) const
+{
+    OS << "Source Frequency " << m_Freq << " Amplitude " << m_Amplitude;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 BBoxStatement::process(const std::vector<std::string>& tokens) {
     // Check if there's at least one token
@@ -354,6 +362,14 @@ BBoxStatement::getYMax() const
 
 // -----------------------------------------------------------------------------
 
+void
+BBoxStatement::save(std::ostream& OS) const
+{
+    OS << "BBox XMin " << m_XMin << " XMax " << m_XMax << " YMin " << m_YMin << " YMax " << m_YMax;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 VelocityStatement::process(const std::vector<std::string>& tokens) {
     // Must have exactly 2 tokens: "Velocity" and the value
@@ -398,6 +414,14 @@ Velocity_t
 VelocityStatement::getVelocity() const
 {
     return m_Velocity;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+VelocityStatement::save(std::ostream& OS) const
+{
+    OS << "Velocity " << m_Velocity;
 }
 
 // -----------------------------------------------------------------------------
@@ -480,6 +504,16 @@ MaxResolutionStatement::getTemporal() const
 {
     return m_Temporal;
 }
+
+// -----------------------------------------------------------------------------
+
+void
+MaxResolutionStatement::save(std::ostream& OS) const
+{
+    OS << "MaxResolution Spatial " << m_Spatial << " Temporal " << m_Temporal;
+}
+
+// -----------------------------------------------------------------------------
 
 } // namespace Input
 
