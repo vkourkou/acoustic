@@ -53,7 +53,11 @@ Runner::parseInput(std::istream& IS) {
 
 bool
 Runner::run(std::istream& IS) {
-    return parseInput(IS);
+    if (!parseInput(IS)) {
+        return false;
+    }
+    m_InputCnt.save(std::cout);
+    return true;
 }
 
 // -----------------------------------------------------------------------------
