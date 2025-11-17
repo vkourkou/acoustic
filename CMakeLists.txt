@@ -43,6 +43,7 @@ set(SOURCES
     InputFileParser.cpp
     InputCompiler.cpp
     Utilities.cpp
+    Grid.cpp
 )
 
 # Header files
@@ -52,6 +53,7 @@ set(HEADERS
     InputFileParser.h
     InputCompiler.h
     Utilities.h
+    Grid.h
 )
 
 # Create executable
@@ -118,6 +120,7 @@ add_executable(ut
     InputFileParser.cpp
     InputCompiler.cpp
     Utilities.cpp
+    Grid.cpp
 )
 
 target_link_libraries(ut
