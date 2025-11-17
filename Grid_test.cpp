@@ -717,8 +717,8 @@ protected:
 TEST_F(Grid2DTest, ConstructorBasic) {
     Grid2D grid(5, 10, 3, 4, 20, 5);
     
-    EXPECT_EQ(5, grid.size<X>());
-    EXPECT_EQ(4, grid.size<Y>());
+    EXPECT_EQ(5, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
     
     // Verify X grid: {10, 13, 16, 19, 22}
     const Grid1D& gridX = grid.get<X>();
@@ -741,16 +741,16 @@ TEST_F(Grid2DTest, ConstructorBasic) {
 // Test constructor with zero sizes
 TEST_F(Grid2DTest, ConstructorZeroSizes) {
     Grid2D grid1(0, 10, 3, 4, 20, 5);
-    EXPECT_EQ(0, grid1.size<X>());
-    EXPECT_EQ(4, grid1.size<Y>());
+    EXPECT_EQ(0, grid1.get<X>().size());
+    EXPECT_EQ(4, grid1.get<Y>().size());
     
     Grid2D grid2(5, 10, 3, 0, 20, 5);
-    EXPECT_EQ(5, grid2.size<X>());
-    EXPECT_EQ(0, grid2.size<Y>());
+    EXPECT_EQ(5, grid2.get<X>().size());
+    EXPECT_EQ(0, grid2.get<Y>().size());
     
     Grid2D grid3(0, 10, 3, 0, 20, 5);
-    EXPECT_EQ(0, grid3.size<X>());
-    EXPECT_EQ(0, grid3.size<Y>());
+    EXPECT_EQ(0, grid3.get<X>().size());
+    EXPECT_EQ(0, grid3.get<Y>().size());
 }
 
 // -----------------------------------------------------------------------------
@@ -759,8 +759,8 @@ TEST_F(Grid2DTest, ConstructorZeroSizes) {
 TEST_F(Grid2DTest, ConstructorSizeOne) {
     Grid2D grid(1, 42, 5, 1, 100, 10);
     
-    EXPECT_EQ(1, grid.size<X>());
-    EXPECT_EQ(1, grid.size<Y>());
+    EXPECT_EQ(1, grid.get<X>().size());
+    EXPECT_EQ(1, grid.get<Y>().size());
     
     EXPECT_EQ(42, grid.get<X>()[0]);
     EXPECT_EQ(100, grid.get<Y>()[0]);
@@ -772,8 +772,8 @@ TEST_F(Grid2DTest, ConstructorSizeOne) {
 TEST_F(Grid2DTest, ConstructorNegativeMin) {
     Grid2D grid(3, -10, 3, 4, -20, 5);
     
-    EXPECT_EQ(3, grid.size<X>());
-    EXPECT_EQ(4, grid.size<Y>());
+    EXPECT_EQ(3, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
     
     // Verify X grid: {-10, -7, -4}
     const Grid1D& gridX = grid.get<X>();
@@ -820,30 +820,30 @@ TEST_F(Grid2DTest, GetY) {
 
 // -----------------------------------------------------------------------------
 
-// Test size<X>() method
+// Test get<X>().size() method
 TEST_F(Grid2DTest, SizeX) {
     Grid2D grid1(0, 0, 1, 5, 0, 1);
-    EXPECT_EQ(0, grid1.size<X>());
+    EXPECT_EQ(0, grid1.get<X>().size());
     
     Grid2D grid2(1, 0, 1, 5, 0, 1);
-    EXPECT_EQ(1, grid2.size<X>());
+    EXPECT_EQ(1, grid2.get<X>().size());
     
     Grid2D grid3(100, 0, 1, 5, 0, 1);
-    EXPECT_EQ(100, grid3.size<X>());
+    EXPECT_EQ(100, grid3.get<X>().size());
 }
 
 // -----------------------------------------------------------------------------
 
-// Test size<Y>() method
+// Test get<Y>().size() method
 TEST_F(Grid2DTest, SizeY) {
     Grid2D grid1(5, 0, 1, 0, 0, 1);
-    EXPECT_EQ(0, grid1.size<Y>());
+    EXPECT_EQ(0, grid1.get<Y>().size());
     
     Grid2D grid2(5, 0, 1, 1, 0, 1);
-    EXPECT_EQ(1, grid2.size<Y>());
+    EXPECT_EQ(1, grid2.get<Y>().size());
     
     Grid2D grid3(5, 0, 1, 100, 0, 1);
-    EXPECT_EQ(100, grid3.size<Y>());
+    EXPECT_EQ(100, grid3.get<Y>().size());
 }
 
 // -----------------------------------------------------------------------------
@@ -870,8 +870,8 @@ TEST_F(Grid2DTest, IndependentGrids) {
 TEST_F(Grid2DTest, LargeSizes) {
     Grid2D grid(100, 0, 1, 50, 0, 2);
     
-    EXPECT_EQ(100, grid.size<X>());
-    EXPECT_EQ(50, grid.size<Y>());
+    EXPECT_EQ(100, grid.get<X>().size());
+    EXPECT_EQ(50, grid.get<Y>().size());
     
     // Verify X grid first and last elements
     const Grid1D& gridX = grid.get<X>();
@@ -900,9 +900,9 @@ TEST_F(Grid2DTest, ConstCorrectness) {
     EXPECT_EQ(4, gridY.size());
     EXPECT_EQ(10, gridY[0]);
     
-    // Test const size<X>() and size<Y>()
-    EXPECT_EQ(3, grid.size<X>());
-    EXPECT_EQ(4, grid.size<Y>());
+    // Test const get<X>().size() and get<Y>().size()
+    EXPECT_EQ(3, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
 }
 
 // -----------------------------------------------------------------------------
@@ -911,20 +911,20 @@ TEST_F(Grid2DTest, ConstCorrectness) {
 TEST_F(Grid2DTest, VariousParameterCombinations) {
     // Test case 1: Different sizes, same Min and Delta
     Grid2D grid1(5, 0, 1, 3, 0, 1);
-    EXPECT_EQ(5, grid1.size<X>());
-    EXPECT_EQ(3, grid1.size<Y>());
+    EXPECT_EQ(5, grid1.get<X>().size());
+    EXPECT_EQ(3, grid1.get<Y>().size());
     
     // Test case 2: Same sizes, different Min and Delta
     Grid2D grid2(4, 0, 1, 4, 10, 2);
-    EXPECT_EQ(4, grid2.size<X>());
-    EXPECT_EQ(4, grid2.size<Y>());
+    EXPECT_EQ(4, grid2.get<X>().size());
+    EXPECT_EQ(4, grid2.get<Y>().size());
     EXPECT_EQ(0, grid2.get<X>()[0]);
     EXPECT_EQ(10, grid2.get<Y>()[0]);
     
     // Test case 3: All different
     Grid2D grid3(6, -5, 2, 8, 100, 3);
-    EXPECT_EQ(6, grid3.size<X>());
-    EXPECT_EQ(8, grid3.size<Y>());
+    EXPECT_EQ(6, grid3.get<X>().size());
+    EXPECT_EQ(8, grid3.get<Y>().size());
     EXPECT_EQ(-5, grid3.get<X>()[0]);
     EXPECT_EQ(100, grid3.get<Y>()[0]);
 }
@@ -1025,6 +1025,214 @@ TEST_F(Grid2DTest, SaveFormatConsistency) {
     EXPECT_NE(std::string::npos, result.find("2 0 1"));
     // Verify it contains the Y grid: "3 0 2 4"
     EXPECT_NE(std::string::npos, result.find("3 0 2 4"));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint to X direction
+TEST_F(Grid2DTest, AddGridPointX) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<X>(12));
+    EXPECT_EQ(4, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    const Grid1D& gridX = grid.get<X>();
+    EXPECT_EQ(10, gridX[0]);
+    EXPECT_EQ(12, gridX[1]);
+    EXPECT_EQ(13, gridX[2]);
+    EXPECT_EQ(16, gridX[3]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint to Y direction
+TEST_F(Grid2DTest, AddGridPointY) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<Y>(22));
+    EXPECT_EQ(3, grid.get<X>().size());
+    EXPECT_EQ(5, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    const Grid1D& gridY = grid.get<Y>();
+    EXPECT_EQ(20, gridY[0]);
+    EXPECT_EQ(22, gridY[1]);
+    EXPECT_EQ(25, gridY[2]);
+    EXPECT_EQ(30, gridY[3]);
+    EXPECT_EQ(35, gridY[4]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint duplicate to X direction
+TEST_F(Grid2DTest, AddGridPointXDuplicate) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_FALSE(grid.addGridPoint<X>(10));
+    EXPECT_FALSE(grid.addGridPoint<X>(13));
+    EXPECT_FALSE(grid.addGridPoint<X>(16));
+    EXPECT_EQ(3, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint duplicate to Y direction
+TEST_F(Grid2DTest, AddGridPointYDuplicate) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_FALSE(grid.addGridPoint<Y>(20));
+    EXPECT_FALSE(grid.addGridPoint<Y>(25));
+    EXPECT_FALSE(grid.addGridPoint<Y>(30));
+    EXPECT_FALSE(grid.addGridPoint<Y>(35));
+    EXPECT_EQ(3, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint to X direction at beginning
+TEST_F(Grid2DTest, AddGridPointXBeginning) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<X>(5));
+    EXPECT_EQ(4, grid.get<X>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    const Grid1D& gridX = grid.get<X>();
+    EXPECT_EQ(5, gridX[0]);
+    EXPECT_EQ(10, gridX[1]);
+    EXPECT_EQ(13, gridX[2]);
+    EXPECT_EQ(16, gridX[3]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint to Y direction at end
+TEST_F(Grid2DTest, AddGridPointYEnd) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<Y>(40));
+    EXPECT_EQ(5, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    const Grid1D& gridY = grid.get<Y>();
+    EXPECT_EQ(20, gridY[0]);
+    EXPECT_EQ(25, gridY[1]);
+    EXPECT_EQ(30, gridY[2]);
+    EXPECT_EQ(35, gridY[3]);
+    EXPECT_EQ(40, gridY[4]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint to X direction with empty grid
+TEST_F(Grid2DTest, AddGridPointXEmpty) {
+    Grid2D grid(0, 10, 3, 4, 20, 5);
+    // X grid: {}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<X>(5));
+    EXPECT_EQ(1, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    const Grid1D& gridX = grid.get<X>();
+    EXPECT_EQ(5, gridX[0]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint to Y direction with empty grid
+TEST_F(Grid2DTest, AddGridPointYEmpty) {
+    Grid2D grid(3, 10, 3, 0, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<Y>(25));
+    EXPECT_EQ(3, grid.get<X>().size());
+    EXPECT_EQ(1, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    const Grid1D& gridY = grid.get<Y>();
+    EXPECT_EQ(25, gridY[0]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint maintains independence between X and Y
+TEST_F(Grid2DTest, AddGridPointIndependence) {
+    Grid2D grid(3, 10, 3, 4, 20, 5);
+    // X grid: {10, 13, 16}, Y grid: {20, 25, 30, 35}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<X>(12));
+    EXPECT_TRUE(grid.addGridPoint<Y>(22));
+    EXPECT_EQ(4, grid.get<X>().size());
+    EXPECT_EQ(5, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    // Verify X grid
+    const Grid1D& gridX = grid.get<X>();
+    EXPECT_EQ(10, gridX[0]);
+    EXPECT_EQ(12, gridX[1]);
+    EXPECT_EQ(13, gridX[2]);
+    EXPECT_EQ(16, gridX[3]);
+    
+    // Verify Y grid
+    const Grid1D& gridY = grid.get<Y>();
+    EXPECT_EQ(20, gridY[0]);
+    EXPECT_EQ(22, gridY[1]);
+    EXPECT_EQ(25, gridY[2]);
+    EXPECT_EQ(30, gridY[3]);
+    EXPECT_EQ(35, gridY[4]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test addGridPoint multiple additions to both directions
+TEST_F(Grid2DTest, AddGridPointMultiple) {
+    Grid2D grid(2, 10, 3, 2, 20, 5);
+    // X grid: {10, 13}, Y grid: {20, 25}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_TRUE(grid.addGridPoint<X>(12));
+    EXPECT_TRUE(grid.addGridPoint<X>(15));
+    EXPECT_TRUE(grid.addGridPoint<Y>(22));
+    EXPECT_TRUE(grid.addGridPoint<Y>(23));
+    EXPECT_EQ(4, grid.get<X>().size());
+    EXPECT_EQ(4, grid.get<Y>().size());
+    EXPECT_TRUE(grid.isSane());
+    
+    // Verify X grid: {10, 12, 13, 15}
+    const Grid1D& gridX = grid.get<X>();
+    EXPECT_EQ(10, gridX[0]);
+    EXPECT_EQ(12, gridX[1]);
+    EXPECT_EQ(13, gridX[2]);
+    EXPECT_EQ(15, gridX[3]);
+    
+    // Verify Y grid: {20, 22, 23, 25}
+    const Grid1D& gridY = grid.get<Y>();
+    EXPECT_EQ(20, gridY[0]);
+    EXPECT_EQ(22, gridY[1]);
+    EXPECT_EQ(23, gridY[2]);
+    EXPECT_EQ(25, gridY[3]);
 }
 
 // -----------------------------------------------------------------------------

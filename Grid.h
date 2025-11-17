@@ -52,6 +52,9 @@ class Grid2D {
 private:
     std::tuple<Grid1D, Grid1D> m_Grids;
 
+    // Get non-const grid for specified direction
+    template<Direction Dir> constexpr Grid1D& getNonConst();
+
 public:
     // Constructor with sizeX, MinX, DeltaX, sizeY, MinY, DeltaY
     Grid2D(std::size_t sizeX, Grid_t MinX, Grid_t DeltaX,
@@ -64,14 +67,19 @@ public:
 
     // -----------------------------------------------------------------------------
 
-    // Get size for specified direction
-    template<Direction Dir>
-    constexpr std::size_t size() const;
+    // Save grid to output stream
+    void save(std::ostream& OS) const;
 
     // -----------------------------------------------------------------------------
 
-    // Save grid to output stream
-    void save(std::ostream& OS) const;
+    // Check if all grids in the tuple are sane
+    bool isSane() const;
+
+    // -----------------------------------------------------------------------------
+
+    // Add grid point to specified direction
+    template<Direction Dir>
+    constexpr bool addGridPoint(Grid_t value);
 
 };
 
@@ -87,12 +95,22 @@ Grid2D::get() const
 
 // -----------------------------------------------------------------------------
 
-// Template implementation for size<Direction>
+// Template implementation for non-const get<Direction>
 template<Direction Dir>
-inline constexpr std::size_t
-Grid2D::size() const
+inline constexpr Grid1D&
+Grid2D::getNonConst()
 {
-    return get<Dir>().size();
+    return std::get<static_cast<std::size_t>(Dir)>(m_Grids);
+}
+
+// -----------------------------------------------------------------------------
+
+// Template implementation for addGridPoint<Direction>
+template<Direction Dir>
+inline constexpr bool
+Grid2D::addGridPoint(Grid_t value)
+{
+    return getNonConst<Dir>().addGridPoint(value);
 }
 
 // -----------------------------------------------------------------------------
