@@ -15,6 +15,12 @@ typedef float Amplitude_t;
 
 typedef float Velocity_t;
 
+enum Direction : unsigned {
+    X = 0,
+    Y = 1,
+    MAX = 2
+};
+
 namespace Utilities {
 
 // Case-insensitive string comparison
