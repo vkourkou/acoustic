@@ -107,6 +107,12 @@ public:
     void save(std::ostream& OS) const;
 
 private:
+    //Courant number Sc = velocity * timestep / spatial_step
+    //Sc = wavelength * frequency * timestep / spatial_step
+    //Sc = (timestep / period) / (spatial_step / wavelenght)
+    //Forstability Sc < 1
+    //Hence (timestep / period) < (spatial_step / wavelenght)
+    //That mean the time resolution should be smaller than the spatial resolution.
     float m_Spatial{0};
     float m_Temporal{0};
 };

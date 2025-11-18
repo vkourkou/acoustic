@@ -485,6 +485,11 @@ MaxResolutionStatement::isValid() const
         std::cout << "Invalid MaxResolution: Temporal (" << m_Temporal << ") must be positive" << std::endl;
         return false;
     }
+
+    if (m_Spatial <= m_Temporal) {
+        std::cout << "Invalid MaxResolution: Spatial (" << m_Spatial << ") must be greater than Temporal (" << m_Temporal << ")" << std::endl;
+        return false;
+    }
     
     return true;
 }
