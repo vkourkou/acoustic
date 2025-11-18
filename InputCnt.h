@@ -16,7 +16,7 @@ private:
     StatementsTuple m_statements;
 
     template<typename T>
-    constexpr T& get() {
+    constexpr T& getNonConst() {
         return const_cast<T&>(static_cast<const InputCnt*>(this)->get<T>());
     }
 
@@ -32,7 +32,7 @@ public:
     // Template function to set statement based on statement class type
     template<typename T>
     bool set(const T& statement) {
-        get<T>() = statement;
+        getNonConst<T>() = statement;
         return true;
     }
     

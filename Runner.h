@@ -14,6 +14,7 @@ public:
 
 private:
     bool parseInput(std::istream& IS);
+    bool execute();
     input::InputCnt m_InputCnt;
 
 };

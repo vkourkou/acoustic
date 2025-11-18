@@ -44,6 +44,7 @@ set(SOURCES
     InputCompiler.cpp
     Utilities.cpp
     Grid.cpp
+    Simulator.cpp
 )
 
 # Header files
@@ -54,6 +55,7 @@ set(HEADERS
     InputCompiler.h
     Utilities.h
     Grid.h
+    Simulator.h
 )
 
 # Create executable

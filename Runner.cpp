@@ -1,4 +1,5 @@
 #include <Runner.h>
+#include <Simulator.h>
 #include <iostream>
 #include <cassert>
 
@@ -52,11 +53,25 @@ Runner::parseInput(std::istream& IS) {
 // -----------------------------------------------------------------------------
 
 bool
+Runner::execute()
+{
+    FDTD::Simulator simulator(m_InputCnt.get<Input::BBoxStatement>(), m_InputCnt.get<Input::SourceStatement>(), m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.computeSpatialStep(), m_InputCnt.computeTimeStep());
+    simulator.save(std::cout);
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
 Runner::run(std::istream& IS) {
     if (!parseInput(IS)) {
         return false;
     }
     m_InputCnt.save(std::cout);
+
+    if (!execute()) {
+        return false;
+    }
     return true;
 }
 
