@@ -54,6 +54,8 @@ public:
 
     //The spatial step is purely dictated by the MaxResolution statement and wave length (velocity/frequency)
     Dimension_t computeSpatialStep() const;
+
+    Dimension_t computeWavelength() const;
     
     void save(std::ostream& OS) const;
 

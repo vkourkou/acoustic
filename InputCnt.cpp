@@ -35,4 +35,14 @@ InputCnt::computeSpatialStep() const
 
 // -----------------------------------------------------------------------------
 
+Dimension_t
+InputCnt::computeWavelength() const
+{
+    Velocity_t velocity = get<Input::VelocityStatement>().getVelocity();
+    Frequency_t frequency = get<Input::SourceStatement>().getFreq();
+    return static_cast<Dimension_t>(velocity / frequency);
+}
+
+// -----------------------------------------------------------------------------
+
 }

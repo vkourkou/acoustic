@@ -69,6 +69,8 @@ Runner::run(std::istream& IS) {
     }
     m_InputCnt.save(std::cout);
 
+    std::cout << "//Wavelength: " << m_InputCnt.computeWavelength() << std::endl;
+
     if (!execute()) {
         return false;
     }
