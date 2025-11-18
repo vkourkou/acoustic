@@ -48,6 +48,12 @@ public:
         constexpr Input::StatementType type = Input::getStatementType<T>();
         return std::get<static_cast<size_t>(type)>(m_statements);
     }
+
+    //The timestep is purely dictated by the MaxResolution statement and the frequency of the source
+    Time_t computeTimeStep() const;
+
+    //The spatial step is purely dictated by the MaxResolution statement and wave length (velocity/frequency)
+    Dimension_t computeSpatialStep() const;
     
     void save(std::ostream& OS) const;
 

@@ -10,6 +10,8 @@ typedef float Dimension_t;
 // Typedef for frequency type
 typedef float Frequency_t;
 
+typedef float Time_t;
+
 // Typedef for amplitude type
 typedef float Amplitude_t;
 
