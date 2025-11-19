@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <limits>
+#include <cmath>
 
 // Test fixture for Utilities tests
 class UtilitiesTest : public ::testing::Test {
@@ -301,5 +302,139 @@ TEST_F(UtilitiesTest, CaseInsensitiveEquals_WithNumbersAndSpecialChars) {
     EXPECT_TRUE(Utilities::caseInsensitiveEquals("XMin_1", "xmin_1"));
     EXPECT_FALSE(Utilities::caseInsensitiveEquals("Test123", "test456"));
     EXPECT_TRUE(Utilities::caseInsensitiveEquals("Hello_World", "HELLO_WORLD"));
+}
+
+// -----------------------------------------------------------------------------
+
+// This function validates that a multiplier result meets the requirements:
+// 1. The round off error with the multiplier (result) is less than MaxAllowedError
+// 2. If the result is not 1, it validates that the result is a power of 2
+// 3. If the result is not 1, it validates that if divided by two, the round off error is not less than maxAllowedError
+
+    
+bool
+validateMultiplierResult(float Value, float MaxAllowedError, long Result) {
+    // Check 1: Validate that the round off error with the multiplier is less than MaxAllowedError
+    if (Value == 0.0f) {
+        return Result == 1;
+    }
+    
+    double Y = Value * Result;
+    double Error = std::abs((Y - std::round(Y)) / Y);
+    if (Error >= MaxAllowedError) {
+        return false;
+    }
+    
+    // Check 2 & 3: If result is not 1, validate it's a power of 2 and that dividing by 2 doesn't meet the error requirement
+    if (Result != 1) {
+        // Check if Result is a power of 2
+        // A number is a power of 2 if (Result & (Result - 1)) == 0 and Result > 0
+        if (Result < 2 || Result % 2 != 0) {
+            return false;
+        }
+        
+        // Check 3: If we divide by two, the round off error should NOT be less than maxAllowedError
+        long HalfResult = Result / 2;
+        double YHalf = Value * HalfResult;
+        double ErrorHalf = std::abs((YHalf - std::round(YHalf)) / YHalf);
+        if (ErrorHalf < MaxAllowedError) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+// Test computeMultiplierToReduceTruncationError with zero value
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_ZeroValue) {
+    long result = Utilities::computeMultiplierToReduceTruncationError(0.0f, 0.001f);
+    EXPECT_EQ(1, result);
+    EXPECT_TRUE(validateMultiplierResult(0.0f, 0.001f, 1));
+}
+
+// Test computeMultiplierToReduceTruncationError with integer values (should return 1)
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_IntegerValues) {
+    long result = Utilities::computeMultiplierToReduceTruncationError(1.0f, 0.001f);
+    EXPECT_EQ(1, result);
+    EXPECT_TRUE(validateMultiplierResult(1.0f, 0.001f, 1));
+    result = Utilities::computeMultiplierToReduceTruncationError(5.0f, 0.001f);
+    EXPECT_EQ(1, result);
+    EXPECT_TRUE(validateMultiplierResult(5.0f, 0.001f, 1));
+    result = Utilities::computeMultiplierToReduceTruncationError(100.0f, 0.001f);
+    EXPECT_EQ(1, result);
+    EXPECT_TRUE(validateMultiplierResult(100.0f, 0.001f, 1));
+}
+
+// Test computeMultiplierToReduceTruncationError with values that need small multipliers
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_SmallMultipliers) {
+    // Test with 0.5 - should need multiplier of 2 to get 1.0
+    long result = Utilities::computeMultiplierToReduceTruncationError(0.5f, 0.001f);
+    EXPECT_EQ(2, result);
+    EXPECT_TRUE(validateMultiplierResult(0.5f, 0.001f, 2));
+    
+    // Test with 0.25 - should need multiplier of 4 to get 1.0
+    result = Utilities::computeMultiplierToReduceTruncationError(0.25f, 0.001f);
+    EXPECT_EQ(4, result);
+    EXPECT_TRUE(validateMultiplierResult(0.25f, 0.001f, 4));
+}
+
+// Test computeMultiplierToReduceTruncationError with values that need larger multipliers
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_LargerMultipliers) {
+    // Test with 0.1 - needs multiplier of 2048
+    long result = Utilities::computeMultiplierToReduceTruncationError(0.1f, 0.001f);
+    EXPECT_EQ(2048, result);
+    EXPECT_TRUE(validateMultiplierResult(0.1f, 0.001f, 2048));
+    // Test with 0.333 - needs multiplier of 2048
+    result = Utilities::computeMultiplierToReduceTruncationError(0.333f, 0.001f);
+    EXPECT_EQ(1024, result);
+    EXPECT_TRUE(validateMultiplierResult(0.333f, 0.001f, 1024));
+}
+
+// Test computeMultiplierToReduceTruncationError with very small error tolerance
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_VerySmallError) {
+    float value = 0.123456f;
+    float maxError = 0.0001f;
+    long result = Utilities::computeMultiplierToReduceTruncationError(value, maxError);
+    EXPECT_EQ(65536, result);
+    EXPECT_TRUE(validateMultiplierResult(value, maxError, 65536));
+}
+
+// Test computeMultiplierToReduceTruncationError with larger error tolerance
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_LargerError) {
+    float value = 0.7f;
+    float maxError = 0.1f;
+    long result = Utilities::computeMultiplierToReduceTruncationError(value, maxError);
+    EXPECT_EQ(4, result);
+    EXPECT_TRUE(validateMultiplierResult(value, maxError, 4));
+}
+
+// Test computeMultiplierToReduceTruncationError with negative values
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_NegativeValues) {
+    float value = -0.5f;
+    float maxError = 0.001f;
+    long result = Utilities::computeMultiplierToReduceTruncationError(value, maxError);
+    EXPECT_EQ(2, result);
+    EXPECT_TRUE(validateMultiplierResult(value, maxError, 2));
+}
+
+// Test computeMultiplierToReduceTruncationError with very small values
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_VerySmallValues) {
+    float value = 0.001f;
+    float maxError = 0.001f;
+    long result = Utilities::computeMultiplierToReduceTruncationError(value, maxError);
+    EXPECT_EQ(131072, result);
+    EXPECT_TRUE(validateMultiplierResult(value, maxError, 131072));
+}
+
+// Test computeMultiplierToReduceTruncationError with values close to integers
+TEST_F(UtilitiesTest, ComputeMultiplierToReduceTruncationError_NearIntegers) {
+    // 1.001 should need multiplier of 1
+    long result = Utilities::computeMultiplierToReduceTruncationError(1.001f, 0.001f);
+    EXPECT_EQ(1, result);
+    EXPECT_TRUE(validateMultiplierResult(1.001f, 0.001f, 1));
+    // 2.999 should need multiplier of 1
+    result = Utilities::computeMultiplierToReduceTruncationError(2.999f, 0.001f);
+    EXPECT_EQ(1, result);
+    EXPECT_TRUE(validateMultiplierResult(2.999f, 0.001f, 1));
 }
 

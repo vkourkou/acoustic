@@ -45,6 +45,15 @@ template<>
 std::optional<float>
 convertTo<float>(const std::string& str);
 
+// This function will compute the minimum multiplier to reduce the truncation relative error
+// below the given MaxAlloweError.
+// if Y = value * multiplier
+// we will compute the minimum T (power of 2) such that
+// abs((Y - round(Y)) / Y) < MaxAlloweError
+
+long 
+computeMultiplierToReduceTruncationError(float Value, float MaxAlloweError);
+
 } // namespace Utilities
 
 #endif // UTILITIES_H

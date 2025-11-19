@@ -128,5 +128,26 @@ convertTo<float>(const std::string& str) {
     }
 }
 
+// -----------------------------------------------------------------------------
+
+long 
+computeMultiplierToReduceTruncationError(float Value, float MaxAlloweError) {
+    if (Value == 0.0f) {
+        return 1;
+    }
+    long multiplier = 1;
+    while (multiplier * 2 < std::numeric_limits<long>::max()) {
+        double Y = Value * multiplier;
+        double Error = abs((Y - round(Y)) / Y);
+        if (Error < MaxAlloweError) {
+            return multiplier;
+        }
+        multiplier *= 2;
+    }
+    return multiplier;
+}
+
+//-----------------------------------------------------------------------------
+
 } // namespace Utilities
 
