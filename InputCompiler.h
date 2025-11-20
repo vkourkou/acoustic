@@ -72,6 +72,8 @@ public:
     
     bool isValid() const;
     
+    bool isPointStrictlyInside(Dimension_t X, Dimension_t Y) const;
+    
     void save(std::ostream& OS) const;
 
 private:

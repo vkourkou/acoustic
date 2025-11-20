@@ -357,6 +357,126 @@ TEST_F(BBoxStatementTest, Process_MultipleCalls) {
 
 // -----------------------------------------------------------------------------
 
+// Test isPointStrictlyInside with point inside bounding box
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_Inside) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_TRUE(bbox.isPointStrictlyInside(3.0f, 4.0f));
+    EXPECT_TRUE(bbox.isPointStrictlyInside(2.5f, 3.5f));
+    EXPECT_TRUE(bbox.isPointStrictlyInside(4.5f, 5.5f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point on X boundary (should return false)
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_OnXBoundary) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_FALSE(bbox.isPointStrictlyInside(1.0f, 4.0f));  // On XMin boundary
+    EXPECT_FALSE(bbox.isPointStrictlyInside(5.0f, 4.0f));  // On XMax boundary
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point on Y boundary (should return false)
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_OnYBoundary) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_FALSE(bbox.isPointStrictlyInside(3.0f, 2.0f));  // On YMin boundary
+    EXPECT_FALSE(bbox.isPointStrictlyInside(3.0f, 6.0f));  // On YMax boundary
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point on corner (should return false)
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_OnCorner) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_FALSE(bbox.isPointStrictlyInside(1.0f, 2.0f));  // Bottom-left corner
+    EXPECT_FALSE(bbox.isPointStrictlyInside(5.0f, 2.0f));  // Bottom-right corner
+    EXPECT_FALSE(bbox.isPointStrictlyInside(1.0f, 6.0f));  // Top-left corner
+    EXPECT_FALSE(bbox.isPointStrictlyInside(5.0f, 6.0f));  // Top-right corner
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point outside bounding box
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_Outside) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_FALSE(bbox.isPointStrictlyInside(0.0f, 4.0f));   // Left of XMin
+    EXPECT_FALSE(bbox.isPointStrictlyInside(6.0f, 4.0f));  // Right of XMax
+    EXPECT_FALSE(bbox.isPointStrictlyInside(3.0f, 1.0f));  // Below YMin
+    EXPECT_FALSE(bbox.isPointStrictlyInside(3.0f, 7.0f));  // Above YMax
+    EXPECT_FALSE(bbox.isPointStrictlyInside(0.0f, 0.0f));  // Outside both
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with negative coordinates
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_NegativeCoordinates) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "-5.0", "XMax", "-1.0", "YMin", "-6.0", "YMax", "-2.0"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_TRUE(bbox.isPointStrictlyInside(-3.0f, -4.0f));   // Inside
+    EXPECT_FALSE(bbox.isPointStrictlyInside(-5.0f, -4.0f));  // On XMin boundary
+    EXPECT_FALSE(bbox.isPointStrictlyInside(-1.0f, -4.0f));  // On XMax boundary
+    EXPECT_FALSE(bbox.isPointStrictlyInside(-3.0f, -6.0f));  // On YMin boundary
+    EXPECT_FALSE(bbox.isPointStrictlyInside(-3.0f, -2.0f));   // On YMax boundary
+    EXPECT_FALSE(bbox.isPointStrictlyInside(-10.0f, -4.0f)); // Outside
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with decimal coordinates
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_DecimalCoordinates) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.5", "XMax", "5.5", "YMin", "2.5", "YMax", "6.5"};
+    bbox.process(tokens);
+    
+    EXPECT_TRUE(bbox.isValid());
+    EXPECT_TRUE(bbox.isPointStrictlyInside(3.0f, 4.0f));
+    EXPECT_TRUE(bbox.isPointStrictlyInside(2.0f, 3.0f));
+    EXPECT_TRUE(bbox.isPointStrictlyInside(5.0f, 6.0f));
+    EXPECT_FALSE(bbox.isPointStrictlyInside(1.5f, 4.0f));  // On XMin
+    EXPECT_FALSE(bbox.isPointStrictlyInside(5.5f, 4.0f));  // On XMax
+    EXPECT_FALSE(bbox.isPointStrictlyInside(3.0f, 2.5f));  // On YMin
+    EXPECT_FALSE(bbox.isPointStrictlyInside(3.0f, 6.5f));  // On YMax
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside const correctness
+TEST_F(BBoxStatementTest, IsPointStrictlyInside_ConstCorrectness) {
+    BBoxStatement bbox;
+    std::vector<std::string> tokens = {"BBox", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    bbox.process(tokens);
+    
+    const BBoxStatement& constBbox = bbox;
+    EXPECT_TRUE(constBbox.isValid());
+    EXPECT_TRUE(constBbox.isPointStrictlyInside(3.0f, 4.0f));
+    EXPECT_FALSE(constBbox.isPointStrictlyInside(1.0f, 4.0f));
+}
+
+// -----------------------------------------------------------------------------
+
 // Test fixture for SourceStatement tests
 class SourceStatementTest : public ::testing::Test {
 protected:

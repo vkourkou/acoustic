@@ -388,6 +388,14 @@ BBoxStatement::getYMax() const
 
 // -----------------------------------------------------------------------------
 
+bool
+BBoxStatement::isPointStrictlyInside(Dimension_t X, Dimension_t Y) const
+{
+    return X > m_XMin && X < m_XMax && Y > m_YMin && Y < m_YMax;
+}
+
+// -----------------------------------------------------------------------------
+
 void
 BBoxStatement::save(std::ostream& OS) const
 {
