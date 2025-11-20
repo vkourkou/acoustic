@@ -2124,7 +2124,7 @@ TEST_F(SourceStatementSaveTest, Save_ValidValues) {
     std::ostringstream oss;
     source.save(oss);
     
-    EXPECT_EQ("Source Frequency 1000 Amplitude 0.5", oss.str());
+    EXPECT_EQ("Source Frequency 1000 Amplitude 0.5 X 1.5 Y 2.5", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -2138,7 +2138,7 @@ TEST_F(SourceStatementSaveTest, Save_DecimalValues) {
     std::ostringstream oss;
     source.save(oss);
     
-    EXPECT_EQ("Source Frequency 1234.57 Amplitude 0.12345", oss.str());
+    EXPECT_EQ("Source Frequency 1234.57 Amplitude 0.12345 X 12.345 Y 23.456", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -2152,7 +2152,7 @@ TEST_F(SourceStatementSaveTest, Save_LargeValues) {
     std::ostringstream oss;
     source.save(oss);
     
-    EXPECT_EQ("Source Frequency 1e+06 Amplitude 1000", oss.str());
+    EXPECT_EQ("Source Frequency 1e+06 Amplitude 1000 X 5000 Y 6000", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -2164,7 +2164,7 @@ TEST_F(SourceStatementSaveTest, Save_DefaultValues) {
     std::ostringstream oss;
     source.save(oss);
     
-    EXPECT_EQ("Source Frequency 0 Amplitude 0", oss.str());
+    EXPECT_EQ("Source Frequency 0 Amplitude 0 X 0 Y 0", oss.str());
 }
 
 // -----------------------------------------------------------------------------

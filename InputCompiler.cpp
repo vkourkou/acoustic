@@ -268,7 +268,7 @@ SourceStatement::getAmplitude() const
 void
 SourceStatement::save(std::ostream& OS) const
 {
-    OS << "Source Frequency " << m_Freq << " Amplitude " << m_Amplitude;
+    OS << "Source Frequency " << m_Freq << " Amplitude " << m_Amplitude << " X " << m_X << " Y " << m_Y;
 }
 
 // -----------------------------------------------------------------------------
