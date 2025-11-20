@@ -21,7 +21,13 @@ private:
     Input::VelocityStatement m_Velocity;
     Dimension_t m_SpatialStep;
     Time_t m_TemporalStep;
+    long m_GridDimPerStatialStep;
     Grid2D m_Grids;
+
+    //This function will find how many grid points are for each spatial step.
+    long computeGridDimPerStatialStep(float MaxAlloweError) const;
+
+    Grid_t computeDimensionGridSpace(Dimension_t Dimension) const;
 
 };
 
