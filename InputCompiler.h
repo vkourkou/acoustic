@@ -44,9 +44,17 @@ public:
     
     void save(std::ostream& OS) const;
 
+    Dimension_t getX() const {
+        return m_X;
+    }
+    Dimension_t getY() const {
+        return m_Y;
+    }
 private:
     Frequency_t m_Freq{0};
     Amplitude_t m_Amplitude{0};
+    Dimension_t m_X{0};
+    Dimension_t m_Y{0};
 };
 
 // BBox statement class

@@ -169,7 +169,7 @@ FileParser::const_iterator::compileCurrentLine() {
 bool
 SourceStatement::process(const std::vector<std::string>& tokens) {
     // Must have exactly 5 tokens: 1 for "Source" and 2 pairs (4 tokens)
-    if (tokens.size() != 5) {
+    if (tokens.size() != 9) {
         return false;
     }
     
@@ -191,12 +191,38 @@ SourceStatement::process(const std::vector<std::string>& tokens) {
             if (convertedValue.has_value()) {
                 m_Freq = convertedValue.value();
             }
+            else {
+                return false;
+            }
         }
         // Check for Amplitude
         else if (Utilities::caseInsensitiveEquals(key, "Amplitude")) {
             auto convertedValue = Utilities::convertTo<Amplitude_t>(value);
             if (convertedValue.has_value()) {
                 m_Amplitude = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
+        // Check for X
+        else if (Utilities::caseInsensitiveEquals(key, "X")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_X = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
+        // Check for Y
+        else if (Utilities::caseInsensitiveEquals(key, "Y")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_Y = convertedValue.value();
+            }
+            else {
+                return false;
             }
         }
         else {

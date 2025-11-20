@@ -371,16 +371,18 @@ protected:
 
 // -----------------------------------------------------------------------------
 
-// Test process with valid Source tokens (5 tokens total)
+// Test process with valid Source tokens (9 tokens total)
 TEST_F(SourceStatementTest, Process_ValidSource) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.3f, source.getX());
+    EXPECT_FLOAT_EQ(-2.5f, source.getY());
 }
 
 // -----------------------------------------------------------------------------
@@ -388,7 +390,7 @@ TEST_F(SourceStatementTest, Process_ValidSource) {
 // Test process with case-insensitive Source (lowercase)
 TEST_F(SourceStatementTest, Process_CaseInsensitiveSource) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.0", "Y", "2.0"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
@@ -397,7 +399,7 @@ TEST_F(SourceStatementTest, Process_CaseInsensitiveSource) {
 // Test process with case-insensitive Source (mixed case)
 TEST_F(SourceStatementTest, Process_CaseInsensitiveSourceMixed) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"SoUrCe", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"SoUrCe", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.0", "Y", "2.0"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
@@ -408,25 +410,29 @@ TEST_F(SourceStatementTest, Process_CaseInsensitiveSourceMixed) {
 // Test process with case-insensitive parameter names
 TEST_F(SourceStatementTest, Process_CaseInsensitiveParameters) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "frequency", "1000.0", "amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "frequency", "1000.0", "amplitude", "0.5", "x", "1.5", "y", "2.5"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.5f, source.getX());
+    EXPECT_FLOAT_EQ(2.5f, source.getY());
 }
 
 // Test process with mixed case parameter names
 TEST_F(SourceStatementTest, Process_MixedCaseParameters) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "FrEqUeNcY", "1000.0", "AmPlItUdE", "0.5"};
+    std::vector<std::string> tokens = {"Source", "FrEqUeNcY", "1000.0", "AmPlItUdE", "0.5", "X", "1.5", "Y", "2.5"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.5f, source.getX());
+    EXPECT_FLOAT_EQ(2.5f, source.getY());
 }
 
 // -----------------------------------------------------------------------------
@@ -451,28 +457,28 @@ TEST_F(SourceStatementTest, Process_EmptyTokens) {
 
 // -----------------------------------------------------------------------------
 
-// Test process with wrong number of tokens (less than 5)
+// Test process with wrong number of tokens (less than 9)
 TEST_F(SourceStatementTest, Process_TooFewTokens) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
     
     bool result = source.process(tokens);
     EXPECT_FALSE(result);
 }
 
-// Test process with wrong number of tokens (more than 5)
+// Test process with wrong number of tokens (more than 9)
 TEST_F(SourceStatementTest, Process_TooManyTokens) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "Extra"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5", "Extra"};
     
     bool result = source.process(tokens);
     EXPECT_FALSE(result);
 }
 
-// Test process with exactly 4 tokens (missing one)
+// Test process with exactly 8 tokens (missing one pair)
 TEST_F(SourceStatementTest, Process_Exactly4Tokens) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.5", "Y"};
     
     bool result = source.process(tokens);
     EXPECT_FALSE(result);
@@ -483,7 +489,7 @@ TEST_F(SourceStatementTest, Process_Exactly4Tokens) {
 // Test process with negative frequency (should fail validation)
 TEST_F(SourceStatementTest, Process_NegativeFrequency) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "-1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "-1000.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     
     bool result = source.process(tokens);
     EXPECT_FALSE(result);  // Should fail because frequency is negative
@@ -495,7 +501,7 @@ TEST_F(SourceStatementTest, Process_NegativeFrequency) {
 // Test process with zero frequency (should fail validation)
 TEST_F(SourceStatementTest, Process_ZeroFrequency) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "0.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "0.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     
     bool result = source.process(tokens);
     EXPECT_FALSE(result);  // Should fail because frequency is zero
@@ -507,25 +513,29 @@ TEST_F(SourceStatementTest, Process_ZeroFrequency) {
 // Test process with large values
 TEST_F(SourceStatementTest, Process_LargeValues) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000000.0", "Amplitude", "1000.0"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000000.0", "Amplitude", "1000.0", "X", "5000.0", "Y", "6000.0"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
     
     EXPECT_FLOAT_EQ(1000000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(1000.0f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(5000.0f, source.getX());
+    EXPECT_FLOAT_EQ(6000.0f, source.getY());
 }
 
 // Test process with decimal values
 TEST_F(SourceStatementTest, Process_DecimalValues) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1234.567", "Amplitude", "0.12345"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1234.567", "Amplitude", "0.12345", "X", "12.345", "Y", "23.456"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
     
     EXPECT_FLOAT_EQ(1234.567f, source.getFreq());
     EXPECT_FLOAT_EQ(0.12345f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(12.345f, source.getX());
+    EXPECT_FLOAT_EQ(23.456f, source.getY());
 }
 
 // -----------------------------------------------------------------------------
@@ -533,13 +543,15 @@ TEST_F(SourceStatementTest, Process_DecimalValues) {
 // Test process with different parameter order
 TEST_F(SourceStatementTest, Process_DifferentParameterOrder) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Amplitude", "0.5", "Frequency", "1000.0"};
+    std::vector<std::string> tokens = {"Source", "Amplitude", "0.5", "Frequency", "1000.0", "Y", "2.5", "X", "1.5"};
     
     bool result = source.process(tokens);
     EXPECT_TRUE(result);
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.5f, source.getX());
+    EXPECT_FLOAT_EQ(2.5f, source.getY());
 }
 
 // -----------------------------------------------------------------------------
@@ -547,24 +559,24 @@ TEST_F(SourceStatementTest, Process_DifferentParameterOrder) {
 // Test process with invalid value (non-numeric string for frequency)
 TEST_F(SourceStatementTest, Process_InvalidFrequencyValue) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "invalid", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "invalid", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     
     bool result = source.process(tokens);
-    EXPECT_FALSE(result);  // Should fail because frequency is not set (remains 0.0) and isValid() fails
+    EXPECT_FALSE(result);  // Should fail because frequency conversion fails
     
     // Frequency should remain uninitialized (default value 0.0)
-    // Amplitude should be set correctly
+    // Amplitude should not be set because we return false immediately
     EXPECT_FLOAT_EQ(0.0f, source.getFreq());
-    EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(0.0f, source.getAmplitude());
 }
 
 // Test process with invalid value (non-numeric string for amplitude, but valid frequency)
 TEST_F(SourceStatementTest, Process_InvalidAmplitudeValue) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "invalid"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "invalid", "X", "1.5", "Y", "2.5"};
     
     bool result = source.process(tokens);
-    EXPECT_TRUE(result);  // Should succeed because frequency is valid (amplitude is not validated)
+    EXPECT_FALSE(result);  // Should fail because amplitude conversion fails
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.0f, source.getAmplitude());  // Amplitude remains default
@@ -573,7 +585,7 @@ TEST_F(SourceStatementTest, Process_InvalidAmplitudeValue) {
 // Test process with unknown parameter name (should fail due to else clause)
 TEST_F(SourceStatementTest, Process_UnknownParameterName) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Unknown", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Unknown", "0.5", "X", "1.5", "Y", "2.5"};
     
     bool result = source.process(tokens);
     EXPECT_FALSE(result);  // Should fail because "Unknown" is not a recognized parameter
@@ -593,12 +605,14 @@ TEST_F(SourceStatementTest, Accessors_DefaultValues) {
 // Test accessors after processing
 TEST_F(SourceStatementTest, Accessors_AfterProcessing) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "2500.0", "Amplitude", "0.75"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "2500.0", "Amplitude", "0.75", "X", "3.5", "Y", "4.5"};
     
     source.process(tokens);
     
     EXPECT_FLOAT_EQ(2500.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.75f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(3.5f, source.getX());
+    EXPECT_FLOAT_EQ(4.5f, source.getY());
 }
 
 // Test accessors are const
@@ -619,14 +633,16 @@ TEST_F(SourceStatementTest, Accessors_Const) {
 TEST_F(SourceStatementTest, Process_MultipleCalls) {
     SourceStatement source;
     
-    std::vector<std::string> tokens1 = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens1 = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.0", "Y", "2.0"};
     bool result1 = source.process(tokens1);
     EXPECT_TRUE(result1);
     
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.0f, source.getX());
+    EXPECT_FLOAT_EQ(2.0f, source.getY());
     
-    std::vector<std::string> tokens2 = {"Source", "Frequency", "2000.0", "Amplitude", "1.0"};
+    std::vector<std::string> tokens2 = {"Source", "Frequency", "2000.0", "Amplitude", "1.0", "X", "3.0", "Y", "4.0"};
     bool result2 = source.process(tokens2);
     EXPECT_TRUE(result2);
     
@@ -1420,7 +1436,7 @@ protected:
 
 // Test processLine with valid Source tokens
 TEST_F(InputCompilerTest, ProcessLine_ValidSource) {
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::SOURCE, result);
@@ -1429,6 +1445,8 @@ TEST_F(InputCompilerTest, ProcessLine_ValidSource) {
     const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
     EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.5f, source.getX());
+    EXPECT_FLOAT_EQ(2.5f, source.getY());
 }
 
 // Test processLine with valid BBox tokens
@@ -1448,7 +1466,7 @@ TEST_F(InputCompilerTest, ProcessLine_ValidBBox) {
 
 // Test processLine with case-insensitive Source
 TEST_F(InputCompilerTest, ProcessLine_CaseInsensitiveSource) {
-    std::vector<std::string> tokens = {"source", "Frequency", "2000.0", "Amplitude", "0.75"};
+    std::vector<std::string> tokens = {"source", "Frequency", "2000.0", "Amplitude", "0.75", "X", "2.0", "Y", "3.0"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::SOURCE, result);
@@ -1524,7 +1542,7 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_WrongTokenCount) {
 
 // Test processLine with Source but invalid frequency (zero)
 TEST_F(InputCompilerTest, ProcessLine_Source_InvalidFrequency) {
-    std::vector<std::string> tokens = {"Source", "Frequency", "0.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "0.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::MAX, result);
@@ -1532,7 +1550,7 @@ TEST_F(InputCompilerTest, ProcessLine_Source_InvalidFrequency) {
 
 // Test processLine with Source but invalid frequency (negative)
 TEST_F(InputCompilerTest, ProcessLine_Source_NegativeFrequency) {
-    std::vector<std::string> tokens = {"Source", "Frequency", "-1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "-1000.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::MAX, result);
@@ -1680,7 +1698,7 @@ TEST_F(InputCompilerTest, ProcessLine_MaxResolution_SpatialGreaterThanTemporal) 
 
 // Test processLine with Source but unknown parameter name (should fail due to else clause)
 TEST_F(InputCompilerTest, ProcessLine_Source_UnknownParameterName) {
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Unknown", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Unknown", "0.5", "X", "1.5", "Y", "2.5"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::MAX, result);
@@ -1722,21 +1740,25 @@ TEST_F(InputCompilerTest, ProcessLine_Velocity_ZeroValue) {
 
 // Test processLine with multiple Source calls (should update values)
 TEST_F(InputCompilerTest, ProcessLine_MultipleSourceCalls) {
-    std::vector<std::string> tokens1 = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens1 = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.0", "Y", "2.0"};
     Input::StatementType result1 = compiler.processLine(tokens1);
     EXPECT_EQ(Input::StatementType::SOURCE, result1);
     
     const auto& source1 = compiler.getStatement<Input::StatementType::SOURCE>();
     EXPECT_FLOAT_EQ(1000.0f, source1.getFreq());
     EXPECT_FLOAT_EQ(0.5f, source1.getAmplitude());
+    EXPECT_FLOAT_EQ(1.0f, source1.getX());
+    EXPECT_FLOAT_EQ(2.0f, source1.getY());
     
-    std::vector<std::string> tokens2 = {"Source", "Frequency", "2000.0", "Amplitude", "1.0"};
+    std::vector<std::string> tokens2 = {"Source", "Frequency", "2000.0", "Amplitude", "1.0", "X", "3.0", "Y", "4.0"};
     Input::StatementType result2 = compiler.processLine(tokens2);
     EXPECT_EQ(Input::StatementType::SOURCE, result2);
     
     const auto& source2 = compiler.getStatement<Input::StatementType::SOURCE>();
     EXPECT_FLOAT_EQ(2000.0f, source2.getFreq());
     EXPECT_FLOAT_EQ(1.0f, source2.getAmplitude());
+    EXPECT_FLOAT_EQ(3.0f, source2.getX());
+    EXPECT_FLOAT_EQ(4.0f, source2.getY());
 }
 
 // Test processLine with multiple BBox calls (should update values)
@@ -1798,7 +1820,7 @@ TEST_F(InputCompilerTest, ProcessLine_MultipleMaxResolutionCalls) {
 
 // Test processLine with different parameter order for Source
 TEST_F(InputCompilerTest, ProcessLine_Source_DifferentParameterOrder) {
-    std::vector<std::string> tokens = {"Source", "Amplitude", "0.75", "Frequency", "1500.0"};
+    std::vector<std::string> tokens = {"Source", "Amplitude", "0.75", "Frequency", "1500.0", "Y", "4.5", "X", "3.5"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::SOURCE, result);
@@ -1806,6 +1828,8 @@ TEST_F(InputCompilerTest, ProcessLine_Source_DifferentParameterOrder) {
     const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
     EXPECT_FLOAT_EQ(1500.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.75f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(3.5f, source.getX());
+    EXPECT_FLOAT_EQ(4.5f, source.getY());
 }
 
 // Test processLine with different parameter order for BBox
@@ -1838,7 +1862,7 @@ TEST_F(InputCompilerTest, ProcessLine_MaxResolution_DifferentParameterOrder) {
 
 // Test processLine with case-insensitive parameter names for Source
 TEST_F(InputCompilerTest, ProcessLine_Source_CaseInsensitiveParameters) {
-    std::vector<std::string> tokens = {"Source", "frequency", "2500.0", "amplitude", "0.9"};
+    std::vector<std::string> tokens = {"Source", "frequency", "2500.0", "amplitude", "0.9", "x", "5.5", "y", "6.5"};
     
     Input::StatementType result = compiler.processLine(tokens);
     EXPECT_EQ(Input::StatementType::SOURCE, result);
@@ -1846,6 +1870,8 @@ TEST_F(InputCompilerTest, ProcessLine_Source_CaseInsensitiveParameters) {
     const auto& source = compiler.getStatement<Input::StatementType::SOURCE>();
     EXPECT_FLOAT_EQ(2500.0f, source.getFreq());
     EXPECT_FLOAT_EQ(0.9f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(5.5f, source.getX());
+    EXPECT_FLOAT_EQ(6.5f, source.getY());
 }
 
 // Test processLine with case-insensitive parameter names for BBox
@@ -1890,7 +1916,7 @@ protected:
 
 TEST_F(FileParserTest, ValidLinesProduceStatements) {
     std::istringstream iss(
-        "Source Frequency 100 Amplitude 50\n"
+        "Source Frequency 100 Amplitude 50 X 1.5 Y 2.5\n"
         "BBox XMin 0 XMax 10 YMin 0 YMax 20\n"
     );
 
@@ -1905,6 +1931,8 @@ TEST_F(FileParserTest, ValidLinesProduceStatements) {
             EXPECT_TRUE(source.isValid());
             EXPECT_FLOAT_EQ(100.0f, source.getFreq());
             EXPECT_FLOAT_EQ(50.0f, source.getAmplitude());
+            EXPECT_FLOAT_EQ(1.5f, source.getX());
+            EXPECT_FLOAT_EQ(2.5f, source.getY());
         } else if (iter.getType() == StatementType::BBOX) {
             const auto& bbox = iter.getStatement<StatementType::BBOX>();
             EXPECT_TRUE(bbox.isValid());
@@ -1927,7 +1955,7 @@ TEST_F(FileParserTest, MixedLinesYieldMaxAndValid) {
         "Invalid line\n"
         "// Comment line\n"
         "\n"
-        "Source Frequency 10 Amplitude 5\n"
+        "Source Frequency 10 Amplitude 5 X 1.0 Y 2.0\n"
     );
 
     FileParser parser(iss);
@@ -1970,7 +1998,7 @@ protected:
 // Test save with valid Source values
 TEST_F(SourceStatementSaveTest, Save_ValidValues) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.5", "Y", "2.5"};
     source.process(tokens);
     
     std::ostringstream oss;
@@ -1984,7 +2012,7 @@ TEST_F(SourceStatementSaveTest, Save_ValidValues) {
 // Test save with decimal values
 TEST_F(SourceStatementSaveTest, Save_DecimalValues) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1234.567", "Amplitude", "0.12345"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1234.567", "Amplitude", "0.12345", "X", "12.345", "Y", "23.456"};
     source.process(tokens);
     
     std::ostringstream oss;
@@ -1998,7 +2026,7 @@ TEST_F(SourceStatementSaveTest, Save_DecimalValues) {
 // Test save with large values
 TEST_F(SourceStatementSaveTest, Save_LargeValues) {
     SourceStatement source;
-    std::vector<std::string> tokens = {"Source", "Frequency", "1000000.0", "Amplitude", "1000.0"};
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000000.0", "Amplitude", "1000.0", "X", "5000.0", "Y", "6000.0"};
     source.process(tokens);
     
     std::ostringstream oss;
