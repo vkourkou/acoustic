@@ -57,6 +57,10 @@ Runner::execute()
 {
     FDTD::Simulator simulator(m_InputCnt.get<Input::BBoxStatement>(), m_InputCnt.get<Input::SourceStatement>(), m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.computeSpatialStep(), m_InputCnt.computeTimeStep());
     simulator.save(std::cout);
+    if (!simulator.initializeMatrices()) {
+        std::cout << "Error initializing matrices" << std::endl;
+        return false;
+    }
     return true;
 }
 
@@ -68,6 +72,12 @@ Runner::run(std::istream& IS) {
         return false;
     }
     m_InputCnt.save(std::cout);
+
+    if (!m_InputCnt.isSane()) {
+        std::cout << "Input is not sane\n";
+        return false;
+    }
+
 
     std::cout << "//Wavelength: " << m_InputCnt.computeWavelength() << std::endl;
 
