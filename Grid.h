@@ -43,6 +43,13 @@ public:
     bool isSane() const;
 
     bool addGridPoint(Grid_t value);
+
+    Grid_t front() const {
+        return m_data.front();
+    };
+    Grid_t back() const {
+        return m_data.back();
+    };
     
 };
 
