@@ -50,6 +50,8 @@ public:
     Grid_t back() const {
         return m_data.back();
     };
+
+    unsigned findIndexForClosestGridPoint(float value) const;
     
 };
 

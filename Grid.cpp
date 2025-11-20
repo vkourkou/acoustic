@@ -1,4 +1,6 @@
 #include <Grid.h>
+#include <algorithm>
+#include <cmath>
 
 // -----------------------------------------------------------------------------
 
@@ -100,6 +102,46 @@ Grid1D::isSane() const
     }
     
     return true;
+}
+
+// -----------------------------------------------------------------------------
+
+unsigned
+Grid1D::findIndexForClosestGridPoint(float value) const
+{
+    if (m_data.empty()) {
+        return 0;
+    }
+    
+    if (m_data.size() == 1) {
+        return 0;
+    }
+    
+    // Use binary search to find the insertion point
+    auto it = std::lower_bound(m_data.begin(), m_data.end(), static_cast<Grid_t>(value));
+    
+    if (it == m_data.end()) {
+        // Value is greater than all grid points, return last index
+        return static_cast<unsigned>(m_data.size() - 1);
+    }
+    
+    if (it == m_data.begin()) {
+        // Value is less than or equal to first grid point
+        return 0;
+    }
+    
+    // Compare with current and previous element to find closest
+    std::size_t currentIdx = std::distance(m_data.begin(), it);
+    std::size_t prevIdx = currentIdx - 1;
+    
+    float distCurrent = std::abs(static_cast<float>(m_data[currentIdx]) - value);
+    float distPrev = std::abs(static_cast<float>(m_data[prevIdx]) - value);
+    
+    if (distPrev <= distCurrent) {
+        return static_cast<unsigned>(prevIdx);
+    } else {
+        return static_cast<unsigned>(currentIdx);
+    }
 }
 
 // -----------------------------------------------------------------------------

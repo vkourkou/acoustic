@@ -786,6 +786,136 @@ TEST_F(Grid1DTest, FrontBackConstCorrectness) {
 
 // -----------------------------------------------------------------------------
 
+// Test findIndexForClosestGridPoint with exact match
+TEST_F(Grid1DTest, FindIndexForClosestGridPointExactMatch) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(10.0f));
+    EXPECT_EQ(1, grid.findIndexForClosestGridPoint(13.0f));
+    EXPECT_EQ(2, grid.findIndexForClosestGridPoint(16.0f));
+    EXPECT_EQ(3, grid.findIndexForClosestGridPoint(19.0f));
+    EXPECT_EQ(4, grid.findIndexForClosestGridPoint(22.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with value between grid points
+TEST_F(Grid1DTest, FindIndexForClosestGridPointBetween) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    // 11.5 is closer to 13 (distance 1.5) than to 10 (distance 1.5), but 10 comes first
+    // Actually, 11.5 - 10 = 1.5, 13 - 11.5 = 1.5, so it's a tie - should return first (index 0)
+    // But let's test: 11.0 is closer to 10 (1.0) than to 13 (2.0)
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(11.0f));
+    // 14.0 is closer to 13 (1.0) than to 16 (2.0)
+    EXPECT_EQ(1, grid.findIndexForClosestGridPoint(14.0f));
+    // 17.5 is exactly between 16 and 19, should prefer the first (index 2)
+    EXPECT_EQ(2, grid.findIndexForClosestGridPoint(17.5f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with value less than first
+TEST_F(Grid1DTest, FindIndexForClosestGridPointBeforeFirst) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(5.0f));
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(0.0f));
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(-10.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with value greater than last
+TEST_F(Grid1DTest, FindIndexForClosestGridPointAfterLast) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(4, grid.findIndexForClosestGridPoint(25.0f));
+    EXPECT_EQ(4, grid.findIndexForClosestGridPoint(30.0f));
+    EXPECT_EQ(4, grid.findIndexForClosestGridPoint(100.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with empty grid
+TEST_F(Grid1DTest, FindIndexForClosestGridPointEmpty) {
+    Grid1D grid(0, 10, 3);
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(5.0f));
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(100.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with size 1
+TEST_F(Grid1DTest, FindIndexForClosestGridPointSizeOne) {
+    Grid1D grid(1, 42, 5);
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(42.0f));
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(0.0f));
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(100.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with negative values
+TEST_F(Grid1DTest, FindIndexForClosestGridPointNegative) {
+    Grid1D grid(4, -10, 3);
+    // Grid: {-10, -7, -4, -1}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(-11.0f));
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(-10.0f));
+    EXPECT_EQ(1, grid.findIndexForClosestGridPoint(-7.0f));
+    EXPECT_EQ(2, grid.findIndexForClosestGridPoint(-4.0f));
+    EXPECT_EQ(3, grid.findIndexForClosestGridPoint(-1.0f));
+    // -8.0 is closer to -7 (1.0) than to -10 (2.0)
+    EXPECT_EQ(1, grid.findIndexForClosestGridPoint(-8.0f));
+    // -5.0 is closer to -4 (1.0) than to -7 (2.0)
+    EXPECT_EQ(2, grid.findIndexForClosestGridPoint(-5.0f));
+
+    EXPECT_EQ(3, grid.findIndexForClosestGridPoint(10.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint const correctness
+TEST_F(Grid1DTest, FindIndexForClosestGridPointConstCorrectness) {
+    const Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(1, grid.findIndexForClosestGridPoint(13.0f));
+    EXPECT_EQ(2, grid.findIndexForClosestGridPoint(16.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test findIndexForClosestGridPoint with tie-breaking (exactly between two points)
+TEST_F(Grid1DTest, FindIndexForClosestGridPointTieBreak) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    // 11.5 is exactly between 10 and 13 (both distances are 1.5)
+    // The implementation should prefer the first one (index 0)
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(0, grid.findIndexForClosestGridPoint(11.5f));
+    // 14.5 is exactly between 13 and 16
+    EXPECT_EQ(1, grid.findIndexForClosestGridPoint(14.5f));
+}
+
+// -----------------------------------------------------------------------------
+
 // Test fixture for Grid2D tests
 class Grid2DTest : public ::testing::Test {
 protected:
