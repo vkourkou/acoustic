@@ -1,4 +1,5 @@
 #include <InputCnt.h>
+#include <iostream>
 
 namespace input {
 
@@ -45,4 +46,22 @@ InputCnt::computeWavelength() const
 
 // -----------------------------------------------------------------------------
 
+bool
+InputCnt::isSane() const
+{
+    bool AllSane = get<Input::SourceStatement>().isValid() && get<Input::BBoxStatement>().isValid() &&
+                   get<Input::VelocityStatement>().isValid() && get<Input::MaxResolutionStatement>().isValid();
+    if (!AllSane) {
+        return false;
+    }
+    if (!get<Input::BBoxStatement>().isPointStrictlyInside(get<Input::SourceStatement>().getX(), get<Input::SourceStatement>().getY())) {
+        std::cout << "Source is not strictly inside the bounding box\n";
+        return false;
+    }
+    return true;
 }
+
+}
+
+// -----------------------------------------------------------------------------
+

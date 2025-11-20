@@ -57,6 +57,8 @@ public:
 
     Dimension_t computeWavelength() const;
     
+    bool isSane() const;
+    
     void save(std::ostream& OS) const;
 
 };
