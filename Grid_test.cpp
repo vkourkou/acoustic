@@ -699,6 +699,93 @@ TEST_F(Grid1DTest, AddGridPointSizeOne) {
 
 // -----------------------------------------------------------------------------
 
+// Test front() method with basic grid
+TEST_F(Grid1DTest, FrontBasic) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(10, grid.front());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test front() method with negative Min
+TEST_F(Grid1DTest, FrontNegativeMin) {
+    Grid1D grid(4, -10, 3);
+    // Grid: {-10, -7, -4, -1}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(-10, grid.front());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test front() method with size 1
+TEST_F(Grid1DTest, FrontSizeOne) {
+    Grid1D grid(1, 42, 5);
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(42, grid.front());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test back() method with basic grid
+TEST_F(Grid1DTest, BackBasic) {
+    Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(22, grid.back());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test back() method with negative Min
+TEST_F(Grid1DTest, BackNegativeMin) {
+    Grid1D grid(4, -10, 3);
+    // Grid: {-10, -7, -4, -1}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(-1, grid.back());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test back() method with size 1
+TEST_F(Grid1DTest, BackSizeOne) {
+    Grid1D grid(1, 42, 5);
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(42, grid.back());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test front() and back() are same for size 1
+TEST_F(Grid1DTest, FrontBackSameSizeOne) {
+    Grid1D grid(1, 100, 1);
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(grid.front(), grid.back());
+    EXPECT_EQ(100, grid.front());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test front() and back() const correctness
+TEST_F(Grid1DTest, FrontBackConstCorrectness) {
+    const Grid1D grid(5, 10, 3);
+    // Grid: {10, 13, 16, 19, 22}
+    
+    EXPECT_TRUE(grid.isSane());
+    EXPECT_EQ(10, grid.front());
+    EXPECT_EQ(22, grid.back());
+}
+
+// -----------------------------------------------------------------------------
+
 // Test fixture for Grid2D tests
 class Grid2DTest : public ::testing::Test {
 protected:
