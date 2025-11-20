@@ -16,6 +16,7 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
     m_SpatialStep(SpatialStep),
     m_TemporalStep(TemporalStep),
     m_GridDimPerStatialStep(computeGridDimPerStatialStep(/*MaxAlloweError*/0.0001f)),
+    m_CourantNb(Velocity.getVelocity() * TemporalStep / SpatialStep),
     m_Grids(
         static_cast<std::size_t>(std::ceil((Box.getXMax() - Box.getXMin()) / SpatialStep) + 1),
         static_cast<Grid_t>(computeDimensionGridSpace(Box.getXMin())),
@@ -24,8 +25,9 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
         static_cast<Grid_t>(computeDimensionGridSpace(Box.getYMin())),
         static_cast<Grid_t>(m_GridDimPerStatialStep)
     )
-    //FIXME: The above has to become more robust
 {
+    m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(m_Source.getX());
+    m_SourceGridIndex_Y = m_Grids.get<Y>().findIndexForClosestGridPoint(m_Source.getY());
 }
 
 // -----------------------------------------------------------------------------
@@ -43,13 +45,15 @@ computeErrorByRounding(long GridDimPerStatialStep, Dimension_t SpatialStep, Dime
 // -----------------------------------------------------------------------------
 
 std::vector<Dimension_t>
-computeDimensionsToBeAccommodated(const Input::BBoxStatement& Box)
+computeDimensionsToBeAccommodated(const Input::BBoxStatement& Box, const Input::SourceStatement& Source)
 {
     std::vector<Dimension_t> DimenstionsToBeAccomodated;
-    DimenstionsToBeAccomodated.push_back(Box.getXMax() - Box.getXMin());
-    DimenstionsToBeAccomodated.push_back(Box.getYMax() - Box.getYMin());
-    DimenstionsToBeAccomodated.push_back(-Box.getYMin());
-    DimenstionsToBeAccomodated.push_back(-Box.getXMin());
+    DimenstionsToBeAccomodated.push_back(Box.getXMax());
+    DimenstionsToBeAccomodated.push_back(Box.getYMax());
+    DimenstionsToBeAccomodated.push_back(Box.getYMin());
+    DimenstionsToBeAccomodated.push_back(Box.getXMin());
+    DimenstionsToBeAccomodated.push_back(Source.getX());
+    DimenstionsToBeAccomodated.push_back(Source.getY());
     return DimenstionsToBeAccomodated;
 }
 
@@ -69,7 +73,7 @@ long
 Simulator::computeGridDimPerStatialStep(float MaxAlloweError) const
 {
 
-    const std::vector<Dimension_t> DimenstionsToBeAccomodated{computeDimensionsToBeAccommodated(m_Box)};
+    const std::vector<Dimension_t> DimenstionsToBeAccomodated{computeDimensionsToBeAccommodated(m_Box, m_Source)};
 
     long DimPerStatialStep = 1;
     for (const auto& Dimension : DimenstionsToBeAccomodated) {
@@ -112,8 +116,24 @@ Simulator::save(std::ostream& OS) const
     OS << "BOX (real coordinates): " << m_Box.getXMin() << " " << m_Box.getXMax() << " " << m_Box.getYMin() << " " << m_Box.getYMax() << "\n";
     OS << "BOX (grid coordinates): " << computeDimensionGridSpace(m_Box.getXMin()) << " " << computeDimensionGridSpace(m_Box.getXMax()) << " " << computeDimensionGridSpace(m_Box.getYMin()) << " " << computeDimensionGridSpace(m_Box.getYMax()) << "\n"; 
     OS << "Grid points (start/end): " << m_Grids.get<X>().front() << " " << m_Grids.get<X>().back() << " " << m_Grids.get<Y>().front() << " " << m_Grids.get<Y>().back() << "\n";
+    OS << "Courant number: " << m_CourantNb << "\n";
     OS << "Grids: " << "\n";
     m_Grids.save(OS);
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+Simulator::initializeMatrices()
+{
+    std::size_t numRows = m_Grids.get<X>().size();
+    std::size_t numCols = m_Grids.get<Y>().size();
+    
+    m_Pres.resize(numRows, numCols);
+    m_Vx.resize(numRows - 1, numCols - 1);
+    m_Vy.resize(numRows - 1, numCols - 1);
+    
+    return true;
 }
 
 // -----------------------------------------------------------------------------
