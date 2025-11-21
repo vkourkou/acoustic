@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstddef>
 #include <stdexcept>
+#include <ostream>
+#include <string>
 
 template<typename Elem_t>
 class DenseMatrix {
@@ -53,7 +55,7 @@ public:
     operator()(std::size_t row, std::size_t col)
     {
         if (row >= m_rows || col >= m_cols) {
-            throw std::out_of_range("DenseMatrix: index out of range");
+            throw std::out_of_range("DenseMatrix: index out of range (row: " + std::to_string(row) + ", col: " + std::to_string(col) + ")");
         }
         return m_data[row * m_cols + col];
     }
@@ -65,7 +67,7 @@ public:
     operator()(std::size_t row, std::size_t col) const
     {
         if (row >= m_rows || col >= m_cols) {
-            throw std::out_of_range("DenseMatrix: index out of range");
+            throw std::out_of_range("DenseMatrix: index out of range (row: " + std::to_string(row) + ", col: " + std::to_string(col) + ")");
         }
         return m_data[row * m_cols + col];
     }
@@ -154,6 +156,27 @@ public:
     {
         return row * m_cols + col;
     }
+
+    // -----------------------------------------------------------------------------
+
+    // Save matrix to output stream
+    void
+    save(std::ostream& OS) const
+    {
+        OS << m_rows << "\n";
+        OS << m_cols << "\n";
+        for (std::size_t i = 0; i < m_rows; ++i) {
+            for (std::size_t j = 0; j < m_cols; ++j) {
+                OS << m_data[i * m_cols + j];
+                if (j < m_cols - 1) {
+                    OS << " ";
+                }
+            }
+            OS << "\n";
+        }
+    }
+
+    // -----------------------------------------------------------------------------
 
 };
 
