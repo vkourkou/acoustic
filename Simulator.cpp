@@ -185,7 +185,7 @@ Simulator::runIteration()
             }
         }
 
-        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_X) = 
+        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = 
         m_Source.getAmplitude() * std::sin(2.0e0f * pi_float * m_Source.getFreq() * m_iteration * m_TemporalStep);
     
         
