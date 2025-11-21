@@ -2,6 +2,7 @@
 #include <Simulator.h>
 #include <iostream>
 #include <cassert>
+#include <filesystem>
 
 // -----------------------------------------------------------------------------
 
@@ -61,6 +62,10 @@ Runner::execute()
         std::cout << "Error initializing matrices" << std::endl;
         return false;
     }
+    if (!simulator.runIterations(m_TotalIterations)) {
+        std::cout << "Error running iterations" << std::endl;
+        return false;
+    }
     return true;
 }
 
@@ -81,10 +86,38 @@ Runner::run(std::istream& IS) {
 
     std::cout << "//Wavelength: " << m_InputCnt.computeWavelength() << std::endl;
 
+    if (!createDBfolder()) {
+        std::cout << "Error creating database folder" << std::endl;
+        return false;
+    }
+
     if (!execute()) {
+        std::cout << "Error executing simulation" << std::endl;
         return false;
     }
     return true;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+Runner::createDBfolder()
+{
+    const std::filesystem::path dbPath(getDbPathName());
+    
+    // Remove directory if it exists
+    if (std::filesystem::exists(dbPath)) {
+        std::filesystem::remove_all(dbPath);
+    }
+    
+    // Create directory from scratch
+    try {
+        std::filesystem::create_directories(dbPath);
+        return true;
+    } catch (const std::filesystem::filesystem_error& e) {
+        std::cerr << "Error creating directory acoustic.db: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 // -----------------------------------------------------------------------------

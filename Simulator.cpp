@@ -1,9 +1,11 @@
 #include <Simulator.h>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
+#include <string>
 
 // -----------------------------------------------------------------------------
 namespace FDTD {
@@ -134,22 +136,21 @@ Simulator::initializeMatrices()
     std::size_t numCols = m_Grids.get<Y>().size();
     
     m_Pres.resize(numRows, numCols, 0.0e0);
-    m_Vx.resize(numRows - 1, numCols - 1, 0.0e0);
-    m_Vy.resize(numRows - 1, numCols - 1, 0.0e0);
+    m_Vx.resize(numRows - 1, numCols , 0.0e0);
+    m_Vy.resize(numRows, numCols - 1, 0.0e0);
     return true;
 }
 
 // -----------------------------------------------------------------------------
 
 bool
-Simulator::runIterations(unsigned numIterations)
+Simulator::runIterations(size_t numIterations)
 {
-    for (unsigned i = 0; i < numIterations; ++i) {
+    for (size_t i = 0; i < numIterations; ++i) {
         if (!runIteration()) {
-            std::cout << "Error running iteration " << i << std::endl;
+            std::cout << "Error running iteration " << m_iteration << std::endl;
             return false;
-        }
-        ++m_iteration;
+        }        
     }
     return true;
 }
@@ -160,29 +161,65 @@ bool
 Simulator::runIteration()
 {
     // Dummy implementation
-    //Update Vx
-    for (std::size_t i = 0, iE = m_Grids.get<X>().size() - 1; i < iE; ++i) {
-        for (std::size_t j = 0, jE = m_Grids.get<Y>().size(); j < jE; ++j) {
-            m_Vx(i,j) = m_Vx(i,j) + m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+    try {
+        //Update Vx
+        for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
+            for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
+                m_Vx(i,j) = m_Vx(i,j) + m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+            }
         }
-    }
-    //Update Vy
-    for (std::size_t i = 0, iE = m_Grids.get<X>().size(); i < iE; ++i) {
-        for (std::size_t j = 0, jE = m_Grids.get<Y>().size() - 1; j < jE; ++j) {
-            m_Vy(i,j) = m_Vy(i,j) + m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+        //Update Vy
+        for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
+            for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
+                m_Vy(i,j) = m_Vy(i,j) + m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+            }
         }
-    }
-    //Update Pres
-    //Boundaries are assume to have directlet condition
-    for (std::size_t i = 1, iE = m_Grids.get<X>().size() - 1; i < iE; ++i) {
-        for (std::size_t j = 1, jE = m_Grids.get<Y>().size() - 1; j < jE; ++j) {
-            m_Pres(i,j) = m_Pres(i,j) + m_CrSquareTimesCourantNb * (m_Vx(i+1,j) - m_Vx(i,j) + m_Vy(i,j+1) - m_Vy(i,j));
+        //Update Pres
+        //Boundaries are assume to have directlet condition
+        for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
+            for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
+                m_Pres(i,j) = m_Pres(i,j) + m_CrSquareTimesCourantNb * (m_Vx(i+1,j) - m_Vx(i,j) + m_Vy(i,j+1) - m_Vy(i,j));
+            }
         }
+
+        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_X) = 
+        m_Source.getAmplitude() * std::sin(2.0e0f * pi_float * m_Source.getFreq() * m_iteration * m_TemporalStep);
+    
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Exception in runIteration: " << e.what() << std::endl;
+        return false;
     }
 
-    m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_X) = 
-    m_Source.getAmplitude() * std::sin(2.0e0f * pi_float * m_Source.getFreq() * m_iteration * m_TemporalStep);
 
+    if (!potentiallySaveTheMatricesToDb()) {
+        std::cout << "Error saving matrices to database" << std::endl;
+        return false;
+    }
+
+    ++m_iteration;
+    
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+Simulator::potentiallySaveTheMatricesToDb()
+{
+    // Dummy implementation
+   // std::cout << "Saving matrices to database" << " iteration " << m_iteration << std::endl;
+    if (m_iteration % 10 == 0) {
+        std::cout << "Saving matrices to database" << std::endl;
+        std::string filename = "iteration_" + std::to_string(m_iteration) + ".db";
+        std::ofstream file(filename.c_str());
+        if (!file.is_open()) {
+            std::cout << "Error opening file " << filename << std::endl;
+            return false;
+        }
+        m_Pres.save(file);
+        file.close();
+    }
     return true;
 }
 

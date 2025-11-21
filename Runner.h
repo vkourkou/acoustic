@@ -15,7 +15,10 @@ public:
 private:
     bool parseInput(std::istream& IS);
     bool execute();
+    bool createDBfolder();
     input::InputCnt m_InputCnt;
+    size_t m_TotalIterations{100};
+    static std::string getDbPathName() { return "acoustic.db"; }
 
 };
 

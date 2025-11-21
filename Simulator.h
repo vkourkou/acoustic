@@ -17,7 +17,7 @@ public:
     void save(std::ostream& OS) const;
 
     bool initializeMatrices();
-    bool runIterations(unsigned numIterations);
+    bool runIterations(size_t numIterations);
 private:
     Input::BBoxStatement m_Box;
     Input::SourceStatement m_Source;
@@ -41,6 +41,8 @@ private:
     Grid_t computeDimensionGridSpace(Dimension_t Dimension) const;
 
     bool runIteration();
+
+    bool potentiallySaveTheMatricesToDb();
 
 };
 
