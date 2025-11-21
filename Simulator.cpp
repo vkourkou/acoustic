@@ -8,6 +8,8 @@
 // -----------------------------------------------------------------------------
 namespace FDTD {
 
+constexpr float pi_float = 3.14159265358979323846f;
+
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, const Input::VelocityStatement& Velocity, Dimension_t SpatialStep, Time_t TemporalStep)
     :
     m_Box(Box),
@@ -17,6 +19,8 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
     m_TemporalStep(TemporalStep),
     m_GridDimPerStatialStep(computeGridDimPerStatialStep(/*MaxAlloweError*/0.0001f)),
     m_CourantNb(Velocity.getVelocity() * TemporalStep / SpatialStep),
+    m_Cr(1.0e0),
+    m_CrSquareTimesCourantNb(m_Cr * m_Cr* m_CourantNb),
     m_Grids(
         static_cast<std::size_t>(std::ceil((Box.getXMax() - Box.getXMin()) / SpatialStep) + 1),
         static_cast<Grid_t>(computeDimensionGridSpace(Box.getXMin())),
@@ -129,10 +133,56 @@ Simulator::initializeMatrices()
     std::size_t numRows = m_Grids.get<X>().size();
     std::size_t numCols = m_Grids.get<Y>().size();
     
-    m_Pres.resize(numRows, numCols);
-    m_Vx.resize(numRows - 1, numCols - 1);
-    m_Vy.resize(numRows - 1, numCols - 1);
-    
+    m_Pres.resize(numRows, numCols, 0.0e0);
+    m_Vx.resize(numRows - 1, numCols - 1, 0.0e0);
+    m_Vy.resize(numRows - 1, numCols - 1, 0.0e0);
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+Simulator::runIterations(unsigned numIterations)
+{
+    for (unsigned i = 0; i < numIterations; ++i) {
+        if (!runIteration()) {
+            std::cout << "Error running iteration " << i << std::endl;
+            return false;
+        }
+        ++m_iteration;
+    }
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+Simulator::runIteration()
+{
+    // Dummy implementation
+    //Update Vx
+    for (std::size_t i = 0, iE = m_Grids.get<X>().size() - 1; i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Grids.get<Y>().size(); j < jE; ++j) {
+            m_Vx(i,j) = m_Vx(i,j) + m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+        }
+    }
+    //Update Vy
+    for (std::size_t i = 0, iE = m_Grids.get<X>().size(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Grids.get<Y>().size() - 1; j < jE; ++j) {
+            m_Vy(i,j) = m_Vy(i,j) + m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+        }
+    }
+    //Update Pres
+    //Boundaries are assume to have directlet condition
+    for (std::size_t i = 1, iE = m_Grids.get<X>().size() - 1; i < iE; ++i) {
+        for (std::size_t j = 1, jE = m_Grids.get<Y>().size() - 1; j < jE; ++j) {
+            m_Pres(i,j) = m_Pres(i,j) + m_CrSquareTimesCourantNb * (m_Vx(i+1,j) - m_Vx(i,j) + m_Vy(i,j+1) - m_Vy(i,j));
+        }
+    }
+
+    m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_X) = 
+    m_Source.getAmplitude() * std::sin(2.0e0f * pi_float * m_Source.getFreq() * m_iteration * m_TemporalStep);
+
     return true;
 }
 

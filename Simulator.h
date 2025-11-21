@@ -17,7 +17,7 @@ public:
     void save(std::ostream& OS) const;
 
     bool initializeMatrices();
-
+    bool runIterations(unsigned numIterations);
 private:
     Input::BBoxStatement m_Box;
     Input::SourceStatement m_Source;
@@ -26,17 +26,21 @@ private:
     Time_t m_TemporalStep;
     long m_GridDimPerStatialStep;
     float m_CourantNb{0.0e0};
+    float m_Cr{1.0e0};
+    float m_CrSquareTimesCourantNb{1.0e0};
     Grid2D m_Grids;
     DenseMatrix<float> m_Pres;
     DenseMatrix<float> m_Vx;
     DenseMatrix<float> m_Vy;
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
-
+    size_t m_iteration{0};
     //This function will find how many grid points are for each spatial step.
     long computeGridDimPerStatialStep(float MaxAlloweError) const;
 
     Grid_t computeDimensionGridSpace(Dimension_t Dimension) const;
+
+    bool runIteration();
 
 };
 
