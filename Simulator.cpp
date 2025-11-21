@@ -12,7 +12,9 @@ namespace FDTD {
 
 constexpr float pi_float = 3.14159265358979323846f;
 
-Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, const Input::VelocityStatement& Velocity, Dimension_t SpatialStep, Time_t TemporalStep)
+Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
+                     const Input::VelocityStatement& Velocity, Dimension_t SpatialStep,
+                     Time_t TemporalStep, const std::string& dbFolderPath)
     :
     m_Box(Box),
     m_Source(Source),
@@ -30,7 +32,8 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
         static_cast<std::size_t>(std::ceil((Box.getYMax() - Box.getYMin()) / SpatialStep) + 1),
         static_cast<Grid_t>(computeDimensionGridSpace(Box.getYMin())),
         static_cast<Grid_t>(m_GridDimPerStatialStep)
-    )
+    ),
+    m_dbFolderPath(dbFolderPath)    
 {
     m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(m_Source.getX());
     m_SourceGridIndex_Y = m_Grids.get<Y>().findIndexForClosestGridPoint(m_Source.getY());
@@ -165,20 +168,20 @@ Simulator::runIteration()
         //Update Vx
         for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
             for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
-                m_Vx(i,j) = m_Vx(i,j) + m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+                m_Vx(i,j) = m_Vx(i,j) - m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
             }
         }
         //Update Vy
         for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
             for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
-                m_Vy(i,j) = m_Vy(i,j) + m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+                m_Vy(i,j) = m_Vy(i,j) - m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
             }
         }
         //Update Pres
         //Boundaries are assume to have directlet condition
         for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
             for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
-                m_Pres(i,j) = m_Pres(i,j) + m_CrSquareTimesCourantNb * (m_Vx(i+1,j) - m_Vx(i,j) + m_Vy(i,j+1) - m_Vy(i,j));
+                m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
             }
         }
 
@@ -204,20 +207,37 @@ Simulator::runIteration()
 
 // -----------------------------------------------------------------------------
 
+void
+saveGrid(const Grid1D& grid, float multiplier, std::ostream& OS)
+{
+    if (grid.empty()) {
+        return;
+    }
+    OS << multiplier * grid.front();
+    for (std::size_t i = 1; i < grid.size(); ++i) {
+        OS << " " << multiplier * grid[i];
+    }
+    OS << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+
 bool
 Simulator::potentiallySaveTheMatricesToDb()
 {
     // Dummy implementation
-   // std::cout << "Saving matrices to database" << " iteration " << m_iteration << std::endl;
-    if (m_iteration % 10 == 0) {
-        std::cout << "Saving matrices to database" << std::endl;
-        std::string filename = "iteration_" + std::to_string(m_iteration) + ".db";
+    if (!m_dbFolderPath.empty() && m_iteration % 10 == 0) {
+        std::string filename = m_dbFolderPath + "/iteration_" + std::to_string(m_iteration) + ".db";
         std::ofstream file(filename.c_str());
         if (!file.is_open()) {
             std::cout << "Error opening file " << filename << std::endl;
             return false;
         }
-        m_Pres.save(file);
+        file << "Time: " << m_iteration * m_TemporalStep << std::endl;
+        float multiplier = m_SpatialStep / m_GridDimPerStatialStep;
+        saveGrid(m_Grids.get<X>(), multiplier, file);
+        saveGrid(m_Grids.get<Y>(), multiplier, file);
+        m_Pres.save(file, /*bPrintTranspose*/ true);
         file.close();
     }
     return true;

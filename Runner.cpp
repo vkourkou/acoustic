@@ -56,7 +56,9 @@ Runner::parseInput(std::istream& IS) {
 bool
 Runner::execute()
 {
-    FDTD::Simulator simulator(m_InputCnt.get<Input::BBoxStatement>(), m_InputCnt.get<Input::SourceStatement>(), m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.computeSpatialStep(), m_InputCnt.computeTimeStep());
+    FDTD::Simulator simulator(m_InputCnt.get<Input::BBoxStatement>(), m_InputCnt.get<Input::SourceStatement>(),
+                              m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.computeSpatialStep(),
+                              m_InputCnt.computeTimeStep(), getDbPathName());
     simulator.save(std::cout);
     if (!simulator.initializeMatrices()) {
         std::cout << "Error initializing matrices" << std::endl;
