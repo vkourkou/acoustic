@@ -2,6 +2,8 @@
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <stdexcept>
+#include <sstream>
+#include <string>
 
 // Test fixture for DenseMatrix tests
 class DenseMatrixTest : public ::testing::Test {
@@ -998,4 +1000,207 @@ TEST_F(DenseMatrixTest, Resize_MultipleResizes) {
     EXPECT_EQ(2, matrix.cols());
     EXPECT_FLOAT_EQ(1.0f, matrix(0, 0));
 }
+
+// -----------------------------------------------------------------------------
+
+// Test save function - normal (non-transpose)
+TEST_F(DenseMatrixTest, Save_Normal) {
+    DenseMatrix<float> matrix(2, 3);
+    
+    // Fill matrix with values
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(0, 2) = 3.0f;
+    matrix(1, 0) = 4.0f;
+    matrix(1, 1) = 5.0f;
+    matrix(1, 2) = 6.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, false);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 2 << " " << 3 << "\n";
+    ssRes << matrix.data()[0] << " " << matrix.data()[1] << " " << matrix.data()[2] << "\n";
+    ssRes << matrix.data()[3] << " " << matrix.data()[4] << " " << matrix.data()[5] << "\n";
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - default parameter (should be non-transpose)
+TEST_F(DenseMatrixTest, Save_DefaultParameter) {
+    DenseMatrix<float> matrix(2, 3);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(0, 2) = 3.0f;
+    matrix(1, 0) = 4.0f;
+    matrix(1, 1) = 5.0f;
+    matrix(1, 2) = 6.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss);  // Using default parameter
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 2 << " " << 3 << "\n";
+    ssRes << matrix.data()[0] << " " << matrix.data()[1] << " " << matrix.data()[2] << "\n";
+    ssRes << matrix.data()[3] << " " << matrix.data()[4] << " " << matrix.data()[5] << "\n";
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - transpose
+TEST_F(DenseMatrixTest, Save_Transpose) {
+    DenseMatrix<float> matrix(2, 3);
+    
+    // Fill matrix with values
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(0, 2) = 3.0f;
+    matrix(1, 0) = 4.0f;
+    matrix(1, 1) = 5.0f;
+    matrix(1, 2) = 6.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, true);  // Print transpose
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 3 << " " << 2 << "\n";  // cols become rows, rows become cols
+    ssRes << matrix.data()[0] << " " << matrix.data()[3] << "\n";  // col 0: (0,0), (1,0)
+    ssRes << matrix.data()[1] << " " << matrix.data()[4] << "\n";  // col 1: (0,1), (1,1)
+    ssRes << matrix.data()[2] << " " << matrix.data()[5] << "\n";  // col 2: (0,2), (1,2)
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - transpose with square matrix
+TEST_F(DenseMatrixTest, Save_Transpose_SquareMatrix) {
+    DenseMatrix<float> matrix(3, 3);
+    
+    // Fill matrix with values
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(0, 2) = 3.0f;
+    matrix(1, 0) = 4.0f;
+    matrix(1, 1) = 5.0f;
+    matrix(1, 2) = 6.0f;
+    matrix(2, 0) = 7.0f;
+    matrix(2, 1) = 8.0f;
+    matrix(2, 2) = 9.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, true);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 3 << " " << 3 << "\n";
+    ssRes << matrix.data()[0] << " " << matrix.data()[3] << " " << matrix.data()[6] << "\n";  // col 0
+    ssRes << matrix.data()[1] << " " << matrix.data()[4] << " " << matrix.data()[7] << "\n";  // col 1
+    ssRes << matrix.data()[2] << " " << matrix.data()[5] << " " << matrix.data()[8] << "\n";  // col 2
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - transpose with single row matrix
+TEST_F(DenseMatrixTest, Save_Transpose_SingleRow) {
+    DenseMatrix<float> matrix(1, 4);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(0, 2) = 3.0f;
+    matrix(0, 3) = 4.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, true);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 4 << " " << 1 << "\n";  // cols become rows, rows become cols
+    ssRes << matrix.data()[0] << "\n";  // col 0
+    ssRes << matrix.data()[1] << "\n";  // col 1
+    ssRes << matrix.data()[2] << "\n";  // col 2
+    ssRes << matrix.data()[3] << "\n";  // col 3
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - transpose with single column matrix
+TEST_F(DenseMatrixTest, Save_Transpose_SingleColumn) {
+    DenseMatrix<float> matrix(4, 1);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(1, 0) = 2.0f;
+    matrix(2, 0) = 3.0f;
+    matrix(3, 0) = 4.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, true);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 1 << " " << 4 << "\n";  // cols become rows, rows become cols
+    ssRes << matrix.data()[0] << " " << matrix.data()[1] << " " << matrix.data()[2] << " " << matrix.data()[3] << "\n";  // col 0
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - normal with negative values
+TEST_F(DenseMatrixTest, Save_Normal_NegativeValues) {
+    DenseMatrix<float> matrix(2, 2);
+    
+    matrix(0, 0) = -1.5f;
+    matrix(0, 1) = 2.5f;
+    matrix(1, 0) = -3.5f;
+    matrix(1, 1) = 4.5f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, false);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 2 << " " << 2 << "\n";
+    ssRes << matrix.data()[0] << " " << matrix.data()[1] << "\n";
+    ssRes << matrix.data()[2] << " " << matrix.data()[3] << "\n";
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - transpose with negative values
+TEST_F(DenseMatrixTest, Save_Transpose_NegativeValues) {
+    DenseMatrix<float> matrix(2, 2);
+    
+    matrix(0, 0) = -1.5f;
+    matrix(0, 1) = 2.5f;
+    matrix(1, 0) = -3.5f;
+    matrix(1, 1) = 4.5f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, true);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    ssRes << 2 << " " << 2 << "\n";  // cols become rows, rows become cols
+    ssRes << matrix.data()[0] << " " << matrix.data()[2] << "\n";  // col 0: (0,0), (1,0)
+    ssRes << matrix.data()[1] << " " << matrix.data()[3] << "\n";  // col 1: (0,1), (1,1)
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
 

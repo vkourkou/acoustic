@@ -161,18 +161,30 @@ public:
 
     // Save matrix to output stream
     void
-    save(std::ostream& OS) const
+    save(std::ostream& OS, bool bPrintTranspose = false) const
     {
-        OS << m_rows << "\n";
-        OS << m_cols << "\n";
-        for (std::size_t i = 0; i < m_rows; ++i) {
-            for (std::size_t j = 0; j < m_cols; ++j) {
-                OS << m_data[i * m_cols + j];
-                if (j < m_cols - 1) {
-                    OS << " ";
+        if (bPrintTranspose) {
+            OS << m_cols << " " << m_rows << "\n";
+            for (std::size_t i = 0; i < m_cols; ++i) {
+                for (std::size_t j = 0; j < m_rows; ++j) {
+                    OS << m_data[j * m_cols + i];
+                    if (j < m_rows - 1) {
+                        OS << " ";
+                    }
                 }
+                OS << "\n";
             }
-            OS << "\n";
+        } else {
+            OS << m_rows << " " << m_cols << "\n";
+            for (std::size_t i = 0; i < m_rows; ++i) {
+                for (std::size_t j = 0; j < m_cols; ++j) {
+                    OS << m_data[i * m_cols + j];
+                    if (j < m_cols - 1) {
+                        OS << " ";
+                    }
+                }
+                OS << "\n";
+            }
         }
     }
 
