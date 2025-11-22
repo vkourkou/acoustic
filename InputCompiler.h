@@ -6,6 +6,7 @@
 #include <ostream>
 #include <vector>
 #include <tuple>
+#include <limits>
 #include <InputFileParser.h>
 #include <Utilities.h>
 
@@ -52,11 +53,15 @@ public:
     Dimension_t getY() const {
         return m_Y;
     }
+    Time_t getDuration() const {
+        return m_Duration;
+    }
 private:
     Frequency_t m_Freq{0};
     Amplitude_t m_Amplitude{0};
     Dimension_t m_X{0};
     Dimension_t m_Y{0};
+    Time_t m_Duration{std::numeric_limits<Time_t>::max()};
 };
 
 // BBox statement class

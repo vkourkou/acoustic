@@ -169,8 +169,8 @@ FileParser::const_iterator::compileCurrentLine() {
 
 bool
 SourceStatement::process(const std::vector<std::string>& tokens) {
-    // Must have exactly 5 tokens: 1 for "Source" and 2 pairs (4 tokens)
-    if (tokens.size() != 9) {
+    // Must have 9 tokens (1 for "Source" and 4 pairs) or 11 tokens (with optional Duration)
+    if (tokens.size() != 9 && tokens.size() != 11) {
         return false;
     }
     
@@ -182,6 +182,9 @@ SourceStatement::process(const std::vector<std::string>& tokens) {
     // Process tokens in pairs starting from index 1
     for (size_t i = 1; i < tokens.size(); i += 2) {
         // Need at least two tokens for a pair
+        if (i + 1 >= tokens.size()) {
+            return false;
+        }
         
         const std::string& key = tokens[i];
         const std::string& value = tokens[i + 1];
@@ -226,6 +229,16 @@ SourceStatement::process(const std::vector<std::string>& tokens) {
                 return false;
             }
         }
+        // Check for Duration
+        else if (Utilities::caseInsensitiveEquals(key, "Duration")) {
+            auto convertedValue = Utilities::convertTo<Time_t>(value);
+            if (convertedValue.has_value()) {
+                m_Duration = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
         else {
             return false;
         }
@@ -244,7 +257,10 @@ SourceStatement::isValid() const
         std::cout << "Invalid Source: Frequency (" << m_Freq << ") must be positive" << std::endl;
         return false;
     }
-    
+    if (m_Duration <= 0.0f) {
+        std::cout << "Invalid Source: Duration (" << m_Duration << ") must be positive" << std::endl;
+        return false;
+    }
     return true;
 }
 
@@ -271,6 +287,9 @@ static const float pi_float = 3.14159265358979323846f;
 Amplitude_t
 SourceStatement::getValue(Time_t t) const
 {
+    if (t > m_Duration) {
+        return 0.0f;
+    }
     return m_Amplitude * std::sin(2.0e0f * pi_float * m_Freq * t);
 }
 

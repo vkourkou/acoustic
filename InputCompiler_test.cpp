@@ -3,6 +3,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <limits>
+#include <cmath>
 
 using Input::BBoxStatement;
 using Input::SourceStatement;
@@ -768,6 +770,237 @@ TEST_F(SourceStatementTest, Process_MultipleCalls) {
     
     EXPECT_FLOAT_EQ(2000.0f, source.getFreq());
     EXPECT_FLOAT_EQ(1.0f, source.getAmplitude());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test default duration value
+TEST_F(SourceStatementTest, Duration_DefaultValue) {
+    SourceStatement source;
+    
+    // Default duration should be max value
+    EXPECT_FLOAT_EQ(std::numeric_limits<float>::max(), source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with Duration parameter (11 tokens)
+TEST_F(SourceStatementTest, Process_WithDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "Duration", "5.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
+    EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.3f, source.getX());
+    EXPECT_FLOAT_EQ(-2.5f, source.getY());
+    EXPECT_FLOAT_EQ(5.0f, source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process without Duration parameter (9 tokens, should use default)
+TEST_F(SourceStatementTest, Process_WithoutDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1000.0f, source.getFreq());
+    EXPECT_FLOAT_EQ(0.5f, source.getAmplitude());
+    EXPECT_FLOAT_EQ(1.3f, source.getX());
+    EXPECT_FLOAT_EQ(-2.5f, source.getY());
+    // Duration should remain at default (max value)
+    EXPECT_FLOAT_EQ(std::numeric_limits<float>::max(), source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive Duration parameter
+TEST_F(SourceStatementTest, Process_CaseInsensitiveDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "duration", "3.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(3.0f, source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with mixed case Duration parameter
+TEST_F(SourceStatementTest, Process_MixedCaseDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "DuRaTiOn", "7.5"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(7.5f, source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid Duration value (negative)
+TEST_F(SourceStatementTest, Process_NegativeDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "Duration", "-1.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because duration is negative
+    
+    // Duration may still be set, but process should return false
+    EXPECT_FLOAT_EQ(-1.0f, source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid Duration value (zero)
+TEST_F(SourceStatementTest, Process_ZeroDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "Duration", "0.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because duration is zero
+    
+    // Duration may still be set, but process should return false
+    EXPECT_FLOAT_EQ(0.0f, source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getValue with time less than duration
+TEST_F(SourceStatementTest, GetValue_TimeLessThanDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "1.0", "X", "0.0", "Y", "0.0", "Duration", "5.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    // Test at time = 0.0
+    float value0 = source.getValue(0.0f);
+    float expected0 = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 0.0f);
+    EXPECT_NEAR(expected0, value0, 1e-5f);
+    
+    // Test at time = 2.0 (less than duration)
+    float value2 = source.getValue(2.0f);
+    float expected2 = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 2.0f);
+    EXPECT_NEAR(expected2, value2, 1e-5f);
+    
+    // Test at time = 4.99 (less than duration)
+    float value499 = source.getValue(4.99f);
+    float expected499 = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 4.99f);
+    EXPECT_NEAR(expected499, value499, 1e-5f);
+    
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getValue with time equal to duration
+TEST_F(SourceStatementTest, GetValue_TimeEqualToDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "1.0", "X", "0.0", "Y", "0.0", "Duration", "5.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    // Test at time = 5.0 (equal to duration)
+    float value5 = source.getValue(5.0f);
+    float expected5 = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 5.0f);
+    EXPECT_NEAR(expected5, value5, 1e-5f);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getValue with time greater than duration
+TEST_F(SourceStatementTest, GetValue_TimeGreaterThanDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "1.0", "X", "0.0", "Y", "0.0", "Duration", "5.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    float time = 1 / (1000.0f) * 0.25f;
+    float value401 = source.getValue(time);
+    EXPECT_FLOAT_EQ(1.0f, value401);
+    // Test at time = 5.01 (greater than duration)
+    float value501 = source.getValue(5.01f);
+    EXPECT_FLOAT_EQ(0.0f, value501);
+    
+    // Test at time = 10.0 (greater than duration)
+    float value10 = source.getValue(10.0f);
+    EXPECT_FLOAT_EQ(0.0f, value10);
+    
+    // Test at time = 100.0 (much greater than duration)
+    float value100 = source.getValue(100.0f);
+    EXPECT_FLOAT_EQ(0.0f, value100);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getValue with default duration (max value)
+TEST_F(SourceStatementTest, GetValue_DefaultDuration) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "1.0", "X", "0.0", "Y", "0.0"};
+    
+    bool result = source.process(tokens);
+    EXPECT_TRUE(result);
+    
+    // With default duration (max), getValue should always return sine wave
+    // Test at various times
+    float value1 = source.getValue(1.0f);
+    float expected1 = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 1.0f);
+    EXPECT_NEAR(expected1, value1, 1e-5f);
+    
+    float value100 = source.getValue(100.0f);
+    float expected100 = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 100.0f);
+    EXPECT_NEAR(expected100, value100, 1e-5f);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getDuration accessor
+TEST_F(SourceStatementTest, GetDuration_Accessor) {
+    SourceStatement source;
+    
+    // Default duration
+    EXPECT_FLOAT_EQ(std::numeric_limits<float>::max(), source.getDuration());
+    
+    // After processing with Duration
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "Duration", "3.5"};
+    source.process(tokens);
+    
+    EXPECT_FLOAT_EQ(3.5f, source.getDuration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getDuration const correctness
+TEST_F(SourceStatementTest, GetDuration_ConstCorrectness) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "0.5", "X", "1.3", "Y", "-2.5", "Duration", "4.5"};
+    source.process(tokens);
+    
+    const SourceStatement& constSource = source;
+    Time_t duration = constSource.getDuration();
+    EXPECT_FLOAT_EQ(4.5f, duration);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test getValue const correctness
+TEST_F(SourceStatementTest, GetValue_ConstCorrectness) {
+    SourceStatement source;
+    std::vector<std::string> tokens = {"Source", "Frequency", "1000.0", "Amplitude", "1.0", "X", "0.0", "Y", "0.0", "Duration", "5.0"};
+    source.process(tokens);
+    
+    const SourceStatement& constSource = source;
+    float value = constSource.getValue(2.0f);
+    float expected = 1.0f * std::sin(2.0f * 3.14159265358979323846f * 1000.0f * 2.0f);
+    EXPECT_NEAR(expected, value, 1e-5f);
 }
 
 // -----------------------------------------------------------------------------
