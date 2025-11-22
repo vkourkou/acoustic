@@ -2,6 +2,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
 
 namespace Input {
 
@@ -261,6 +262,16 @@ Amplitude_t
 SourceStatement::getAmplitude() const
 {
     return m_Amplitude;
+}
+
+// -----------------------------------------------------------------------------
+
+static const float pi_float = 3.14159265358979323846f;
+
+Amplitude_t
+SourceStatement::getValue(Time_t t) const
+{
+    return m_Amplitude * std::sin(2.0e0f * pi_float * m_Freq * t);
 }
 
 // -----------------------------------------------------------------------------

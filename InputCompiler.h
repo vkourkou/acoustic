@@ -40,6 +40,8 @@ public:
     Frequency_t getFreq() const;
     Amplitude_t getAmplitude() const;
     
+    Amplitude_t getValue(Time_t t) const;
+    
     bool isValid() const;
     
     void save(std::ostream& OS) const;
