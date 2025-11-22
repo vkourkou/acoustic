@@ -1,5 +1,4 @@
 #include <Simulator.h>
-#include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <iostream>
@@ -9,8 +8,6 @@
 
 // -----------------------------------------------------------------------------
 namespace FDTD {
-
-constexpr float pi_float = 3.14159265358979323846f;
 
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
                      const Input::VelocityStatement& Velocity, Dimension_t SpatialStep,
@@ -132,6 +129,14 @@ Simulator::save(std::ostream& OS) const
 
 // -----------------------------------------------------------------------------
 
+Time_t
+Simulator::getTime() const
+{
+    return m_TemporalStep * m_iteration;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 Simulator::initializeMatrices()
 {
@@ -184,8 +189,7 @@ Simulator::runIteration()
                 m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
             }
         }
-        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = 
-        m_Source.getAmplitude() * std::sin(2.0e0f * pi_float * m_Source.getFreq() * m_iteration * m_TemporalStep);
+        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = m_Source.getValue(getTime());
     
         
     } catch (const std::exception& e) {

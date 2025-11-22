@@ -17,7 +17,7 @@ public:
     ~Simulator() = default;
     
     void save(std::ostream& OS) const;
-
+    Time_t getTime() const;
     bool initializeMatrices();
     bool runIterations(size_t numIterations);
 private:
