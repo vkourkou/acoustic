@@ -35,8 +35,8 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
     ),
     m_dbFolderPath(dbFolderPath)    
 {
-    m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(m_Source.getX());
-    m_SourceGridIndex_Y = m_Grids.get<Y>().findIndexForClosestGridPoint(m_Source.getY());
+    m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(static_cast<float>(computeDimensionGridSpace(m_Source.getX())));
+    m_SourceGridIndex_Y = m_Grids.get<Y>().findIndexForClosestGridPoint(static_cast<float>(computeDimensionGridSpace(m_Source.getY())));
 }
 
 // -----------------------------------------------------------------------------
@@ -184,7 +184,6 @@ Simulator::runIteration()
                 m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
             }
         }
-
         m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = 
         m_Source.getAmplitude() * std::sin(2.0e0f * pi_float * m_Source.getFreq() * m_iteration * m_TemporalStep);
     
