@@ -45,6 +45,8 @@ private:
 
     bool runIteration();
 
+    void updatePressurePointsForSource();
+
     bool potentiallySaveTheMatricesToDb();
 
 };

@@ -189,8 +189,7 @@ Simulator::runIteration()
                 m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
             }
         }
-        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = m_Source.getValue(getTime());
-    
+        updatePressurePointsForSource();
         
     } catch (const std::exception& e) {
         std::cerr << "Exception in runIteration: " << e.what() << std::endl;
@@ -206,6 +205,18 @@ Simulator::runIteration()
     ++m_iteration;
     
     return true;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::updatePressurePointsForSource()
+{
+    Time_t time = getTime();
+    if (time <= m_Source.getDuration()) {
+        //If the source stops being applied we would like the point to become "free"
+        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = m_Source.getValue(getTime());
+    }
 }
 
 // -----------------------------------------------------------------------------
