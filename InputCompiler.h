@@ -18,8 +18,9 @@ enum class StatementType {
     BBOX = 1,
     VELOCITY = 2,
     MAXRESOLUTION = 3,
-    COMMENT = 4,
-    MAX = 5
+    SIMULATIONPARAM = 4,
+    COMMENT = 5,
+    MAX = 6
 };
 
 std::string getString(StatementType type);
@@ -134,9 +135,29 @@ private:
     float m_Temporal{0};
 };
 
-// Class to hold a tuple of SourceStatement, BBoxStatement, VelocityStatement, and MaxResolutionStatement
+// -----------------------------------------------------------------------------
+
+// SimulationParam statement class
+class SimulationParamStatement {
+public:
+    SimulationParamStatement() = default;
+    ~SimulationParamStatement() = default;
+    
+    bool process(const std::vector<std::string>& tokens);
+    
+    size_t getMaxIteration() const;
+    
+    bool isValid() const;
+    
+    void save(std::ostream& OS) const;
+
+private:
+    size_t m_MaxIteration{0};
+};
+
+// Class to hold a tuple of SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement, and SimulationParamStatement
 class StatementCnt {
-    std::tuple<SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement> m_statements;
+    std::tuple<SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement, SimulationParamStatement> m_statements;
 public:
     StatementCnt() = default;
     ~StatementCnt() = default;
@@ -236,6 +257,12 @@ template<>
 inline constexpr StatementType
 getStatementType<MaxResolutionStatement>() {
     return StatementType::MAXRESOLUTION;
+}
+
+template<>
+inline constexpr StatementType
+getStatementType<SimulationParamStatement>() {
+    return StatementType::SIMULATIONPARAM;
 }
 
 // -----------------------------------------------------------------------------

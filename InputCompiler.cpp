@@ -15,6 +15,7 @@ getString(StatementType type) {
         case StatementType::BBOX: return "BBox";
         case StatementType::VELOCITY: return "Velocity";
         case StatementType::MAXRESOLUTION: return "MaxResolution";
+        case StatementType::SIMULATIONPARAM: return "SimulationParam";
         case StatementType::COMMENT: return "//";
         case StatementType::MAX: return "Max";
         default: return "INVALID";
@@ -36,6 +37,9 @@ getStatementType(const std::string& str) {
     }
     else if (Utilities::caseInsensitiveEquals(str, "MaxResolution")) {
         return StatementType::MAXRESOLUTION;
+    }
+    else if (Utilities::caseInsensitiveEquals(str, "SimulationParam")) {
+        return StatementType::SIMULATIONPARAM;
     }
     else if (str == "//") {
         return StatementType::COMMENT;
@@ -80,6 +84,9 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
     }
     else if (type == StatementType::MAXRESOLUTION) {
         success = m_statementCnt.process<StatementType::MAXRESOLUTION>(tokens);
+    }
+    else if (type == StatementType::SIMULATIONPARAM) {
+        success = m_statementCnt.process<StatementType::SIMULATIONPARAM>(tokens);
     }
     else if (type == StatementType::COMMENT) {
         // Comments don't need processing, they're always valid
@@ -580,6 +587,66 @@ void
 MaxResolutionStatement::save(std::ostream& OS) const
 {
     OS << "MaxResolution Spatial " << m_Spatial << " Temporal " << m_Temporal;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+SimulationParamStatement::process(const std::vector<std::string>& tokens) {
+    // Must have exactly 3 tokens: "SimulationParam", "MaxIteration", value
+    if (tokens.size() != 3) {
+        return false;
+    }
+    
+    // Check if first token is "SimulationParam" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[0], "SimulationParam")) {
+        return false;
+    }
+    
+    // Check if second token is "MaxIteration" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[1], "MaxIteration")) {
+        return false;
+    }
+    
+    // Parse and set MaxIteration value
+    auto convertedValue = Utilities::convertTo<size_t>(tokens[2]);
+    if (convertedValue.has_value()) {
+        m_MaxIteration = convertedValue.value();
+    }
+    else {
+        return false;
+    }
+    
+    return isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+size_t
+SimulationParamStatement::getMaxIteration() const
+{
+    return m_MaxIteration;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+SimulationParamStatement::isValid() const
+{
+    // MaxIteration must be positive
+    if (m_MaxIteration == 0) {
+        std::cout << "Invalid SimulationParam: MaxIteration (" << m_MaxIteration << ") must be positive" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+SimulationParamStatement::save(std::ostream& OS) const
+{
+    OS << "SimulationParam MaxIteration " << m_MaxIteration;
 }
 
 // -----------------------------------------------------------------------------

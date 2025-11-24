@@ -42,7 +42,8 @@ public:
             std::is_same_v<T, Input::SourceStatement> ||
             std::is_same_v<T, Input::BBoxStatement> ||
             std::is_same_v<T, Input::VelocityStatement> ||
-            std::is_same_v<T, Input::MaxResolutionStatement>,
+            std::is_same_v<T, Input::MaxResolutionStatement> ||
+            std::is_same_v<T, Input::SimulationParamStatement>,
             "T must be one of the statement types in the tuple"
         );
         constexpr Input::StatementType type = Input::getStatementType<T>();

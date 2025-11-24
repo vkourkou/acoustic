@@ -10,6 +10,7 @@ using Input::BBoxStatement;
 using Input::SourceStatement;
 using Input::VelocityStatement;
 using Input::MaxResolutionStatement;
+using Input::SimulationParamStatement;
 using Input::FileParser;
 using Input::StatementType;
 
@@ -2706,6 +2707,367 @@ TEST_F(MaxResolutionStatementSaveTest, RoundTrip_ProcessSaveParse) {
     EXPECT_TRUE(saved.find("MaxResolution") != std::string::npos);
     EXPECT_TRUE(saved.find("Spatial") != std::string::npos);
     EXPECT_TRUE(saved.find("Temporal") != std::string::npos);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for SimulationParamStatement tests
+class SimulationParamStatementTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test process with valid SimulationParam tokens (3 tokens total)
+TEST_F(SimulationParamStatementTest, Process_ValidSimulationParam) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive SimulationParam (lowercase)
+TEST_F(SimulationParamStatementTest, Process_CaseInsensitiveSimulationParam) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"simulationparam", "MaxIteration", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+}
+
+// Test process with case-insensitive SimulationParam (mixed case)
+TEST_F(SimulationParamStatementTest, Process_CaseInsensitiveSimulationParamMixed) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SiMuLaTiOnPaRaM", "MaxIteration", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive parameter name
+TEST_F(SimulationParamStatementTest, Process_CaseInsensitiveParameter) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "maxiteration", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+}
+
+// Test process with mixed case parameter name
+TEST_F(SimulationParamStatementTest, Process_MixedCaseParameter) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaXiTeRaTiOn", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid first token (not SimulationParam)
+TEST_F(SimulationParamStatementTest, Process_InvalidFirstToken) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"Source", "MaxIteration", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with empty tokens
+TEST_F(SimulationParamStatementTest, Process_EmptyTokens) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens;
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong number of tokens (less than 3)
+TEST_F(SimulationParamStatementTest, Process_TooFewTokens) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with wrong number of tokens (more than 3)
+TEST_F(SimulationParamStatementTest, Process_TooManyTokens) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "Extra"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with exactly 2 tokens
+TEST_F(SimulationParamStatementTest, Process_Exactly2Tokens) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with zero MaxIteration (should fail validation)
+TEST_F(SimulationParamStatementTest, Process_ZeroMaxIteration) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "0"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because MaxIteration must be positive
+    
+    // Value may still be set, but process should return false
+    EXPECT_EQ(0u, simParam.getMaxIteration());
+}
+
+// Test process with positive MaxIteration
+TEST_F(SimulationParamStatementTest, Process_PositiveMaxIteration) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1u, simParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with large MaxIteration value
+TEST_F(SimulationParamStatementTest, Process_LargeMaxIteration) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000000u, simParam.getMaxIteration());
+}
+
+// Test process with very large MaxIteration value
+TEST_F(SimulationParamStatementTest, Process_VeryLargeMaxIteration) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "999999999"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(999999999u, simParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid MaxIteration value (non-numeric)
+TEST_F(SimulationParamStatementTest, Process_InvalidMaxIterationValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "invalid"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with invalid MaxIteration value (negative as string)
+TEST_F(SimulationParamStatementTest, Process_NegativeMaxIterationValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "-100"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with invalid MaxIteration value (decimal)
+TEST_F(SimulationParamStatementTest, Process_DecimalMaxIterationValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "100.5"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong parameter name
+TEST_F(SimulationParamStatementTest, Process_WrongParameterName) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "WrongParam", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessor methods - default values
+TEST_F(SimulationParamStatementTest, Accessors_DefaultValues) {
+    SimulationParamStatement simParam;
+    
+    EXPECT_EQ(0u, simParam.getMaxIteration());
+}
+
+// Test accessor methods - after processing
+TEST_F(SimulationParamStatementTest, Accessors_AfterProcessing) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "5000"};
+    simParam.process(tokens);
+    
+    EXPECT_EQ(5000u, simParam.getMaxIteration());
+}
+
+// Test accessor methods - const
+TEST_F(SimulationParamStatementTest, Accessors_Const) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "2000"};
+    simParam.process(tokens);
+    
+    const SimulationParamStatement& constSimParam = simParam;
+    EXPECT_EQ(2000u, constSimParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with multiple calls (should overwrite previous value)
+TEST_F(SimulationParamStatementTest, Process_MultipleCalls) {
+    SimulationParamStatement simParam;
+    
+    std::vector<std::string> tokens1 = {"SimulationParam", "MaxIteration", "1000"};
+    bool result1 = simParam.process(tokens1);
+    EXPECT_TRUE(result1);
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    
+    std::vector<std::string> tokens2 = {"SimulationParam", "MaxIteration", "2000"};
+    bool result2 = simParam.process(tokens2);
+    EXPECT_TRUE(result2);
+    EXPECT_EQ(2000u, simParam.getMaxIteration());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isValid with zero value
+TEST_F(SimulationParamStatementTest, IsValid_ZeroValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "0"};
+    simParam.process(tokens);
+    
+    bool result = simParam.isValid();
+    EXPECT_FALSE(result);
+}
+
+// Test isValid with positive value
+TEST_F(SimulationParamStatementTest, IsValid_PositiveValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000"};
+    simParam.process(tokens);
+    
+    bool result = simParam.isValid();
+    EXPECT_TRUE(result);
+}
+
+// Test isValid with default value
+TEST_F(SimulationParamStatementTest, IsValid_DefaultValue) {
+    SimulationParamStatement simParam;
+    
+    bool result = simParam.isValid();
+    EXPECT_FALSE(result);  // Default value 0 is invalid
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for SimulationParamStatement save tests
+class SimulationParamStatementSaveTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test save with valid MaxIteration value
+TEST_F(SimulationParamStatementSaveTest, Save_ValidValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 1000", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with large value
+TEST_F(SimulationParamStatementSaveTest, Save_LargeValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000000"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 1000000", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default value (before processing)
+TEST_F(SimulationParamStatementSaveTest, Save_DefaultValue) {
+    SimulationParamStatement simParam;
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 0", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save and reload pattern
+TEST_F(SimulationParamStatementSaveTest, Save_ReloadPattern) {
+    SimulationParamStatement simParam1;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "5000"};
+    simParam1.process(tokens);
+    
+    std::ostringstream oss;
+    simParam1.save(oss);
+    std::string saved = oss.str();
+    
+    // Parse the saved string (simplified - in real scenario would use tokenizer)
+    // This test verifies the format is correct
+    EXPECT_TRUE(saved.find("SimulationParam") != std::string::npos);
+    EXPECT_TRUE(saved.find("MaxIteration") != std::string::npos);
+    EXPECT_TRUE(saved.find("5000") != std::string::npos);
 }
 
 // -----------------------------------------------------------------------------
