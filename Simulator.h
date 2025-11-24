@@ -45,6 +45,12 @@ private:
 
     bool runIteration();
 
+    void updateVx();
+
+    void updateVy();
+
+    void updatepressure();
+
     void updatePressurePointsForSource();
 
     bool potentiallySaveTheMatricesToDb();

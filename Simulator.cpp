@@ -165,30 +165,54 @@ Simulator::runIterations(size_t numIterations)
 
 // -----------------------------------------------------------------------------
 
+void
+Simulator::updateVx()
+{
+    for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
+            m_Vx(i,j) = m_Vx(i,j) - m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::updateVy()
+{
+    for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
+            m_Vy(i,j) = m_Vy(i,j) - m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::updatepressure()
+{
+    //Boundaries are assume to have directlet condition
+    for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
+        for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
+            m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 Simulator::runIteration()
 {
     // Dummy implementation
     try {
         //Update Vx
-        for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
-            for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
-                m_Vx(i,j) = m_Vx(i,j) - m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
-            }
-        }
+        updateVx();
         //Update Vy
-        for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
-            for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
-                m_Vy(i,j) = m_Vy(i,j) - m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
-            }
-        }
+        updateVy();
         //Update Pres
-        //Boundaries are assume to have directlet condition
-        for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
-            for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
-                m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
-            }
-        }
+        updatepressure();
         updatePressurePointsForSource();
         
     } catch (const std::exception& e) {
