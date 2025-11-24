@@ -5,6 +5,7 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <algorithm>
 
 // -----------------------------------------------------------------------------
 namespace FDTD {
@@ -152,11 +153,18 @@ Simulator::initializeMatrices()
 
 // -----------------------------------------------------------------------------
 
+size_t
+calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulationParam, size_t currentIteration)
+{
+    return std::min(simulationParam.getBatchSize(), simulationParam.getMaxIteration() - currentIteration);
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 Simulator::runIterations()
 {
-    size_t numIterations = m_SimulationParam.getMaxIteration();
-    size_t numIterationsForThisBatch = std::min(m_BatchSize, numIterations - m_iteration);
+    size_t numIterationsForThisBatch = calculateNumIterationsForBatch(m_SimulationParam, m_iteration);
     while (numIterationsForThisBatch > 0) {
         
         if (!runBatchIterations(numIterationsForThisBatch)) {
@@ -168,7 +176,7 @@ Simulator::runIterations()
             return false;
         }
 
-        numIterationsForThisBatch = std::min(m_BatchSize, numIterations - m_iteration);
+        numIterationsForThisBatch = calculateNumIterationsForBatch(m_SimulationParam, m_iteration);
     }
     
     return true;

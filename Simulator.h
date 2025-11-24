@@ -38,7 +38,6 @@ private:
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};
-    size_t m_BatchSize{100};
     std::string m_dbFolderPath;
     //This function will find how many grid points are for each spatial step.
     long computeGridDimPerStatialStep(float MaxAlloweError) const;
