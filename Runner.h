@@ -17,7 +17,6 @@ private:
     bool execute();
     bool createDBfolder();
     input::InputCnt m_InputCnt;
-    size_t getTotalIterations() const;
     static std::string getDbPathName() { return "acoustic.db"; }
 };
 

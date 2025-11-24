@@ -10,12 +10,13 @@
 namespace FDTD {
 
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
-                     const Input::VelocityStatement& Velocity, Dimension_t SpatialStep,
-                     Time_t TemporalStep, const std::string& dbFolderPath)
+                     const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
+                     Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath)
     :
     m_Box(Box),
     m_Source(Source),
     m_Velocity(Velocity),
+    m_SimulationParam(SimulationParam),
     m_SpatialStep(SpatialStep),
     m_TemporalStep(TemporalStep),
     m_GridDimPerStatialStep(computeGridDimPerStatialStep(/*MaxAlloweError*/0.0001f)),
@@ -152,14 +153,24 @@ Simulator::initializeMatrices()
 // -----------------------------------------------------------------------------
 
 bool
-Simulator::runIterations(size_t numIterations)
+Simulator::runIterations()
 {
-    for (size_t i = 0; i < numIterations; ++i) {
-        if (!runIteration()) {
-            std::cout << "Error running iteration " << m_iteration << std::endl;
+    size_t numIterations = m_SimulationParam.getMaxIteration();
+    size_t numIterationsForThisBatch = std::min(m_BatchSize, numIterations - m_iteration);
+    while (numIterationsForThisBatch > 0) {
+        
+        if (!runBatchIterations(numIterationsForThisBatch)) {
+            std::cout << "Error running batch of iterations. Failed at iteration " << m_iteration << std::endl;
             return false;
-        }        
+        }
+        if (!potentiallySaveTheMatricesToDb()) {
+            std::cout << "Error saving matrices to database" << std::endl;
+            return false;
+        }
+
+        numIterationsForThisBatch = std::min(m_BatchSize, numIterations - m_iteration);
     }
+    
     return true;
 }
 
@@ -203,32 +214,21 @@ Simulator::updatepressure()
 // -----------------------------------------------------------------------------
 
 bool
-Simulator::runIteration()
+Simulator::runBatchIterations(size_t numIterations)
 {
     // Dummy implementation
     try {
-        //Update Vx
-        updateVx();
-        //Update Vy
-        updateVy();
-        //Update Pres
-        updatepressure();
-        updatePressurePointsForSource();
-        
+        for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
+            updateVx();
+            updateVy();
+            updatepressure();
+            updatePressurePointsForSource();
+        }
+        return true;
     } catch (const std::exception& e) {
-        std::cerr << "Exception in runIteration: " << e.what() << std::endl;
+        std::cerr << "Exception in runBatchIterations: " << e.what() << std::endl;
         return false;
     }
-
-
-    if (!potentiallySaveTheMatricesToDb()) {
-        std::cout << "Error saving matrices to database" << std::endl;
-        return false;
-    }
-
-    ++m_iteration;
-    
-    return true;
 }
 
 // -----------------------------------------------------------------------------
@@ -264,7 +264,7 @@ bool
 Simulator::potentiallySaveTheMatricesToDb()
 {
     // Dummy implementation
-    if (!m_dbFolderPath.empty() && m_iteration % 10 == 0) {
+    if (!m_dbFolderPath.empty()) {
         std::string filename = m_dbFolderPath + "/iteration_" + std::to_string(m_iteration) + ".db";
         std::ofstream file(filename.c_str());
         if (!file.is_open()) {

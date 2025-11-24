@@ -63,14 +63,14 @@ bool
 Runner::execute()
 {
     FDTD::Simulator simulator(m_InputCnt.get<Input::BBoxStatement>(), m_InputCnt.get<Input::SourceStatement>(),
-                              m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.computeSpatialStep(),
+                              m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.get<Input::SimulationParamStatement>(), m_InputCnt.computeSpatialStep(),
                               m_InputCnt.computeTimeStep(), getDbPathName());
     simulator.save(std::cout);
     if (!simulator.initializeMatrices()) {
         std::cout << "Error initializing matrices" << std::endl;
         return false;
     }
-    if (!simulator.runIterations(getTotalIterations())) {
+    if (!simulator.runIterations()) {
         std::cout << "Error running iterations" << std::endl;
         return false;
     }
@@ -104,14 +104,6 @@ Runner::run(std::istream& IS) {
         return false;
     }
     return true;
-}
-
-// -----------------------------------------------------------------------------
-
-size_t
-Runner::getTotalIterations() const
-{
-    return m_InputCnt.get<Input::SimulationParamStatement>().getMaxIteration();
 }
 
 // -----------------------------------------------------------------------------
