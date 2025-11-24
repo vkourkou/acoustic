@@ -12,7 +12,8 @@ namespace input {
 class InputCnt {
 private:
     using StatementsTuple = std::tuple<Input::SourceStatement, Input::BBoxStatement, 
-                                       Input::VelocityStatement, Input::MaxResolutionStatement>;
+                                       Input::VelocityStatement, Input::MaxResolutionStatement,
+                                       Input::SimulationParamStatement>;
     StatementsTuple m_statements;
 
     template<typename T>

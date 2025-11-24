@@ -39,6 +39,12 @@ Runner::parseInput(std::istream& IS) {
         else if (type == Input::StatementType::COMMENT) {
             // Comments are ignored, continue processing
         }
+        else if (type == Input::StatementType::SIMULATIONPARAM) {
+            const Input::SimulationParamStatement& simParam = iter.getStatement<Input::StatementType::SIMULATIONPARAM>();
+            if (!m_InputCnt.set(simParam)) {
+                return false;
+            }
+        }
         else if (type == Input::StatementType::MAX) {
             std::cerr << "Error in line " << iter.getLineNumber() << std::endl;
             return false;
@@ -64,7 +70,7 @@ Runner::execute()
         std::cout << "Error initializing matrices" << std::endl;
         return false;
     }
-    if (!simulator.runIterations(m_TotalIterations)) {
+    if (!simulator.runIterations(getTotalIterations())) {
         std::cout << "Error running iterations" << std::endl;
         return false;
     }
@@ -98,6 +104,14 @@ Runner::run(std::istream& IS) {
         return false;
     }
     return true;
+}
+
+// -----------------------------------------------------------------------------
+
+size_t
+Runner::getTotalIterations() const
+{
+    return m_InputCnt.get<Input::SimulationParamStatement>().getMaxIteration();
 }
 
 // -----------------------------------------------------------------------------

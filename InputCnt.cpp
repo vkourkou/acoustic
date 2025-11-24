@@ -50,7 +50,8 @@ bool
 InputCnt::isSane() const
 {
     bool AllSane = get<Input::SourceStatement>().isValid() && get<Input::BBoxStatement>().isValid() &&
-                   get<Input::VelocityStatement>().isValid() && get<Input::MaxResolutionStatement>().isValid();
+                   get<Input::VelocityStatement>().isValid() && get<Input::MaxResolutionStatement>().isValid() &&
+                   get<Input::SimulationParamStatement>().isValid();
     if (!AllSane) {
         return false;
     }
