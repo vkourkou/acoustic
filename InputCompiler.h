@@ -146,6 +146,7 @@ public:
     bool process(const std::vector<std::string>& tokens);
     
     size_t getMaxIteration() const;
+    size_t getBatchSize() const;
     
     bool isValid() const;
     
@@ -153,6 +154,7 @@ public:
 
 private:
     size_t m_MaxIteration{0};
+    size_t m_BatchSize{100};
 };
 
 // Class to hold a tuple of SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement, and SimulationParamStatement

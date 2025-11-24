@@ -3022,7 +3022,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_ValidValue) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 1000", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 100", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3036,7 +3036,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_LargeValue) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 1000000", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 1000000 BatchSize 100", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3048,7 +3048,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_DefaultValue) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 0", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 0 BatchSize 100", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3068,6 +3068,216 @@ TEST_F(SimulationParamStatementSaveTest, Save_ReloadPattern) {
     EXPECT_TRUE(saved.find("SimulationParam") != std::string::npos);
     EXPECT_TRUE(saved.find("MaxIteration") != std::string::npos);
     EXPECT_TRUE(saved.find("5000") != std::string::npos);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with BatchSize parameter (5 tokens total)
+TEST_F(SimulationParamStatementTest, Process_WithBatchSize) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(200u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive BatchSize token
+TEST_F(SimulationParamStatementTest, Process_CaseInsensitiveBatchSize) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "batchsize", "150"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(150u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with mixed case BatchSize token
+TEST_F(SimulationParamStatementTest, Process_MixedCaseBatchSize) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BaTcHsIzE", "250"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(250u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessor for BatchSize default value
+TEST_F(SimulationParamStatementTest, Accessors_BatchSizeDefaultValue) {
+    SimulationParamStatement simParam;
+    
+    EXPECT_EQ(100u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessor for BatchSize after processing
+TEST_F(SimulationParamStatementTest, Accessors_BatchSizeAfterProcessing) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "5000", "BatchSize", "300"};
+    simParam.process(tokens);
+    
+    EXPECT_EQ(5000u, simParam.getMaxIteration());
+    EXPECT_EQ(300u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessor for BatchSize - const
+TEST_F(SimulationParamStatementTest, Accessors_BatchSizeConst) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "2000", "BatchSize", "400"};
+    simParam.process(tokens);
+    
+    const SimulationParamStatement& constSimParam = simParam;
+    EXPECT_EQ(2000u, constSimParam.getMaxIteration());
+    EXPECT_EQ(400u, constSimParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isValid with BatchSize = 0
+TEST_F(SimulationParamStatementTest, IsValid_BatchSizeZero) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "0"};
+    simParam.process(tokens);
+    
+    bool result = simParam.isValid();
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isValid with BatchSize positive
+TEST_F(SimulationParamStatementTest, IsValid_BatchSizePositive) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200"};
+    simParam.process(tokens);
+    
+    bool result = simParam.isValid();
+    EXPECT_TRUE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isValid with default BatchSize (should be valid since default is 100)
+TEST_F(SimulationParamStatementTest, IsValid_DefaultBatchSize) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000"};
+    simParam.process(tokens);
+    
+    bool result = simParam.isValid();
+    EXPECT_TRUE(result);
+    EXPECT_EQ(100u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid BatchSize value
+TEST_F(SimulationParamStatementTest, Process_InvalidBatchSizeValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "invalid"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with negative BatchSize value
+TEST_F(SimulationParamStatementTest, Process_NegativeBatchSizeValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "-50"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with decimal BatchSize value
+TEST_F(SimulationParamStatementTest, Process_DecimalBatchSizeValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "100.5"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong parameter name for BatchSize
+TEST_F(SimulationParamStatementTest, Process_WrongBatchSizeParameterName) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "WrongParam", "200"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with BatchSize included
+TEST_F(SimulationParamStatementSaveTest, Save_WithBatchSize) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 200", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default BatchSize
+TEST_F(SimulationParamStatementSaveTest, Save_WithDefaultBatchSize) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "5000"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 5000 BatchSize 100", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with BatchSize only (should fail - MaxIteration is required)
+TEST_F(SimulationParamStatementTest, Process_BatchSizeOnly) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "BatchSize", "200"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with BatchSize before MaxIteration (should work - order doesn't matter)
+TEST_F(SimulationParamStatementTest, Process_BatchSizeBeforeMaxIteration) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "BatchSize", "200", "MaxIteration", "1000"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(200u, simParam.getBatchSize());
 }
 
 // -----------------------------------------------------------------------------

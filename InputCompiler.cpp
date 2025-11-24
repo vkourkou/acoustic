@@ -593,8 +593,9 @@ MaxResolutionStatement::save(std::ostream& OS) const
 
 bool
 SimulationParamStatement::process(const std::vector<std::string>& tokens) {
-    // Must have exactly 3 tokens: "SimulationParam", "MaxIteration", value
-    if (tokens.size() != 3) {
+    // Must have at least 3 tokens (SimulationParam + at least one key-value pair)
+    // Can have 3 or 5 tokens: "SimulationParam", "MaxIteration", value, "BatchSize", value
+    if (tokens.size() != 3 && tokens.size() != 5) {
         return false;
     }
     
@@ -603,18 +604,39 @@ SimulationParamStatement::process(const std::vector<std::string>& tokens) {
         return false;
     }
     
-    // Check if second token is "MaxIteration" (case insensitive)
-    if (!Utilities::caseInsensitiveEquals(tokens[1], "MaxIteration")) {
-        return false;
-    }
-    
-    // Parse and set MaxIteration value
-    auto convertedValue = Utilities::convertTo<size_t>(tokens[2]);
-    if (convertedValue.has_value()) {
-        m_MaxIteration = convertedValue.value();
-    }
-    else {
-        return false;
+    // Process tokens in pairs starting from index 1
+    for (size_t i = 1; i < tokens.size(); i += 2) {
+        // Need at least two tokens for a pair
+        if (i + 1 >= tokens.size()) {
+            break;
+        }
+        
+        const std::string& key = tokens[i];
+        const std::string& value = tokens[i + 1];
+        
+        // Check for MaxIteration
+        if (Utilities::caseInsensitiveEquals(key, "MaxIteration")) {
+            auto convertedValue = Utilities::convertTo<size_t>(value);
+            if (convertedValue.has_value()) {
+                m_MaxIteration = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
+        // Check for BatchSize
+        else if (Utilities::caseInsensitiveEquals(key, "BatchSize")) {
+            auto convertedValue = Utilities::convertTo<size_t>(value);
+            if (convertedValue.has_value()) {
+                m_BatchSize = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
     }
     
     return isValid();
@@ -630,12 +652,25 @@ SimulationParamStatement::getMaxIteration() const
 
 // -----------------------------------------------------------------------------
 
+size_t
+SimulationParamStatement::getBatchSize() const
+{
+    return m_BatchSize;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 SimulationParamStatement::isValid() const
 {
     // MaxIteration must be positive
     if (m_MaxIteration == 0) {
         std::cout << "Invalid SimulationParam: MaxIteration (" << m_MaxIteration << ") must be positive" << std::endl;
+        return false;
+    }
+    // BatchSize must be positive
+    if (m_BatchSize == 0) {
+        std::cout << "Invalid SimulationParam: BatchSize (" << m_BatchSize << ") must be positive" << std::endl;
         return false;
     }
     return true;
@@ -646,7 +681,7 @@ SimulationParamStatement::isValid() const
 void
 SimulationParamStatement::save(std::ostream& OS) const
 {
-    OS << "SimulationParam MaxIteration " << m_MaxIteration;
+    OS << "SimulationParam MaxIteration " << m_MaxIteration << " BatchSize " << m_BatchSize;
 }
 
 // -----------------------------------------------------------------------------
