@@ -161,13 +161,74 @@ calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulation
 
 // -----------------------------------------------------------------------------
 
+template<>
+void
+Simulator::updateVx<0>()
+{
+    for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
+            m_Vx(i,j) = m_Vx(i,j) - m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+template<>
+void
+Simulator::updateVy<0>()
+{
+    for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
+            m_Vy(i,j) = m_Vy(i,j) - m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+template<>
+void
+Simulator::updatepressure<0>()
+{
+    //Boundaries are assume to have directlet condition
+    for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
+        for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
+            m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+template<size_t Type>
+bool
+Simulator::runBatchIterations(size_t numIterations)
+{
+    // Dummy implementation
+    try {
+        for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
+            updateVx<Type>();
+            updateVy<Type>();
+            updatepressure<Type>();
+            updatePressurePointsForSource();
+        }
+        return true;
+    } catch (const std::exception& e) {
+        std::cerr << "Exception in runBatchIterations: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 Simulator::runIterations()
 {
     size_t numIterationsForThisBatch = calculateNumIterationsForBatch(m_SimulationParam, m_iteration);
     while (numIterationsForThisBatch > 0) {
         
-        if (!runBatchIterations(numIterationsForThisBatch)) {
+        if (!runBatchIterations<getType()>(numIterationsForThisBatch)) {
             std::cout << "Error running batch of iterations. Failed at iteration " << m_iteration << std::endl;
             return false;
         }
@@ -184,59 +245,18 @@ Simulator::runIterations()
 
 // -----------------------------------------------------------------------------
 
-void
-Simulator::updateVx()
-{
-    for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
-        for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
-            m_Vx(i,j) = m_Vx(i,j) - m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-
-void
-Simulator::updateVy()
-{
-    for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
-        for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
-            m_Vy(i,j) = m_Vy(i,j) - m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-
-void
-Simulator::updatepressure()
-{
-    //Boundaries are assume to have directlet condition
-    for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
-        for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
-            m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-
 bool
-Simulator::runBatchIterations(size_t numIterations)
+Simulator::execute()
 {
-    // Dummy implementation
-    try {
-        for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
-            updateVx();
-            updateVy();
-            updatepressure();
-            updatePressurePointsForSource();
-        }
-        return true;
-    } catch (const std::exception& e) {
-        std::cerr << "Exception in runBatchIterations: " << e.what() << std::endl;
+    if (!initializeMatrices()) {
+        std::cout << "Error initializing matrices" << std::endl;
         return false;
     }
+    if (!runIterations()) {
+        std::cout << "Error running iterations" << std::endl;
+        return false;
+    }
+    return true;
 }
 
 // -----------------------------------------------------------------------------

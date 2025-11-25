@@ -20,6 +20,7 @@ public:
     Time_t getTime() const;
     bool initializeMatrices();
     bool runIterations();
+    bool execute();
 private:
     Input::BBoxStatement m_Box;
     Input::SourceStatement m_Source;
@@ -44,17 +45,23 @@ private:
 
     Grid_t computeDimensionGridSpace(Dimension_t Dimension) const;
 
+    template<size_t Type>
     bool runBatchIterations(size_t numIterations);
 
+    template<size_t Type>
     void updateVx();
 
+    template<size_t Type>
     void updateVy();
 
+    template<size_t Type>
     void updatepressure();
 
     void updatePressurePointsForSource();
 
     bool potentiallySaveTheMatricesToDb();
+
+    constexpr static size_t getType() { return 0; };
 
 };
 

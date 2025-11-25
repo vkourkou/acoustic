@@ -66,12 +66,7 @@ Runner::execute()
                               m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.get<Input::SimulationParamStatement>(), m_InputCnt.computeSpatialStep(),
                               m_InputCnt.computeTimeStep(), getDbPathName());
     simulator.save(std::cout);
-    if (!simulator.initializeMatrices()) {
-        std::cout << "Error initializing matrices" << std::endl;
-        return false;
-    }
-    if (!simulator.runIterations()) {
-        std::cout << "Error running iterations" << std::endl;
+    if (!simulator.execute()) {
         return false;
     }
     return true;
