@@ -10,6 +10,16 @@
 namespace FDTD {
 
 class Simulator {
+    struct WorkSpace {
+        DenseMatrix<float> m_Pres;
+        DenseMatrix<float> m_Vx;
+        DenseMatrix<float> m_Vy;
+        bool initialize(size_t numRows, size_t numCols);
+        void updateVx(float courantNb);
+        void updateVy(float courantNb);
+        void updatepressure(float crSquareTimesCourantNb);
+        void updateFields(float courantNb, float crSquareTimesCourantNb);
+    };
 public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
               const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
@@ -18,8 +28,7 @@ public:
     
     void save(std::ostream& OS) const;
     Time_t getTime() const;
-    bool initializeMatrices();
-    bool runIterations();
+    
     bool execute();
 private:
     Input::BBoxStatement m_Box;
@@ -33,9 +42,7 @@ private:
     float m_Cr{1.0e0};
     float m_CrSquareTimesCourantNb{1.0e0};
     Grid2D m_Grids;
-    DenseMatrix<float> m_Pres;
-    DenseMatrix<float> m_Vx;
-    DenseMatrix<float> m_Vy;
+    WorkSpace m_WorkSpace;
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};
@@ -49,13 +56,16 @@ private:
     bool runBatchIterations(size_t numIterations);
 
     template<size_t Type>
-    void updateVx();
+    void updateFields();
 
     template<size_t Type>
-    void updateVy();
+    bool executeForType();
 
     template<size_t Type>
-    void updatepressure();
+    bool initializeMatrices();
+
+    template<size_t Type>
+    bool runIterations();
 
     void updatePressurePointsForSource();
 

@@ -10,6 +10,66 @@
 // -----------------------------------------------------------------------------
 namespace FDTD {
 
+// -----------------------------------------------------------------------------
+
+bool
+Simulator::WorkSpace::initialize(size_t numRows, size_t numCols)
+{
+    m_Pres.resize(numRows, numCols, 0.0e0);
+    m_Vx.resize(numRows - 1, numCols, 0.0e0);
+    m_Vy.resize(numRows, numCols - 1, 0.0e0);
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::WorkSpace::updateVx(float courantNb)
+{
+    for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
+            m_Vx(i,j) = m_Vx(i,j) - courantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::WorkSpace::updateVy(float courantNb)
+{
+    for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
+            m_Vy(i,j) = m_Vy(i,j) - courantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::WorkSpace::updatepressure(float crSquareTimesCourantNb)
+{
+    //Boundaries are assume to have directlet condition
+    for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
+        for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
+            m_Pres(i,j) = m_Pres(i,j) - crSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::WorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb)
+{
+    updateVx(courantNb);
+    updateVy(courantNb);
+    updatepressure(crSquareTimesCourantNb);
+}
+
+// -----------------------------------------------------------------------------
+
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
                      const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
                      Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath)
@@ -139,16 +199,14 @@ Simulator::getTime() const
 
 // -----------------------------------------------------------------------------
 
+template<size_t Type>
 bool
 Simulator::initializeMatrices()
 {
     std::size_t numRows = m_Grids.get<X>().size();
     std::size_t numCols = m_Grids.get<Y>().size();
     
-    m_Pres.resize(numRows, numCols, 0.0e0);
-    m_Vx.resize(numRows - 1, numCols , 0.0e0);
-    m_Vy.resize(numRows, numCols - 1, 0.0e0);
-    return true;
+    return m_WorkSpace.initialize(numRows, numCols);
 }
 
 // -----------------------------------------------------------------------------
@@ -161,42 +219,11 @@ calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulation
 
 // -----------------------------------------------------------------------------
 
-template<>
+template<size_t Type>
 void
-Simulator::updateVx<0>()
+Simulator::updateFields()
 {
-    for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
-        for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
-            m_Vx(i,j) = m_Vx(i,j) - m_CourantNb * (m_Pres(i+1,j) - m_Pres(i,j));
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-
-template<>
-void
-Simulator::updateVy<0>()
-{
-    for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
-        for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
-            m_Vy(i,j) = m_Vy(i,j) - m_CourantNb * (m_Pres(i,j+1) - m_Pres(i,j));
-        }
-    }
-}
-
-// -----------------------------------------------------------------------------
-
-template<>
-void
-Simulator::updatepressure<0>()
-{
-    //Boundaries are assume to have directlet condition
-    for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
-        for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
-            m_Pres(i,j) = m_Pres(i,j) - m_CrSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
-        }
-    }
+    m_WorkSpace.updateFields(m_CourantNb, m_CrSquareTimesCourantNb);
 }
 
 // -----------------------------------------------------------------------------
@@ -208,9 +235,7 @@ Simulator::runBatchIterations(size_t numIterations)
     // Dummy implementation
     try {
         for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
-            updateVx<Type>();
-            updateVy<Type>();
-            updatepressure<Type>();
+            updateFields<Type>();
             updatePressurePointsForSource();
         }
         return true;
@@ -222,13 +247,14 @@ Simulator::runBatchIterations(size_t numIterations)
 
 // -----------------------------------------------------------------------------
 
+template<size_t Type>
 bool
 Simulator::runIterations()
 {
     size_t numIterationsForThisBatch = calculateNumIterationsForBatch(m_SimulationParam, m_iteration);
     while (numIterationsForThisBatch > 0) {
         
-        if (!runBatchIterations<getType()>(numIterationsForThisBatch)) {
+        if (!runBatchIterations<Type>(numIterationsForThisBatch)) {
             std::cout << "Error running batch of iterations. Failed at iteration " << m_iteration << std::endl;
             return false;
         }
@@ -245,18 +271,33 @@ Simulator::runIterations()
 
 // -----------------------------------------------------------------------------
 
+template<size_t Type>
 bool
-Simulator::execute()
+Simulator::executeForType()
 {
-    if (!initializeMatrices()) {
+    if (!initializeMatrices<Type>()) {
         std::cout << "Error initializing matrices" << std::endl;
         return false;
     }
-    if (!runIterations()) {
+    if (!runIterations<Type>()) {
         std::cout << "Error running iterations" << std::endl;
         return false;
     }
     return true;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+Simulator::execute()
+{
+    size_t Type = 1;
+    switch (Type) {
+        case 0:
+            return executeForType<0>();
+        default:
+            return executeForType<1>();
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -267,7 +308,7 @@ Simulator::updatePressurePointsForSource()
     Time_t time = getTime();
     if (time <= m_Source.getDuration()) {
         //If the source stops being applied we would like the point to become "free"
-        m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = m_Source.getValue(getTime());
+        m_WorkSpace.m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = m_Source.getValue(getTime());
     }
 }
 
@@ -303,7 +344,7 @@ Simulator::potentiallySaveTheMatricesToDb()
         float multiplier = m_SpatialStep / m_GridDimPerStatialStep;
         saveGrid(m_Grids.get<X>(), multiplier, file);
         saveGrid(m_Grids.get<Y>(), multiplier, file);
-        m_Pres.save(file, /*bPrintTranspose*/ true);
+        m_WorkSpace.m_Pres.save(file, /*bPrintTranspose*/ true);
         file.close();
     }
     return true;
