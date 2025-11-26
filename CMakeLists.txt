@@ -1,28 +1,22 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 
 project(AcousticProject
     VERSION 1.0.0
-    LANGUAGES CXX
+    LANGUAGES CXX CUDA
     DESCRIPTION "C++ Project with Input File Parser"
 )
 
-# Set C++ standard
+# Ensure C++17 and CUDA runtime settings match
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CUDA_STANDARD 17)
 
 # Build options
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # Compiler-specific options
 if(MSVC)
-    # Visual Studio compiler flags
-    add_compile_options(/W4 /permissive-)
-    add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
-    
-    # Disable specific warnings
-    add_compile_options(/wd4996)  # Disable deprecated function warnings
-    
     # Set output directories
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
     set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -47,6 +41,11 @@ set(SOURCES
     Simulator.cpp
 )
 
+# CUDA source files
+set(CUDA_SOURCES
+    add_arrays.cu
+)
+
 # Header files
 set(HEADERS
     Runner.h
@@ -59,7 +58,33 @@ set(HEADERS
 )
 
 # Create executable
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${CUDA_SOURCES})
+
+# Include headers from current directory
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Add compile definitions
+target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+
+# Compiler-specific options for C++ only (not CUDA)
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:/W4 /permissive- /wd4996>
+    )
+endif()
+
+# Required for MSVC + CUDA to play nice together
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    CUDA_SEPARABLE_COMPILATION ON
+    CUDA_ARCHITECTURES 90  # Adjust: 75=Turing, 80=Ampere, 86=Ampere (laptop), 89=Ada, 90=Hopper
+    CUDA_RESOLVE_DEVICE_SYMBOLS ON
+)
+
+# Set CUDA host compiler to match C++ compiler
+if(MSVC)
+    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "CUDA host compiler" FORCE)
+endif()
+
 
 # Set target properties
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -70,23 +95,24 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/MinSizeRel/bin"
 )
 
-# Debug configuration
-if(CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE)
-    if(MSVC)
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Debug>:/Od /Zi /MDd>
-            $<$<CONFIG:Release>:/O2 /MD /DNDEBUG>
-            $<$<CONFIG:RelWithDebInfo>:/O2 /Zi /MD>
-            $<$<CONFIG:MinSizeRel>:/O1 /MD /DNDEBUG>
-        )
-    else()
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            $<$<CONFIG:Debug>:-g -O0 -DDEBUG>
-            $<$<CONFIG:Release>:-O3 -DNDEBUG>
-            $<$<CONFIG:RelWithDebInfo>:-O2 -g>
-            $<$<CONFIG:MinSizeRel>:-Os -DNDEBUG>
-        )
-    endif()
+# Compiler options - simplified approach matching working project
+if(MSVC)
+    # C++ compiler options
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:CXX>:/MD /EHsc>
+    )
+    
+    # CUDA compiler options - match working project exactly
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<COMPILE_LANGUAGE:CUDA>:--compiler-options "/MD /EHsc">
+    )
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:-g -O0 -DDEBUG>
+        $<$<CONFIG:Release>:-O3 -DNDEBUG>
+        $<$<CONFIG:RelWithDebInfo>:-O2 -g>
+        $<$<CONFIG:MinSizeRel>:-Os -DNDEBUG>
+    )
 endif()
 
 # Installation (optional)
