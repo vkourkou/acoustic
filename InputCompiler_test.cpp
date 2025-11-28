@@ -13,6 +13,9 @@ using Input::MaxResolutionStatement;
 using Input::SimulationParamStatement;
 using Input::FileParser;
 using Input::StatementType;
+using ::ProcessingType;
+using ::CPU;
+using ::GPU;
 
 // Test fixture for BBoxStatement tests
 class BBoxStatementTest : public ::testing::Test {
@@ -3022,7 +3025,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_ValidValue) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 100", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 100 ProcessingType CPU", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3036,7 +3039,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_LargeValue) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 1000000 BatchSize 100", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 1000000 BatchSize 100 ProcessingType CPU", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3048,7 +3051,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_DefaultValue) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 0 BatchSize 100", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 0 BatchSize 100 ProcessingType CPU", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3238,7 +3241,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_WithBatchSize) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 200", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 200 ProcessingType CPU", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3252,7 +3255,7 @@ TEST_F(SimulationParamStatementSaveTest, Save_WithDefaultBatchSize) {
     std::ostringstream oss;
     simParam.save(oss);
     
-    EXPECT_EQ("SimulationParam MaxIteration 5000 BatchSize 100", oss.str());
+    EXPECT_EQ("SimulationParam MaxIteration 5000 BatchSize 100 ProcessingType CPU", oss.str());
 }
 
 // -----------------------------------------------------------------------------
@@ -3278,6 +3281,226 @@ TEST_F(SimulationParamStatementTest, Process_BatchSizeBeforeMaxIteration) {
     
     EXPECT_EQ(1000u, simParam.getMaxIteration());
     EXPECT_EQ(200u, simParam.getBatchSize());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType CPU (7 tokens total)
+TEST_F(SimulationParamStatementTest, Process_WithProcessingTypeCPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "CPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(200u, simParam.getBatchSize());
+    EXPECT_EQ(CPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType GPU (7 tokens total)
+TEST_F(SimulationParamStatementTest, Process_WithProcessingTypeGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "GPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(200u, simParam.getBatchSize());
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType CPU (case insensitive - lowercase)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeCPU_Lowercase) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "cpu"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(CPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType GPU (case insensitive - lowercase)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeGPU_Lowercase) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "gpu"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType CPU (case insensitive - mixed case)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeCPU_MixedCase) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "CpU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(CPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType GPU (case insensitive - mixed case)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeGPU_MixedCase) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GpU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType parameter name (case insensitive)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeParameterName_CaseInsensitive) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "processingtype", "GPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid ProcessingType value
+TEST_F(SimulationParamStatementTest, Process_InvalidProcessingTypeValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "INVALID"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType only (should fail - MaxIteration is required)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeOnly) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "ProcessingType", "GPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType in different positions
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeFirst) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "ProcessingType", "GPU", "MaxIteration", "1000", "BatchSize", "200"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(200u, simParam.getBatchSize());
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with ProcessingType in middle position
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeMiddle) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BatchSize", "200"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(1000u, simParam.getMaxIteration());
+    EXPECT_EQ(200u, simParam.getBatchSize());
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test default ProcessingType value (should be CPU)
+TEST_F(SimulationParamStatementTest, DefaultProcessingType) {
+    SimulationParamStatement simParam;
+    
+    EXPECT_EQ(CPU, simParam.getProcessingType());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with ProcessingType CPU
+TEST_F(SimulationParamStatementSaveTest, Save_WithProcessingTypeCPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "CPU"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 200 ProcessingType CPU", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with ProcessingType GPU
+TEST_F(SimulationParamStatementSaveTest, Save_WithProcessingTypeGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "GPU"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 200 ProcessingType GPU", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default ProcessingType (CPU)
+TEST_F(SimulationParamStatementSaveTest, Save_WithDefaultProcessingType) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    
+    EXPECT_EQ("SimulationParam MaxIteration 1000 BatchSize 200 ProcessingType CPU", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong number of tokens (6 tokens - missing ProcessingType value)
+TEST_F(SimulationParamStatementTest, Process_ProcessingTypeMissingValue) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with 7 tokens but invalid ProcessingType value
+TEST_F(SimulationParamStatementTest, Process_SevenTokensInvalidProcessingType) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "INVALID"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
 }
 
 // -----------------------------------------------------------------------------

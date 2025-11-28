@@ -594,8 +594,8 @@ MaxResolutionStatement::save(std::ostream& OS) const
 bool
 SimulationParamStatement::process(const std::vector<std::string>& tokens) {
     // Must have at least 3 tokens (SimulationParam + at least one key-value pair)
-    // Can have 3 or 5 tokens: "SimulationParam", "MaxIteration", value, "BatchSize", value
-    if (tokens.size() != 3 && tokens.size() != 5) {
+    // Can have 3, 5, or 7 tokens: "SimulationParam", "MaxIteration", value, "BatchSize", value, "ProcessingType", value
+    if (tokens.size() != 3 && tokens.size() != 5 && tokens.size() != 7) {
         return false;
     }
     
@@ -634,6 +634,18 @@ SimulationParamStatement::process(const std::vector<std::string>& tokens) {
                 return false;
             }
         }
+        // Check for ProcessingType
+        else if (Utilities::caseInsensitiveEquals(key, "ProcessingType")) {
+            if (Utilities::caseInsensitiveEquals(value, "CPU")) {
+                m_PT = CPU;
+            }
+            else if (Utilities::caseInsensitiveEquals(value, "GPU")) {
+                m_PT = GPU;
+            }
+            else {
+                return false;
+            }
+        }
         else {
             return false;
         }
@@ -660,6 +672,14 @@ SimulationParamStatement::getBatchSize() const
 
 // -----------------------------------------------------------------------------
 
+ProcessingType
+SimulationParamStatement::getProcessingType() const
+{
+    return m_PT;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 SimulationParamStatement::isValid() const
 {
@@ -682,6 +702,7 @@ void
 SimulationParamStatement::save(std::ostream& OS) const
 {
     OS << "SimulationParam MaxIteration " << m_MaxIteration << " BatchSize " << m_BatchSize;
+    OS << " ProcessingType " << (m_PT == CPU ? "CPU" : "GPU");
 }
 
 // -----------------------------------------------------------------------------

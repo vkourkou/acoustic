@@ -147,6 +147,7 @@ public:
     
     size_t getMaxIteration() const;
     size_t getBatchSize() const;
+    ProcessingType getProcessingType() const;
     
     bool isValid() const;
     
@@ -155,6 +156,7 @@ public:
 private:
     size_t m_MaxIteration{0};
     size_t m_BatchSize{100};
+    ProcessingType m_PT{CPU};
 };
 
 // Class to hold a tuple of SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement, and SimulationParamStatement

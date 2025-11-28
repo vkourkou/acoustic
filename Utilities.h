@@ -23,6 +23,11 @@ enum Direction : unsigned {
     MAX = 2
 };
 
+enum ProcessingType : unsigned {
+    CPU = 0,
+    GPU = 1
+};
+
 namespace Utilities {
 
 // Case-insensitive string comparison
