@@ -9,6 +9,9 @@
 
 namespace FDTD {
 
+// Forward declaration for CUDA workspace (defined in simulator_kernels.cuh)
+struct CudaWorkSpace;
+
 class Simulator {
     struct WorkSpace {
         DenseMatrix<float> m_Pres;
@@ -24,7 +27,7 @@ public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
               const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
               Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath);
-    ~Simulator() = default;
+    ~Simulator();
     
     void save(std::ostream& OS) const;
     Time_t getTime() const;
@@ -43,6 +46,7 @@ private:
     float m_CrSquareTimesCourantNb{1.0e0};
     Grid2D m_Grids;
     WorkSpace m_WorkSpace;
+    CudaWorkSpace* m_CudaWorkSpace;  // Only used when Type=1, managed in CUDA code
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};

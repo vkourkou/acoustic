@@ -44,6 +44,7 @@ set(SOURCES
 # CUDA source files
 set(CUDA_SOURCES
     add_arrays.cu
+    simulator_kernels.cu
 )
 
 # Header files
@@ -55,6 +56,9 @@ set(HEADERS
     Utilities.h
     Grid.h
     Simulator.h
+    simulator_kernels.cuh
+    CudaArray.h
+    CudaDenseMatrix.h
 )
 
 # Create executable

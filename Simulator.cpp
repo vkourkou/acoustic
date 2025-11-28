@@ -7,6 +7,12 @@
 #include <string>
 #include <algorithm>
 
+// Forward declaration for cleanup function (defined in simulator_kernels.cu)
+namespace FDTD {
+    struct CudaWorkSpace;
+    void cleanupCudaWorkSpace(CudaWorkSpace* ws);
+}
+
 // -----------------------------------------------------------------------------
 namespace FDTD {
 
@@ -92,10 +98,23 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
         static_cast<Grid_t>(computeDimensionGridSpace(Box.getYMin())),
         static_cast<Grid_t>(m_GridDimPerStatialStep)
     ),
+    m_CudaWorkSpace(nullptr),
     m_dbFolderPath(dbFolderPath)    
 {
     m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(static_cast<float>(computeDimensionGridSpace(m_Source.getX())));
     m_SourceGridIndex_Y = m_Grids.get<Y>().findIndexForClosestGridPoint(static_cast<float>(computeDimensionGridSpace(m_Source.getY())));
+}
+
+// -----------------------------------------------------------------------------
+
+Simulator::~Simulator()
+{
+    // Cleanup CUDA workspace if it exists
+    // The actual cleanup function is defined in simulator_kernels.cu
+    if (m_CudaWorkSpace) {
+        FDTD::cleanupCudaWorkSpace(m_CudaWorkSpace);
+        m_CudaWorkSpace = nullptr;
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -199,9 +218,9 @@ Simulator::getTime() const
 
 // -----------------------------------------------------------------------------
 
-template<size_t Type>
+template<>
 bool
-Simulator::initializeMatrices()
+Simulator::initializeMatrices<0>()
 {
     std::size_t numRows = m_Grids.get<X>().size();
     std::size_t numCols = m_Grids.get<Y>().size();
@@ -219,9 +238,9 @@ calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulation
 
 // -----------------------------------------------------------------------------
 
-template<size_t Type>
+template<>
 void
-Simulator::updateFields()
+Simulator::updateFields<0>()
 {
     m_WorkSpace.updateFields(m_CourantNb, m_CrSquareTimesCourantNb);
 }
@@ -291,7 +310,7 @@ Simulator::executeForType()
 bool
 Simulator::execute()
 {
-    size_t Type = 1;
+    size_t Type = 0;
     switch (Type) {
         case 0:
             return executeForType<0>();
