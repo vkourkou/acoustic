@@ -209,14 +209,14 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
 
 // -----------------------------------------------------------------------------
 
-// Template specializations for CUDA workspace (Type=1)
+// Template specializations for CUDA workspace (PT=GPU)
 // These are defined here so they can access the full CudaWorkSpace definition
 
 // -----------------------------------------------------------------------------
 
 template<>
 bool
-Simulator::initializeMatrices<1>()
+Simulator::initializeMatrices<GPU>()
 {
     std::size_t numRows = m_Grids.get<X>().size();
     std::size_t numCols = m_Grids.get<Y>().size();
@@ -244,7 +244,7 @@ cleanupCudaWorkSpace(CudaWorkSpace* ws)
 
 template<>
 void
-Simulator::updateFields<1>()
+Simulator::updateFields<GPU>()
 {
     if (m_CudaWorkSpace) {
         m_CudaWorkSpace->updateVx(m_CourantNb);

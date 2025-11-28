@@ -46,7 +46,7 @@ private:
     float m_CrSquareTimesCourantNb{1.0e0};
     Grid2D m_Grids;
     WorkSpace m_WorkSpace;
-    CudaWorkSpace* m_CudaWorkSpace;  // Only used when Type=1, managed in CUDA code
+    CudaWorkSpace* m_CudaWorkSpace;  // Only used when PT=GPU, managed in CUDA code
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};
@@ -56,26 +56,24 @@ private:
 
     Grid_t computeDimensionGridSpace(Dimension_t Dimension) const;
 
-    template<size_t Type>
+    template<ProcessingType PT>
     bool runBatchIterations(size_t numIterations);
 
-    template<size_t Type>
+    template<ProcessingType PT>
     void updateFields();
 
-    template<size_t Type>
+    template<ProcessingType PT>
     bool executeForType();
 
-    template<size_t Type>
+    template<ProcessingType PT>
     bool initializeMatrices();
 
-    template<size_t Type>
+    template<ProcessingType PT>
     bool runIterations();
 
     void updatePressurePointsForSource();
 
     bool potentiallySaveTheMatricesToDb();
-
-    constexpr static size_t getType() { return 0; };
 
 };
 

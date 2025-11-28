@@ -220,7 +220,7 @@ Simulator::getTime() const
 
 template<>
 bool
-Simulator::initializeMatrices<0>()
+Simulator::initializeMatrices<CPU>()
 {
     std::size_t numRows = m_Grids.get<X>().size();
     std::size_t numCols = m_Grids.get<Y>().size();
@@ -240,21 +240,21 @@ calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulation
 
 template<>
 void
-Simulator::updateFields<0>()
+Simulator::updateFields<CPU>()
 {
     m_WorkSpace.updateFields(m_CourantNb, m_CrSquareTimesCourantNb);
 }
 
 // -----------------------------------------------------------------------------
 
-template<size_t Type>
+template<ProcessingType PT>
 bool
 Simulator::runBatchIterations(size_t numIterations)
 {
     // Dummy implementation
     try {
         for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
-            updateFields<Type>();
+            updateFields<PT>();
             updatePressurePointsForSource();
         }
         return true;
@@ -266,14 +266,14 @@ Simulator::runBatchIterations(size_t numIterations)
 
 // -----------------------------------------------------------------------------
 
-template<size_t Type>
+template<ProcessingType PT>
 bool
 Simulator::runIterations()
 {
     size_t numIterationsForThisBatch = calculateNumIterationsForBatch(m_SimulationParam, m_iteration);
     while (numIterationsForThisBatch > 0) {
         
-        if (!runBatchIterations<Type>(numIterationsForThisBatch)) {
+        if (!runBatchIterations<PT>(numIterationsForThisBatch)) {
             std::cout << "Error running batch of iterations. Failed at iteration " << m_iteration << std::endl;
             return false;
         }
@@ -290,15 +290,15 @@ Simulator::runIterations()
 
 // -----------------------------------------------------------------------------
 
-template<size_t Type>
+template<ProcessingType PT>
 bool
 Simulator::executeForType()
 {
-    if (!initializeMatrices<Type>()) {
+    if (!initializeMatrices<PT>()) {
         std::cout << "Error initializing matrices" << std::endl;
         return false;
     }
-    if (!runIterations<Type>()) {
+    if (!runIterations<PT>()) {
         std::cout << "Error running iterations" << std::endl;
         return false;
     }
@@ -310,12 +310,14 @@ Simulator::executeForType()
 bool
 Simulator::execute()
 {
-    size_t Type = 0;
-    switch (Type) {
-        case 0:
-            return executeForType<0>();
+    ProcessingType PT = m_SimulationParam.getProcessingType();
+    switch (PT) {
+        case CPU:
+            return executeForType<CPU>();
+        case GPU:
+            return executeForType<GPU>();
         default:
-            return executeForType<1>();
+            return executeForType<CPU>();
     }
 }
 
