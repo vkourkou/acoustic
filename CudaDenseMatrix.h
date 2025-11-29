@@ -2,11 +2,13 @@
 #define CUDA_DENSE_MATRIX_H
 
 #include <CudaArray.h>
+#include <DenseMatrix.h>
 #include <cstddef>
 #include <stdexcept>
 #include <ostream>
 #include <string>
 #include <new>
+#include <cuda_runtime.h>
 
 template<typename Elem_t>
 class CudaDenseMatrix {
@@ -87,6 +89,12 @@ public:
 
     // -----------------------------------------------------------------------------
 
+    // Transfer memory from CUDA device to host DenseMatrix
+    void
+    transferTo(DenseMatrix<Elem_t>& To) const;
+
+    // -----------------------------------------------------------------------------
+
 };
 
 // -----------------------------------------------------------------------------
@@ -152,6 +160,23 @@ void
 CudaDenseMatrix<Elem_t>::initialize(const Elem_t& t)
 {
     m_data.initialize(t);
+}
+
+// -----------------------------------------------------------------------------
+
+template<typename Elem_t>
+void
+CudaDenseMatrix<Elem_t>::transferTo(DenseMatrix<Elem_t>& To) const
+{
+    if (empty()) {
+        return;
+    }
+    To.resize(m_rows, m_cols);
+    cudaError_t err = cudaMemcpy(To.data(), m_data.data(), m_rows * m_cols * sizeof(Elem_t), cudaMemcpyDeviceToHost);
+    if (err != cudaSuccess) {
+        std::cerr << "CUDA memcpy failed in transferTo: " << cudaGetErrorString(err) << std::endl;
+        throw std::runtime_error("Failed to transfer data from CUDA device to host");
+    }
 }
 
 // -----------------------------------------------------------------------------
