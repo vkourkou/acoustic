@@ -209,6 +209,24 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
 
 // -----------------------------------------------------------------------------
 
+void
+CudaWorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)
+{
+    if (m_Pres.empty()) {
+        return;
+    }
+    if (GridIndexX >= m_Pres.rows() || GridIndexY >= m_Pres.cols()) {
+        return;
+    }
+    std::size_t index = GridIndexX * m_Pres.cols() + GridIndexY;
+    cudaError_t err = cudaMemcpy(m_Pres.data() + index, &val, sizeof(float), cudaMemcpyHostToDevice);
+    if (err != cudaSuccess) {
+        std::cerr << "CUDA memcpy failed in UpdateForSource: " << cudaGetErrorString(err) << std::endl;
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 // Template specializations for CUDA workspace (PT=GPU)
 // These are defined here so they can access the full CudaWorkSpace definition
 
@@ -251,6 +269,14 @@ Simulator::updateFields<GPU>()
         m_CudaWorkSpace->updateVy(m_CourantNb);
         m_CudaWorkSpace->updatepressure(m_CrSquareTimesCourantNb);
     }
+}
+
+// -----------------------------------------------------------------------------
+
+template<>
+void
+Simulator::UpdateForSource<GPU>(unsigned GridIndexX, unsigned GridIndexY, float val) {
+    m_CudaWorkSpace->UpdateForSource(GridIndexX, GridIndexY, val);
 }
 
 // -----------------------------------------------------------------------------

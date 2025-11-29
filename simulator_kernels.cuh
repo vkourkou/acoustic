@@ -27,6 +27,7 @@ struct CudaWorkSpace {
     void updateVx(float courantNb);
     void updateVy(float courantNb);
     void updatepressure(float crSquareTimesCourantNb);
+    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
 };
 
 

@@ -22,6 +22,7 @@ class Simulator {
         void updateVy(float courantNb);
         void updatepressure(float crSquareTimesCourantNb);
         void updateFields(float courantNb, float crSquareTimesCourantNb);
+        void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
     };
 public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
@@ -71,7 +72,11 @@ private:
     template<ProcessingType PT>
     bool runIterations();
 
+    template<ProcessingType PT>
     void updatePressurePointsForSource();
+
+    template<ProcessingType PT>
+    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
 
     bool potentiallySaveTheMatricesToDb();
 

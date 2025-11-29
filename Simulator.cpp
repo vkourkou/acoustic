@@ -76,6 +76,14 @@ Simulator::WorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb
 
 // -----------------------------------------------------------------------------
 
+void
+Simulator::WorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)
+{
+    m_Pres(GridIndexX, GridIndexY) = val;
+}
+
+// -----------------------------------------------------------------------------
+
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
                      const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
                      Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath)
@@ -255,7 +263,7 @@ Simulator::runBatchIterations(size_t numIterations)
     try {
         for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
             updateFields<PT>();
-            updatePressurePointsForSource();
+            updatePressurePointsForSource<PT>();
         }
         return true;
     } catch (const std::exception& e) {
@@ -323,13 +331,23 @@ Simulator::execute()
 
 // -----------------------------------------------------------------------------
 
+template<>
+void
+Simulator::UpdateForSource<CPU>(unsigned GridIndexX, unsigned GridIndexY, float val) {
+    m_WorkSpace.UpdateForSource(GridIndexX, GridIndexY, val);
+}
+
+// -----------------------------------------------------------------------------
+
+template<ProcessingType PT>
 void
 Simulator::updatePressurePointsForSource()
 {
     Time_t time = getTime();
     if (time <= m_Source.getDuration()) {
         //If the source stops being applied we would like the point to become "free"
-        m_WorkSpace.m_Pres(m_SourceGridIndex_X, m_SourceGridIndex_Y) = m_Source.getValue(getTime());
+        float val = m_Source.getValue(getTime());
+        UpdateForSource<PT>(m_SourceGridIndex_X, m_SourceGridIndex_Y, val);
     }
 }
 
