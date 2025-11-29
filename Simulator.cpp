@@ -285,7 +285,7 @@ Simulator::runIterations()
             std::cout << "Error running batch of iterations. Failed at iteration " << m_iteration << std::endl;
             return false;
         }
-        if (!potentiallySaveTheMatricesToDb()) {
+        if (!potentiallySaveTheMatricesToDb<PT>()) {
             std::cout << "Error saving matrices to database" << std::endl;
             return false;
         }
@@ -368,6 +368,7 @@ saveGrid(const Grid1D& grid, float multiplier, std::ostream& OS)
 
 //-----------------------------------------------------------------------------
 
+template<ProcessingType PT>
 bool
 Simulator::potentiallySaveTheMatricesToDb()
 {
@@ -383,7 +384,13 @@ Simulator::potentiallySaveTheMatricesToDb()
         float multiplier = m_SpatialStep / m_GridDimPerStatialStep;
         saveGrid(m_Grids.get<X>(), multiplier, file);
         saveGrid(m_Grids.get<Y>(), multiplier, file);
-        m_WorkSpace.m_Pres.save(file, /*bPrintTranspose*/ true);
+        if constexpr (PT == CPU) {
+            m_WorkSpace.m_Pres.save(file, /*bPrintTranspose*/ true);
+        } else {
+            DenseMatrix<float> To;
+            potentiallyTransferToDevice(To);
+            To.save(file, /*bPrintTranspose*/ true);
+        }
         file.close();
     }
     return true;

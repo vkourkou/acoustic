@@ -78,7 +78,10 @@ private:
     template<ProcessingType PT>
     void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
 
+    template<ProcessingType PT>
     bool potentiallySaveTheMatricesToDb();
+
+    void potentiallyTransferToDevice(DenseMatrix<float>& To);
 
 };
 

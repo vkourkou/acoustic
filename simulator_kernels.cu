@@ -281,5 +281,16 @@ Simulator::UpdateForSource<GPU>(unsigned GridIndexX, unsigned GridIndexY, float 
 
 // -----------------------------------------------------------------------------
 
+void
+Simulator::potentiallyTransferToDevice(DenseMatrix<float>& To)
+{
+    if (m_CudaWorkSpace) {
+        m_CudaWorkSpace->m_Pres.transferTo(To);
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+
 } // namespace FDTD
 
