@@ -1,6 +1,8 @@
 #include <Utilities.h>
 #include <stdexcept>
 #include <cctype>
+#include <cmath>
+#include <limits>
 
 namespace Utilities {
 
@@ -138,7 +140,7 @@ computeMultiplierToReduceTruncationError(float Value, float MaxAlloweError) {
     long multiplier = 1;
     while (multiplier * 2 < std::numeric_limits<long>::max()) {
         double Y = Value * multiplier;
-        double Error = abs((Y - round(Y)) / Y);
+        double Error = std::abs((Y - std::round(Y)) / Y);
         if (Error < MaxAlloweError) {
             return multiplier;
         }

@@ -1,4 +1,5 @@
 #include <Simulator.h>
+#include <cmath>
 #include <cstddef>
 #include <fstream>
 #include <iostream>

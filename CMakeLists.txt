@@ -1,29 +1,17 @@
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20)
 
-project(AcousticProject
-    VERSION 1.0.0
-    LANGUAGES CXX CUDA
-    DESCRIPTION "C++ Project with Input File Parser"
-)
+project(AcousticProject LANGUAGES C CXX CUDA)
 
-# Ensure C++17 and CUDA runtime settings match
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CUDA_STANDARD 17)
+find_package(CUDAToolkit REQUIRED)
 
-# Build options
-option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# Compiler-specific options
-if(MSVC)
-    # Set output directories
-    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_CUDA_ARCHITECTURES 75 80 86 87 89 90 100 110 120)
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -Wno-deprecated-gpu-targets")
+if(ENABLE_CUDA_DEBUG)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -G")  # enable cuda-gdb (may significantly affect performance on some targets)
 else()
-    # GCC/Clang compiler flags
-    add_compile_options(-Wall -Wextra -pedantic)
+    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo") # add line information to all builds for debug tools (exclusive to -G option)
 endif()
 
 # Include directories
@@ -61,73 +49,23 @@ set(HEADERS
     CudaDenseMatrix.h
 )
 
-# Create executable
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${CUDA_SOURCES})
+# Add target for acoustic
+add_executable(acoustic ${SOURCES} ${CUDA_SOURCES} ${HEADERS})
 
-# Include headers from current directory
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(acoustic PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
 
-# Add compile definitions
-target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+target_compile_features(acoustic PRIVATE cxx_std_17 cuda_std_17)
 
-# Compiler-specific options for C++ only (not CUDA)
-if(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:/W4 /permissive- /wd4996>
-    )
-endif()
-
-# Required for MSVC + CUDA to play nice together
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
-    CUDA_ARCHITECTURES 90  # Adjust: 75=Turing, 80=Ampere, 86=Ampere (laptop), 89=Ada, 90=Hopper
-    CUDA_RESOLVE_DEVICE_SYMBOLS ON
-)
-
-# Set CUDA host compiler to match C++ compiler
-if(MSVC)
-    set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_CXX_COMPILER} CACHE FILEPATH "CUDA host compiler" FORCE)
-endif()
-
-
-# Set target properties
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    OUTPUT_NAME "acoustic"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/RelWithDebInfo/bin"
-    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/MinSizeRel/bin"
-)
-
-# Compiler options - simplified approach matching working project
-if(MSVC)
-    # C++ compiler options
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<COMPILE_LANGUAGE:CXX>:/MD /EHsc>
-    )
-    
-    # CUDA compiler options - match working project exactly
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<COMPILE_LANGUAGE:CUDA>:--compiler-options "/MD /EHsc">
-    )
-else()
-    target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<CONFIG:Debug>:-g -O0 -DDEBUG>
-        $<$<CONFIG:Release>:-O3 -DNDEBUG>
-        $<$<CONFIG:RelWithDebInfo>:-O2 -g>
-        $<$<CONFIG:MinSizeRel>:-Os -DNDEBUG>
-    )
-endif()
+set_target_properties(acoustic PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
 
 # Installation (optional)
-install(TARGETS ${PROJECT_NAME}
-    RUNTIME DESTINATION bin
-)
+install(TARGETS acoustic RUNTIME DESTINATION bin)
 
+# ------------------------------------------------------------------------------
 # Google Test setup
+# ------------------------------------------------------------------------------
 include(FetchContent)
 
-# Try to download from GitHub release archive (doesn't require Git)
 FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.tar.gz
@@ -137,16 +75,14 @@ FetchContent_Declare(
 # For Windows: Prevent overriding the parent project's compiler/linker settings
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
-# Only enable testing if Google Test is available
 FetchContent_MakeAvailable(googletest)
 
-# Enable testing
 enable_testing()
 
 # Find all test files (files ending with _test.cpp)
 file(GLOB_RECURSE TEST_SOURCES "${CMAKE_SOURCE_DIR}/*_test.cpp")
 
-# Create a single unit test executable
+# Add target for unit tests
 add_executable(ut
     ${TEST_SOURCES}
     InputFileParser.cpp
@@ -155,26 +91,8 @@ add_executable(ut
     Grid.cpp
 )
 
-target_link_libraries(ut
-    PRIVATE
-    GTest::gtest
-    GTest::gtest_main
-)
+target_link_libraries(ut PRIVATE GTest::gtest GTest::gtest_main)
 
-# Set output name to ut.exe on all platforms
-set_target_properties(ut PROPERTIES
-    OUTPUT_NAME "ut"
-    RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/Debug/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/Release/bin"
-    RUNTIME_OUTPUT_DIRECTORY_RELWITHDEBINFO "${CMAKE_BINARY_DIR}/RelWithDebInfo/bin"
-    RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL "${CMAKE_BINARY_DIR}/MinSizeRel/bin"
-)
+target_compile_features(ut PRIVATE cxx_std_17)
 
-# Add test to ctest
 add_test(NAME UnitTests COMMAND ut)
-
-# Print configuration info
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "C++ compiler: ${CMAKE_CXX_COMPILER}")
-message(STATUS "C++ flags: ${CMAKE_CXX_FLAGS}")
-
