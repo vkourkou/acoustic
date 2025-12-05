@@ -6,6 +6,7 @@
 #include <type_traits>
 #include <ostream>
 #include <utility>
+#include <vector>
 
 namespace input {
 
@@ -15,6 +16,7 @@ private:
                                        Input::WallStatement, Input::VelocityStatement, 
                                        Input::MaxResolutionStatement, Input::SimulationParamStatement>;
     StatementsTuple m_statements;
+    std::vector<Input::WallStatement> m_walls;
 
     template<typename T>
     constexpr T& getNonConst() {
@@ -42,15 +44,20 @@ public:
         static_assert(
             std::is_same_v<T, Input::SourceStatement> ||
             std::is_same_v<T, Input::BBoxStatement> ||
-            std::is_same_v<T, Input::WallStatement> ||
             std::is_same_v<T, Input::VelocityStatement> ||
             std::is_same_v<T, Input::MaxResolutionStatement> ||
             std::is_same_v<T, Input::SimulationParamStatement>,
             "T must be one of the statement types in the tuple"
         );
+        //We shhould not be using the wallstatement from here. We should have a vector of walls.
+        
         constexpr Input::StatementType type = Input::getStatementType<T>();
         return std::get<static_cast<size_t>(type)>(m_statements);
     }
+
+    void appendWall(const Input::WallStatement& wall);
+    
+    const std::vector<Input::WallStatement>& getWalls() const;
 
     //The timestep is purely dictated by the MaxResolution statement and the frequency of the source
     Time_t computeTimeStep() const;

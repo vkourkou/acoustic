@@ -87,7 +87,8 @@ Simulator::WorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, 
 
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
                      const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
-                     Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath)
+                     Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath,
+                     const std::vector<Input::WallStatement>* walls)
     :
     m_Box(Box),
     m_Source(Source),
@@ -108,6 +109,7 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
         static_cast<Grid_t>(m_GridDimPerStatialStep)
     ),
     m_CudaWorkSpace(nullptr),
+    m_walls(walls),
     m_dbFolderPath(dbFolderPath)    
 {
     m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(static_cast<float>(computeDimensionGridSpace(m_Source.getX())));

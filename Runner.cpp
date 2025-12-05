@@ -24,6 +24,10 @@ Runner::parseInput(std::istream& IS) {
                 return false;
             }
         }
+        else if (type == Input::StatementType::WALL) {
+            const Input::WallStatement& wall = iter.getStatement<Input::StatementType::WALL>();
+            m_InputCnt.appendWall(wall);
+        }
         else if (type == Input::StatementType::VELOCITY) {
             const Input::VelocityStatement& velocity = iter.getStatement<Input::StatementType::VELOCITY>();
             if (!m_InputCnt.set(velocity)) {
@@ -64,7 +68,7 @@ Runner::execute()
 {
     FDTD::Simulator simulator(m_InputCnt.get<Input::BBoxStatement>(), m_InputCnt.get<Input::SourceStatement>(),
                               m_InputCnt.get<Input::VelocityStatement>(), m_InputCnt.get<Input::SimulationParamStatement>(), m_InputCnt.computeSpatialStep(),
-                              m_InputCnt.computeTimeStep(), getDbPathName());
+                              m_InputCnt.computeTimeStep(), getDbPathName(), &m_InputCnt.getWalls());
     simulator.save(std::cout);
     if (!simulator.execute()) {
         return false;

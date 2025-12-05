@@ -6,6 +6,7 @@
 #include <Utilities.h>
 #include <DenseMatrix.h>
 #include <ostream>
+#include <vector>
 
 namespace FDTD {
 
@@ -27,7 +28,8 @@ class Simulator {
 public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
               const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
-              Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath);
+              Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath,
+              const std::vector<Input::WallStatement>* walls);
     ~Simulator();
     
     void save(std::ostream& OS) const;
@@ -48,6 +50,7 @@ private:
     Grid2D m_Grids;
     WorkSpace m_WorkSpace;
     CudaWorkSpace* m_CudaWorkSpace;  // Only used when PT=GPU, managed in CUDA code
+    const std::vector<Input::WallStatement>* m_walls;
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};

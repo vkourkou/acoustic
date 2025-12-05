@@ -9,6 +9,12 @@ void
 InputCnt::save(std::ostream& OS) const
 {
     saveImpl(OS, std::make_index_sequence<std::tuple_size_v<StatementsTuple>>{});
+    
+    // Save all walls
+    for (const auto& wall : m_walls) {
+        wall.save(OS);
+        OS << "\n";
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -46,6 +52,22 @@ InputCnt::computeWavelength() const
 
 // -----------------------------------------------------------------------------
 
+void
+InputCnt::appendWall(const Input::WallStatement& wall)
+{
+    m_walls.push_back(wall);
+}
+
+// -----------------------------------------------------------------------------
+
+const std::vector<Input::WallStatement>&
+InputCnt::getWalls() const
+{
+    return m_walls;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 InputCnt::isSane() const
 {
@@ -59,6 +81,15 @@ InputCnt::isSane() const
         std::cout << "Source is not strictly inside the bounding box\n";
         return false;
     }
+    
+    // Validate all walls
+    for (const auto& wall : m_walls) {
+        if (!wall.isValid()) {
+            std::cout << "Invalid wall found\n";
+            return false;
+        }
+    }
+    
     return true;
 }
 
