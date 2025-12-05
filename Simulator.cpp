@@ -96,6 +96,7 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
     m_SimulationParam(SimulationParam),
     m_SpatialStep(SpatialStep),
     m_TemporalStep(TemporalStep),
+    m_Walls(walls),
     m_GridDimPerStatialStep(computeGridDimPerStatialStep(/*MaxAlloweError*/0.0001f)),
     m_CourantNb(Velocity.getVelocity() * TemporalStep / SpatialStep),
     m_Cr(1.0e0),
@@ -109,7 +110,6 @@ Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStateme
         static_cast<Grid_t>(m_GridDimPerStatialStep)
     ),
     m_CudaWorkSpace(nullptr),
-    m_walls(walls),
     m_dbFolderPath(dbFolderPath)    
 {
     m_SourceGridIndex_X = m_Grids.get<X>().findIndexForClosestGridPoint(static_cast<float>(computeDimensionGridSpace(m_Source.getX())));
@@ -143,7 +143,8 @@ computeErrorByRounding(long GridDimPerStatialStep, Dimension_t SpatialStep, Dime
 // -----------------------------------------------------------------------------
 
 std::vector<Dimension_t>
-computeDimensionsToBeAccommodated(const Input::BBoxStatement& Box, const Input::SourceStatement& Source)
+computeDimensionsToBeAccommodated(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
+                                  const std::vector<Input::WallStatement>* walls)
 {
     std::vector<Dimension_t> DimenstionsToBeAccomodated;
     DimenstionsToBeAccomodated.push_back(Box.getXMax());
@@ -152,6 +153,17 @@ computeDimensionsToBeAccommodated(const Input::BBoxStatement& Box, const Input::
     DimenstionsToBeAccomodated.push_back(Box.getXMin());
     DimenstionsToBeAccomodated.push_back(Source.getX());
     DimenstionsToBeAccomodated.push_back(Source.getY());
+    
+    // Add all wall dimensions
+    if (walls) {
+        for (const auto& wall : *walls) {
+            DimenstionsToBeAccomodated.push_back(wall.getXMin());
+            DimenstionsToBeAccomodated.push_back(wall.getXMax());
+            DimenstionsToBeAccomodated.push_back(wall.getYMin());
+            DimenstionsToBeAccomodated.push_back(wall.getYMax());
+        }
+    }
+    
     return DimenstionsToBeAccomodated;
 }
 
@@ -171,7 +183,7 @@ long
 Simulator::computeGridDimPerStatialStep(float MaxAlloweError) const
 {
 
-    const std::vector<Dimension_t> DimenstionsToBeAccomodated{computeDimensionsToBeAccommodated(m_Box, m_Source)};
+    const std::vector<Dimension_t> DimenstionsToBeAccomodated{computeDimensionsToBeAccommodated(m_Box, m_Source, m_Walls)};
 
     long DimPerStatialStep = 1;
     for (const auto& Dimension : DimenstionsToBeAccomodated) {

@@ -43,6 +43,7 @@ private:
     Input::SimulationParamStatement m_SimulationParam;
     Dimension_t m_SpatialStep;
     Time_t m_TemporalStep;
+    const std::vector<Input::WallStatement>* m_Walls;
     long m_GridDimPerStatialStep;
     float m_CourantNb{0.0e0};
     float m_Cr{1.0e0};
@@ -50,7 +51,6 @@ private:
     Grid2D m_Grids;
     WorkSpace m_WorkSpace;
     CudaWorkSpace* m_CudaWorkSpace;  // Only used when PT=GPU, managed in CUDA code
-    const std::vector<Input::WallStatement>* m_walls;
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};
