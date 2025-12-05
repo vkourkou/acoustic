@@ -13,6 +13,7 @@ getString(StatementType type) {
     switch (type) {
         case StatementType::SOURCE: return "Source";
         case StatementType::BBOX: return "BBox";
+        case StatementType::WALL: return "Wall";
         case StatementType::VELOCITY: return "Velocity";
         case StatementType::MAXRESOLUTION: return "MaxResolution";
         case StatementType::SIMULATIONPARAM: return "SimulationParam";
@@ -31,6 +32,9 @@ getStatementType(const std::string& str) {
     }
     else if (Utilities::caseInsensitiveEquals(str, "BBox")) {
         return StatementType::BBOX;
+    }
+    else if (Utilities::caseInsensitiveEquals(str, "Wall")) {
+        return StatementType::WALL;
     }
     else if (Utilities::caseInsensitiveEquals(str, "Velocity")) {
         return StatementType::VELOCITY;
@@ -78,6 +82,9 @@ InputCompiler::processLine(const std::vector<std::string>& tokens) {
     }
     else if (type == StatementType::BBOX) {
         success = m_statementCnt.process<StatementType::BBOX>(tokens);
+    }
+    else if (type == StatementType::WALL) {
+        success = m_statementCnt.process<StatementType::WALL>(tokens);
     }
     else if (type == StatementType::VELOCITY) {
         success = m_statementCnt.process<StatementType::VELOCITY>(tokens);
@@ -437,6 +444,137 @@ void
 BBoxStatement::save(std::ostream& OS) const
 {
     OS << "BBox XMin " << m_XMin << " XMax " << m_XMax << " YMin " << m_YMin << " YMax " << m_YMax;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+WallStatement::process(const std::vector<std::string>& tokens) {
+    // Check if there's at least one token
+    // Must have exactly 9 tokens: 1 for "Wall" and 4 pairs (8 tokens)
+    if (tokens.size() != 9) {
+        return false;
+    }   
+    
+    // Check if first token is "Wall" (case insensitive)
+    if (!Utilities::caseInsensitiveEquals(tokens[0], "Wall")) {
+        return false;
+    }
+
+    // Process tokens in pairs starting from index 1
+    for (size_t i = 1; i < tokens.size(); i += 2) {
+        // Need at least two tokens for a pair
+        if (i + 1 >= tokens.size()) {
+            break;
+        }
+        
+        const std::string& key = tokens[i];
+        const std::string& value = tokens[i + 1];
+        
+        // Check for XMin
+        if (Utilities::caseInsensitiveEquals(key, "XMin")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_XMin = convertedValue.value();
+            }
+        }
+        // Check for XMax
+        else if (Utilities::caseInsensitiveEquals(key, "XMax")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_XMax = convertedValue.value();
+            }
+        }
+        // Check for YMin
+        else if (Utilities::caseInsensitiveEquals(key, "YMin")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_YMin = convertedValue.value();
+            }
+        }
+        // Check for YMax
+        else if (Utilities::caseInsensitiveEquals(key, "YMax")) {
+            auto convertedValue = Utilities::convertTo<Dimension_t>(value);
+            if (convertedValue.has_value()) {
+                m_YMax = convertedValue.value();
+            }
+        }
+        else {
+            return false;
+        }
+    }
+    
+    return isValid();
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+WallStatement::isValid() const
+{
+    bool valid = true;
+    
+    // Check XMin < XMax
+    if (m_XMin >= m_XMax) {
+        std::cout << "Invalid Wall: XMin (" << m_XMin << ") >= XMax (" << m_XMax << ")" << std::endl;
+        valid = false;
+    }
+    
+    // Check YMin < YMax
+    if (m_YMin >= m_YMax) {
+        std::cout << "Invalid Wall: YMin (" << m_YMin << ") >= YMax (" << m_YMax << ")" << std::endl;
+        valid = false;
+    }
+    
+    return valid;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+WallStatement::getXMin() const
+{
+    return m_XMin;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+WallStatement::getXMax() const
+{
+    return m_XMax;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+WallStatement::getYMin() const
+{
+    return m_YMin;
+}
+
+// -----------------------------------------------------------------------------
+
+Dimension_t
+WallStatement::getYMax() const
+{
+    return m_YMax;
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+WallStatement::isPointStrictlyInside(Dimension_t X, Dimension_t Y) const
+{
+    return X > m_XMin && X < m_XMax && Y > m_YMin && Y < m_YMax;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+WallStatement::save(std::ostream& OS) const
+{
+    OS << "Wall XMin " << m_XMin << " XMax " << m_XMax << " YMin " << m_YMin << " YMax " << m_YMax;
 }
 
 // -----------------------------------------------------------------------------

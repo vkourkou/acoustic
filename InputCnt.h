@@ -12,8 +12,8 @@ namespace input {
 class InputCnt {
 private:
     using StatementsTuple = std::tuple<Input::SourceStatement, Input::BBoxStatement, 
-                                       Input::VelocityStatement, Input::MaxResolutionStatement,
-                                       Input::SimulationParamStatement>;
+                                       Input::WallStatement, Input::VelocityStatement, 
+                                       Input::MaxResolutionStatement, Input::SimulationParamStatement>;
     StatementsTuple m_statements;
 
     template<typename T>
@@ -42,6 +42,7 @@ public:
         static_assert(
             std::is_same_v<T, Input::SourceStatement> ||
             std::is_same_v<T, Input::BBoxStatement> ||
+            std::is_same_v<T, Input::WallStatement> ||
             std::is_same_v<T, Input::VelocityStatement> ||
             std::is_same_v<T, Input::MaxResolutionStatement> ||
             std::is_same_v<T, Input::SimulationParamStatement>,

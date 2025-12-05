@@ -7,6 +7,7 @@
 #include <cmath>
 
 using Input::BBoxStatement;
+using Input::WallStatement;
 using Input::SourceStatement;
 using Input::VelocityStatement;
 using Input::MaxResolutionStatement;
@@ -479,6 +480,501 @@ TEST_F(BBoxStatementTest, IsPointStrictlyInside_ConstCorrectness) {
     EXPECT_TRUE(constBbox.isValid());
     EXPECT_TRUE(constBbox.isPointStrictlyInside(3.0f, 4.0f));
     EXPECT_FALSE(constBbox.isPointStrictlyInside(1.0f, 4.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for WallStatement tests
+class WallStatementTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test process with valid Wall tokens (9 tokens total)
+TEST_F(WallStatementTest, Process_ValidWall) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive Wall (lowercase)
+TEST_F(WallStatementTest, Process_CaseInsensitiveWall) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+}
+
+// Test process with case-insensitive Wall (mixed case)
+TEST_F(WallStatementTest, Process_CaseInsensitiveWallMixed) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"WaLl", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with case-insensitive parameter names
+TEST_F(WallStatementTest, Process_CaseInsensitiveParameters) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "xmin", "1.0", "xmax", "2.0", "ymin", "3.0", "ymax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+}
+
+// Test process with mixed case parameter names
+TEST_F(WallStatementTest, Process_MixedCaseParameters) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XmIn", "1.0", "XmAx", "2.0", "YmIn", "3.0", "YmAx", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid first token (not Wall)
+TEST_F(WallStatementTest, Process_InvalidFirstToken) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Source", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with empty tokens
+TEST_F(WallStatementTest, Process_EmptyTokens) {
+    WallStatement wall;
+    std::vector<std::string> tokens;
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with wrong number of tokens (less than 9)
+TEST_F(WallStatementTest, Process_TooFewTokens) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with wrong number of tokens (more than 9)
+TEST_F(WallStatementTest, Process_TooManyTokens) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0", "Extra"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with exactly 8 tokens (missing one)
+TEST_F(WallStatementTest, Process_Exactly8Tokens) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with negative values (valid when min < max)
+TEST_F(WallStatementTest, Process_NegativeValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "-2.5", "XMax", "-1.5", "YMin", "-4.5", "YMax", "-3.5"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(-2.5f, wall.getXMin());
+    EXPECT_FLOAT_EQ(-1.5f, wall.getXMax());
+    EXPECT_FLOAT_EQ(-4.5f, wall.getYMin());
+    EXPECT_FLOAT_EQ(-3.5f, wall.getYMax());
+}
+
+// Test process with XMin >= XMax (should fail validation)
+TEST_F(WallStatementTest, Process_XMinGreaterThanOrEqualXMax) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "2.0", "XMax", "1.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because XMin >= XMax
+    
+    // Values may still be set, but process should return false
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMax());
+}
+
+// Test process with XMin equal to XMax (should fail validation)
+TEST_F(WallStatementTest, Process_XMinEqualXMax) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "1.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because XMin == XMax
+    
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMax());
+}
+
+// Test process with YMin >= YMax (should fail validation)
+TEST_F(WallStatementTest, Process_YMinGreaterThanOrEqualYMax) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "4.0", "YMax", "3.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because YMin >= YMax
+    
+    // Values may still be set, but process should return false
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMax());
+}
+
+// Test process with YMin equal to YMax (should fail validation)
+TEST_F(WallStatementTest, Process_YMinEqualYMax) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "3.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because YMin == YMax
+    
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMax());
+}
+
+// Test process with both XMin >= XMax and YMin >= YMax (should fail validation)
+TEST_F(WallStatementTest, Process_BothDimensionsInvalid) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "2.0", "XMax", "1.0", "YMin", "4.0", "YMax", "3.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because both dimensions are invalid
+    
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMax());
+}
+
+// Test process with large values
+TEST_F(WallStatementTest, Process_LargeValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1000.0", "XMax", "2000.0", "YMin", "3000.0", "YMax", "4000.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1000.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2000.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3000.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4000.0f, wall.getYMax());
+}
+
+// Test process with decimal values
+TEST_F(WallStatementTest, Process_DecimalValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.5", "XMax", "2.75", "YMin", "3.14159", "YMax", "4.99"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.5f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.75f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.14159f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.99f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with different parameter order
+TEST_F(WallStatementTest, Process_DifferentParameterOrder) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "YMax", "4.0", "XMin", "1.0", "YMin", "3.0", "XMax", "2.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test process with invalid value (non-numeric string)
+TEST_F(WallStatementTest, Process_InvalidValue) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "invalid", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_TRUE(result);  // process returns true, but invalid value is not assigned
+    
+    // XMin should remain uninitialized (default value 0.0 or whatever was there)
+    // Other values should be set correctly
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+}
+
+// Test process with unknown parameter name (should fail due to else clause)
+TEST_F(WallStatementTest, Process_UnknownParameterName) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "Unknown", "4.0"};
+    
+    bool result = wall.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because "Unknown" is not a recognized parameter
+}
+
+// -----------------------------------------------------------------------------
+
+// Test accessors with default values (before processing)
+TEST_F(WallStatementTest, Accessors_DefaultValues) {
+    WallStatement wall;
+    
+    // Before processing, values should be uninitialized (default float value is 0.0)
+    EXPECT_FLOAT_EQ(0.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(0.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(0.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(0.0f, wall.getYMax());
+}
+
+// Test accessors after processing
+TEST_F(WallStatementTest, Accessors_AfterProcessing) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "10.5", "XMax", "20.5", "YMin", "30.5", "YMax", "40.5"};
+    
+    wall.process(tokens);
+    
+    EXPECT_FLOAT_EQ(10.5f, wall.getXMin());
+    EXPECT_FLOAT_EQ(20.5f, wall.getXMax());
+    EXPECT_FLOAT_EQ(30.5f, wall.getYMin());
+    EXPECT_FLOAT_EQ(40.5f, wall.getYMax());
+}
+
+// Test accessors are const
+TEST_F(WallStatementTest, Accessors_Const) {
+    const WallStatement wall;
+    
+    // Should compile - accessors are const
+    Dimension_t xmin = wall.getXMin();
+    Dimension_t xmax = wall.getXMax();
+    Dimension_t ymin = wall.getYMin();
+    Dimension_t ymax = wall.getYMax();
+    
+    EXPECT_FLOAT_EQ(0.0f, xmin);
+    EXPECT_FLOAT_EQ(0.0f, xmax);
+    EXPECT_FLOAT_EQ(0.0f, ymin);
+    EXPECT_FLOAT_EQ(0.0f, ymax);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test multiple process calls (should update values)
+TEST_F(WallStatementTest, Process_MultipleCalls) {
+    WallStatement wall;
+    
+    std::vector<std::string> tokens1 = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    bool result1 = wall.process(tokens1);
+    EXPECT_TRUE(result1);
+    
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+    
+    std::vector<std::string> tokens2 = {"Wall", "XMin", "10.0", "XMax", "20.0", "YMin", "30.0", "YMax", "40.0"};
+    bool result2 = wall.process(tokens2);
+    EXPECT_TRUE(result2);
+    
+    EXPECT_FLOAT_EQ(10.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(20.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(30.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(40.0f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point inside bounding box
+TEST_F(WallStatementTest, IsPointStrictlyInside_Inside) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_TRUE(wall.isPointStrictlyInside(3.0f, 4.0f));
+    EXPECT_TRUE(wall.isPointStrictlyInside(2.5f, 3.5f));
+    EXPECT_TRUE(wall.isPointStrictlyInside(4.5f, 5.5f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point on X boundary (should return false)
+TEST_F(WallStatementTest, IsPointStrictlyInside_OnXBoundary) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_FALSE(wall.isPointStrictlyInside(1.0f, 4.0f));  // On XMin boundary
+    EXPECT_FALSE(wall.isPointStrictlyInside(5.0f, 4.0f));  // On XMax boundary
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point on Y boundary (should return false)
+TEST_F(WallStatementTest, IsPointStrictlyInside_OnYBoundary) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_FALSE(wall.isPointStrictlyInside(3.0f, 2.0f));  // On YMin boundary
+    EXPECT_FALSE(wall.isPointStrictlyInside(3.0f, 6.0f));  // On YMax boundary
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point on corner (should return false)
+TEST_F(WallStatementTest, IsPointStrictlyInside_OnCorner) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_FALSE(wall.isPointStrictlyInside(1.0f, 2.0f));  // Bottom-left corner
+    EXPECT_FALSE(wall.isPointStrictlyInside(5.0f, 2.0f));  // Bottom-right corner
+    EXPECT_FALSE(wall.isPointStrictlyInside(1.0f, 6.0f));  // Top-left corner
+    EXPECT_FALSE(wall.isPointStrictlyInside(5.0f, 6.0f));  // Top-right corner
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with point outside bounding box
+TEST_F(WallStatementTest, IsPointStrictlyInside_Outside) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_FALSE(wall.isPointStrictlyInside(0.0f, 4.0f));   // Left of XMin
+    EXPECT_FALSE(wall.isPointStrictlyInside(6.0f, 4.0f));  // Right of XMax
+    EXPECT_FALSE(wall.isPointStrictlyInside(3.0f, 1.0f));  // Below YMin
+    EXPECT_FALSE(wall.isPointStrictlyInside(3.0f, 7.0f));  // Above YMax
+    EXPECT_FALSE(wall.isPointStrictlyInside(0.0f, 0.0f));  // Outside both
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with negative coordinates
+TEST_F(WallStatementTest, IsPointStrictlyInside_NegativeCoordinates) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "-5.0", "XMax", "-1.0", "YMin", "-6.0", "YMax", "-2.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_TRUE(wall.isPointStrictlyInside(-3.0f, -4.0f));   // Inside
+    EXPECT_FALSE(wall.isPointStrictlyInside(-5.0f, -4.0f));  // On XMin boundary
+    EXPECT_FALSE(wall.isPointStrictlyInside(-1.0f, -4.0f));  // On XMax boundary
+    EXPECT_FALSE(wall.isPointStrictlyInside(-3.0f, -6.0f));  // On YMin boundary
+    EXPECT_FALSE(wall.isPointStrictlyInside(-3.0f, -2.0f));   // On YMax boundary
+    EXPECT_FALSE(wall.isPointStrictlyInside(-10.0f, -4.0f)); // Outside
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside with decimal coordinates
+TEST_F(WallStatementTest, IsPointStrictlyInside_DecimalCoordinates) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.5", "XMax", "5.5", "YMin", "2.5", "YMax", "6.5"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+    EXPECT_TRUE(wall.isPointStrictlyInside(3.0f, 4.0f));
+    EXPECT_TRUE(wall.isPointStrictlyInside(2.0f, 3.0f));
+    EXPECT_TRUE(wall.isPointStrictlyInside(5.0f, 6.0f));
+    EXPECT_FALSE(wall.isPointStrictlyInside(1.5f, 4.0f));  // On XMin
+    EXPECT_FALSE(wall.isPointStrictlyInside(5.5f, 4.0f));  // On XMax
+    EXPECT_FALSE(wall.isPointStrictlyInside(3.0f, 2.5f));  // On YMin
+    EXPECT_FALSE(wall.isPointStrictlyInside(3.0f, 6.5f));  // On YMax
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isPointStrictlyInside const correctness
+TEST_F(WallStatementTest, IsPointStrictlyInside_ConstCorrectness) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "5.0", "YMin", "2.0", "YMax", "6.0"};
+    wall.process(tokens);
+    
+    const WallStatement& constWall = wall;
+    EXPECT_TRUE(constWall.isValid());
+    EXPECT_TRUE(constWall.isPointStrictlyInside(3.0f, 4.0f));
+    EXPECT_FALSE(constWall.isPointStrictlyInside(1.0f, 4.0f));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test isValid with valid wall
+TEST_F(WallStatementTest, IsValid_ValidWall) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    wall.process(tokens);
+    
+    EXPECT_TRUE(wall.isValid());
+}
+
+// Test isValid with invalid wall (XMin >= XMax)
+TEST_F(WallStatementTest, IsValid_InvalidXDimension) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "2.0", "XMax", "1.0", "YMin", "3.0", "YMax", "4.0"};
+    wall.process(tokens);
+    
+    EXPECT_FALSE(wall.isValid());
+}
+
+// Test isValid with invalid wall (YMin >= YMax)
+TEST_F(WallStatementTest, IsValid_InvalidYDimension) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "4.0", "YMax", "3.0"};
+    wall.process(tokens);
+    
+    EXPECT_FALSE(wall.isValid());
 }
 
 // -----------------------------------------------------------------------------
@@ -1929,6 +2425,63 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_InvalidYDimensions) {
     EXPECT_EQ(Input::StatementType::MAX, result);
 }
 
+// Test processLine with valid Wall tokens
+TEST_F(InputCompilerTest, ProcessLine_ValidWall) {
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::WALL, result);
+    
+    // Verify the statement values using getStatement
+    const auto& wall = compiler.getStatement<Input::StatementType::WALL>();
+    EXPECT_FLOAT_EQ(1.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(3.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(4.0f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test processLine with case-insensitive Wall
+TEST_F(InputCompilerTest, ProcessLine_CaseInsensitiveWall) {
+    std::vector<std::string> tokens = {"wall", "XMin", "10.5", "XMax", "20.5", "YMin", "30.5", "YMax", "40.5"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::WALL, result);
+    
+    const auto& wall = compiler.getStatement<Input::StatementType::WALL>();
+    EXPECT_FLOAT_EQ(10.5f, wall.getXMin());
+    EXPECT_FLOAT_EQ(20.5f, wall.getXMax());
+    EXPECT_FLOAT_EQ(30.5f, wall.getYMin());
+    EXPECT_FLOAT_EQ(40.5f, wall.getYMax());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test processLine with Wall but wrong number of tokens
+TEST_F(InputCompilerTest, ProcessLine_Wall_WrongTokenCount) {
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Wall but invalid dimensions (XMin >= XMax)
+TEST_F(InputCompilerTest, ProcessLine_Wall_InvalidDimensions) {
+    std::vector<std::string> tokens = {"Wall", "XMin", "2.0", "XMax", "1.0", "YMin", "3.0", "YMax", "4.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
+// Test processLine with Wall but invalid dimensions (YMin >= YMax)
+TEST_F(InputCompilerTest, ProcessLine_Wall_InvalidYDimensions) {
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "4.0", "YMax", "3.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
 // Test processLine with valid Velocity tokens
 TEST_F(InputCompilerTest, ProcessLine_ValidVelocity) {
     std::vector<std::string> tokens = {"Velocity", "130.0"};
@@ -2069,6 +2622,14 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_UnknownParameterName) {
     EXPECT_EQ(Input::StatementType::MAX, result);
 }
 
+// Test processLine with Wall but unknown parameter name (should fail due to else clause)
+TEST_F(InputCompilerTest, ProcessLine_Wall_UnknownParameterName) {
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "Unknown", "4.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::MAX, result);
+}
+
 // Test processLine with MaxResolution but unknown parameter name (should fail due to else clause)
 TEST_F(InputCompilerTest, ProcessLine_MaxResolution_UnknownParameterName) {
     std::vector<std::string> tokens = {"MaxResolution", "Spatial", "1.0", "Unknown", "2.0"};
@@ -2139,6 +2700,27 @@ TEST_F(InputCompilerTest, ProcessLine_MultipleBBoxCalls) {
     EXPECT_FLOAT_EQ(40.0f, bbox2.getYMax());
 }
 
+// Test processLine with multiple Wall calls (should update values)
+TEST_F(InputCompilerTest, ProcessLine_MultipleWallCalls) {
+    std::vector<std::string> tokens1 = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    Input::StatementType result1 = compiler.processLine(tokens1);
+    EXPECT_EQ(Input::StatementType::WALL, result1);
+    
+    const auto& wall1 = compiler.getStatement<Input::StatementType::WALL>();
+    EXPECT_FLOAT_EQ(1.0f, wall1.getXMin());
+    EXPECT_FLOAT_EQ(2.0f, wall1.getXMax());
+    
+    std::vector<std::string> tokens2 = {"Wall", "XMin", "10.0", "XMax", "20.0", "YMin", "30.0", "YMax", "40.0"};
+    Input::StatementType result2 = compiler.processLine(tokens2);
+    EXPECT_EQ(Input::StatementType::WALL, result2);
+    
+    const auto& wall2 = compiler.getStatement<Input::StatementType::WALL>();
+    EXPECT_FLOAT_EQ(10.0f, wall2.getXMin());
+    EXPECT_FLOAT_EQ(20.0f, wall2.getXMax());
+    EXPECT_FLOAT_EQ(30.0f, wall2.getYMin());
+    EXPECT_FLOAT_EQ(40.0f, wall2.getYMax());
+}
+
 // Test processLine with multiple Velocity calls (should update values)
 TEST_F(InputCompilerTest, ProcessLine_MultipleVelocityCalls) {
     std::vector<std::string> tokens1 = {"Velocity", "130.0"};
@@ -2203,6 +2785,20 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_DifferentParameterOrder) {
     EXPECT_FLOAT_EQ(40.0f, bbox.getYMax());
 }
 
+// Test processLine with different parameter order for Wall
+TEST_F(InputCompilerTest, ProcessLine_Wall_DifferentParameterOrder) {
+    std::vector<std::string> tokens = {"Wall", "YMax", "40.0", "XMin", "10.0", "YMin", "30.0", "XMax", "20.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::WALL, result);
+    
+    const auto& wall = compiler.getStatement<Input::StatementType::WALL>();
+    EXPECT_FLOAT_EQ(10.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(20.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(30.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(40.0f, wall.getYMax());
+}
+
 // Test processLine with different parameter order for MaxResolution
 TEST_F(InputCompilerTest, ProcessLine_MaxResolution_DifferentParameterOrder) {
     std::vector<std::string> tokens = {"MaxResolution", "Temporal", "10.0", "Spatial", "20.0"};
@@ -2243,6 +2839,20 @@ TEST_F(InputCompilerTest, ProcessLine_BBox_CaseInsensitiveParameters) {
     EXPECT_FLOAT_EQ(15.0f, bbox.getXMax());
     EXPECT_FLOAT_EQ(25.0f, bbox.getYMin());
     EXPECT_FLOAT_EQ(35.0f, bbox.getYMax());
+}
+
+// Test processLine with Wall but case-insensitive parameters
+TEST_F(InputCompilerTest, ProcessLine_Wall_CaseInsensitiveParameters) {
+    std::vector<std::string> tokens = {"Wall", "xmin", "5.0", "xmax", "15.0", "ymin", "25.0", "ymax", "35.0"};
+    
+    Input::StatementType result = compiler.processLine(tokens);
+    EXPECT_EQ(Input::StatementType::WALL, result);
+    
+    const auto& wall = compiler.getStatement<Input::StatementType::WALL>();
+    EXPECT_FLOAT_EQ(5.0f, wall.getXMin());
+    EXPECT_FLOAT_EQ(15.0f, wall.getXMax());
+    EXPECT_FLOAT_EQ(25.0f, wall.getYMin());
+    EXPECT_FLOAT_EQ(35.0f, wall.getYMax());
 }
 
 // Test processLine with case-insensitive parameter names for MaxResolution
@@ -2484,6 +3094,88 @@ TEST_F(BBoxStatementSaveTest, Save_DefaultValues) {
     bbox.save(oss);
     
     EXPECT_EQ("BBox XMin 0 XMax 0 YMin 0 YMax 0", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test fixture for WallStatement save tests
+class WallStatementSaveTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        // Setup code if needed
+    }
+    
+    void TearDown() override {
+        // Cleanup code if needed
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+// Test save with valid Wall values
+TEST_F(WallStatementSaveTest, Save_ValidValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.0", "XMax", "2.0", "YMin", "3.0", "YMax", "4.0"};
+    wall.process(tokens);
+    
+    std::ostringstream oss;
+    wall.save(oss);
+    
+    EXPECT_EQ("Wall XMin 1 XMax 2 YMin 3 YMax 4", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with decimal values
+TEST_F(WallStatementSaveTest, Save_DecimalValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1.5", "XMax", "2.75", "YMin", "3.14159", "YMax", "4.99"};
+    wall.process(tokens);
+    
+    std::ostringstream oss;
+    wall.save(oss);
+    
+    EXPECT_EQ("Wall XMin 1.5 XMax 2.75 YMin 3.14159 YMax 4.99", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with negative values
+TEST_F(WallStatementSaveTest, Save_NegativeValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "-2.5", "XMax", "-1.5", "YMin", "-4.5", "YMax", "-3.5"};
+    wall.process(tokens);
+    
+    std::ostringstream oss;
+    wall.save(oss);
+    
+    EXPECT_EQ("Wall XMin -2.5 XMax -1.5 YMin -4.5 YMax -3.5", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with large values
+TEST_F(WallStatementSaveTest, Save_LargeValues) {
+    WallStatement wall;
+    std::vector<std::string> tokens = {"Wall", "XMin", "1000.0", "XMax", "2000.0", "YMin", "3000.0", "YMax", "4000.0"};
+    wall.process(tokens);
+    
+    std::ostringstream oss;
+    wall.save(oss);
+    
+    EXPECT_EQ("Wall XMin 1000 XMax 2000 YMin 3000 YMax 4000", oss.str());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save with default values (before processing)
+TEST_F(WallStatementSaveTest, Save_DefaultValues) {
+    WallStatement wall;
+    
+    std::ostringstream oss;
+    wall.save(oss);
+    
+    EXPECT_EQ("Wall XMin 0 XMax 0 YMin 0 YMax 0", oss.str());
 }
 
 // -----------------------------------------------------------------------------

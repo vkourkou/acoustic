@@ -16,11 +16,12 @@ namespace Input {
 enum class StatementType {
     SOURCE = 0,
     BBOX = 1,
-    VELOCITY = 2,
-    MAXRESOLUTION = 3,
-    SIMULATIONPARAM = 4,
-    COMMENT = 5,
-    MAX = 6
+    WALL = 2,
+    VELOCITY = 3,
+    MAXRESOLUTION = 4,
+    SIMULATIONPARAM = 5,
+    COMMENT = 6,
+    MAX = 7
 };
 
 std::string getString(StatementType type);
@@ -70,6 +71,32 @@ class BBoxStatement {
 public:
     BBoxStatement() = default;
     ~BBoxStatement() = default;
+    
+    bool process(const std::vector<std::string>& tokens);
+    
+    Dimension_t getXMin() const;
+    Dimension_t getXMax() const;
+    Dimension_t getYMin() const;
+    Dimension_t getYMax() const;
+    
+    bool isValid() const;
+    
+    bool isPointStrictlyInside(Dimension_t X, Dimension_t Y) const;
+    
+    void save(std::ostream& OS) const;
+
+private:
+    Dimension_t m_XMin{0};
+    Dimension_t m_XMax{0};
+    Dimension_t m_YMin{0};
+    Dimension_t m_YMax{0};
+};
+
+// Wall statement class
+class WallStatement {
+public:
+    WallStatement() = default;
+    ~WallStatement() = default;
     
     bool process(const std::vector<std::string>& tokens);
     
@@ -159,9 +186,9 @@ private:
     ProcessingType m_PT{CPU};
 };
 
-// Class to hold a tuple of SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement, and SimulationParamStatement
+// Class to hold a tuple of SourceStatement, BBoxStatement, WallStatement, VelocityStatement, MaxResolutionStatement, and SimulationParamStatement
 class StatementCnt {
-    std::tuple<SourceStatement, BBoxStatement, VelocityStatement, MaxResolutionStatement, SimulationParamStatement> m_statements;
+    std::tuple<SourceStatement, BBoxStatement, WallStatement, VelocityStatement, MaxResolutionStatement, SimulationParamStatement> m_statements;
 public:
     StatementCnt() = default;
     ~StatementCnt() = default;
@@ -249,6 +276,12 @@ template<>
 inline constexpr StatementType
 getStatementType<BBoxStatement>() {
     return StatementType::BBOX;
+}
+
+template<>
+inline constexpr StatementType
+getStatementType<WallStatement>() {
+    return StatementType::WALL;
 }
 
 template<>
