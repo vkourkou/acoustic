@@ -344,28 +344,28 @@ BBoxStatement::process(const std::vector<std::string>& tokens) {
         if (Utilities::caseInsensitiveEquals(key, "XMin")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_XMin = convertedValue.value();
+                m_Box.setXMin(convertedValue.value());
             }
         }
         // Check for XMax
         else if (Utilities::caseInsensitiveEquals(key, "XMax")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_XMax = convertedValue.value();
+                m_Box.setXMax(convertedValue.value());
             }
         }
         // Check for YMin
         else if (Utilities::caseInsensitiveEquals(key, "YMin")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_YMin = convertedValue.value();
+                m_Box.setYMin(convertedValue.value());
             }
         }
         // Check for YMax
         else if (Utilities::caseInsensitiveEquals(key, "YMax")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_YMax = convertedValue.value();
+                m_Box.setYMax(convertedValue.value());
             }
         }
         else {
@@ -384,14 +384,14 @@ BBoxStatement::isValid() const
     bool valid = true;
     
     // Check XMin < XMax
-    if (m_XMin >= m_XMax) {
-        std::cout << "Invalid BBox: XMin (" << m_XMin << ") >= XMax (" << m_XMax << ")" << std::endl;
+    if (m_Box.getXMin() >= m_Box.getXMax()) {
+        std::cout << "Invalid BBox: XMin (" << m_Box.getXMin() << ") >= XMax (" << m_Box.getXMax() << ")" << std::endl;
         valid = false;
     }
     
     // Check YMin < YMax
-    if (m_YMin >= m_YMax) {
-        std::cout << "Invalid BBox: YMin (" << m_YMin << ") >= YMax (" << m_YMax << ")" << std::endl;
+    if (m_Box.getYMin() >= m_Box.getYMax()) {
+        std::cout << "Invalid BBox: YMin (" << m_Box.getYMin() << ") >= YMax (" << m_Box.getYMax() << ")" << std::endl;
         valid = false;
     }
     
@@ -403,7 +403,7 @@ BBoxStatement::isValid() const
 Dimension_t
 BBoxStatement::getXMin() const
 {
-    return m_XMin;
+    return m_Box.getXMin();
 }
 
 // -----------------------------------------------------------------------------
@@ -411,7 +411,7 @@ BBoxStatement::getXMin() const
 Dimension_t
 BBoxStatement::getXMax() const
 {
-    return m_XMax;
+    return m_Box.getXMax();
 }
 
 // -----------------------------------------------------------------------------
@@ -419,7 +419,7 @@ BBoxStatement::getXMax() const
 Dimension_t
 BBoxStatement::getYMin() const
 {
-    return m_YMin;
+    return m_Box.getYMin();
 }
 
 // -----------------------------------------------------------------------------
@@ -427,7 +427,15 @@ BBoxStatement::getYMin() const
 Dimension_t
 BBoxStatement::getYMax() const
 {
-    return m_YMax;
+    return m_Box.getYMax();
+}
+
+// -----------------------------------------------------------------------------
+
+const Box<Dimension_t>&
+BBoxStatement::getBox() const
+{
+    return m_Box;
 }
 
 // -----------------------------------------------------------------------------
@@ -435,7 +443,7 @@ BBoxStatement::getYMax() const
 bool
 BBoxStatement::isPointStrictlyInside(Dimension_t X, Dimension_t Y) const
 {
-    return X > m_XMin && X < m_XMax && Y > m_YMin && Y < m_YMax;
+    return X > m_Box.getXMin() && X < m_Box.getXMax() && Y > m_Box.getYMin() && Y < m_Box.getYMax();
 }
 
 // -----------------------------------------------------------------------------
@@ -443,7 +451,7 @@ BBoxStatement::isPointStrictlyInside(Dimension_t X, Dimension_t Y) const
 void
 BBoxStatement::save(std::ostream& OS) const
 {
-    OS << "BBox XMin " << m_XMin << " XMax " << m_XMax << " YMin " << m_YMin << " YMax " << m_YMax;
+    OS << "BBox XMin " << m_Box.getXMin() << " XMax " << m_Box.getXMax() << " YMin " << m_Box.getYMin() << " YMax " << m_Box.getYMax();
 }
 
 // -----------------------------------------------------------------------------
@@ -475,28 +483,28 @@ WallStatement::process(const std::vector<std::string>& tokens) {
         if (Utilities::caseInsensitiveEquals(key, "XMin")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_XMin = convertedValue.value();
+                m_Box.setXMin(convertedValue.value());
             }
         }
         // Check for XMax
         else if (Utilities::caseInsensitiveEquals(key, "XMax")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_XMax = convertedValue.value();
+                m_Box.setXMax(convertedValue.value());
             }
         }
         // Check for YMin
         else if (Utilities::caseInsensitiveEquals(key, "YMin")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_YMin = convertedValue.value();
+                m_Box.setYMin(convertedValue.value());
             }
         }
         // Check for YMax
         else if (Utilities::caseInsensitiveEquals(key, "YMax")) {
             auto convertedValue = Utilities::convertTo<Dimension_t>(value);
             if (convertedValue.has_value()) {
-                m_YMax = convertedValue.value();
+                m_Box.setYMax(convertedValue.value());
             }
         }
         else {
@@ -515,14 +523,14 @@ WallStatement::isValid() const
     bool valid = true;
     
     // Check XMin < XMax
-    if (m_XMin >= m_XMax) {
-        std::cout << "Invalid Wall: XMin (" << m_XMin << ") >= XMax (" << m_XMax << ")" << std::endl;
+    if (m_Box.getXMin() >= m_Box.getXMax()) {
+        std::cout << "Invalid Wall: XMin (" << m_Box.getXMin() << ") >= XMax (" << m_Box.getXMax() << ")" << std::endl;
         valid = false;
     }
     
     // Check YMin < YMax
-    if (m_YMin >= m_YMax) {
-        std::cout << "Invalid Wall: YMin (" << m_YMin << ") >= YMax (" << m_YMax << ")" << std::endl;
+    if (m_Box.getYMin() >= m_Box.getYMax()) {
+        std::cout << "Invalid Wall: YMin (" << m_Box.getYMin() << ") >= YMax (" << m_Box.getYMax() << ")" << std::endl;
         valid = false;
     }
     
@@ -534,7 +542,7 @@ WallStatement::isValid() const
 Dimension_t
 WallStatement::getXMin() const
 {
-    return m_XMin;
+    return m_Box.getXMin();
 }
 
 // -----------------------------------------------------------------------------
@@ -542,7 +550,7 @@ WallStatement::getXMin() const
 Dimension_t
 WallStatement::getXMax() const
 {
-    return m_XMax;
+    return m_Box.getXMax();
 }
 
 // -----------------------------------------------------------------------------
@@ -550,7 +558,7 @@ WallStatement::getXMax() const
 Dimension_t
 WallStatement::getYMin() const
 {
-    return m_YMin;
+    return m_Box.getYMin();
 }
 
 // -----------------------------------------------------------------------------
@@ -558,7 +566,15 @@ WallStatement::getYMin() const
 Dimension_t
 WallStatement::getYMax() const
 {
-    return m_YMax;
+    return m_Box.getYMax();
+}
+
+// -----------------------------------------------------------------------------
+
+const Box<Dimension_t>&
+WallStatement::getBox() const
+{
+    return m_Box;
 }
 
 // -----------------------------------------------------------------------------
@@ -566,7 +582,7 @@ WallStatement::getYMax() const
 bool
 WallStatement::isPointStrictlyInside(Dimension_t X, Dimension_t Y) const
 {
-    return X > m_XMin && X < m_XMax && Y > m_YMin && Y < m_YMax;
+    return X > m_Box.getXMin() && X < m_Box.getXMax() && Y > m_Box.getYMin() && Y < m_Box.getYMax();
 }
 
 // -----------------------------------------------------------------------------
@@ -574,7 +590,7 @@ WallStatement::isPointStrictlyInside(Dimension_t X, Dimension_t Y) const
 void
 WallStatement::save(std::ostream& OS) const
 {
-    OS << "Wall XMin " << m_XMin << " XMax " << m_XMax << " YMin " << m_YMin << " YMax " << m_YMax;
+    OS << "Wall XMin " << m_Box.getXMin() << " XMax " << m_Box.getXMax() << " YMin " << m_Box.getYMin() << " YMax " << m_Box.getYMax();
 }
 
 // -----------------------------------------------------------------------------

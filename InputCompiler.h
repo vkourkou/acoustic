@@ -9,6 +9,7 @@
 #include <limits>
 #include <InputFileParser.h>
 #include <Utilities.h>
+#include <Box.h>
 
 namespace Input {
 
@@ -79,6 +80,8 @@ public:
     Dimension_t getYMin() const;
     Dimension_t getYMax() const;
     
+    const Box<Dimension_t>& getBox() const;
+    
     bool isValid() const;
     
     bool isPointStrictlyInside(Dimension_t X, Dimension_t Y) const;
@@ -86,10 +89,7 @@ public:
     void save(std::ostream& OS) const;
 
 private:
-    Dimension_t m_XMin{0};
-    Dimension_t m_XMax{0};
-    Dimension_t m_YMin{0};
-    Dimension_t m_YMax{0};
+    Box<Dimension_t> m_Box;
 };
 
 // Wall statement class
@@ -105,6 +105,8 @@ public:
     Dimension_t getYMin() const;
     Dimension_t getYMax() const;
     
+    const Box<Dimension_t>& getBox() const;
+    
     bool isValid() const;
     
     bool isPointStrictlyInside(Dimension_t X, Dimension_t Y) const;
@@ -112,10 +114,7 @@ public:
     void save(std::ostream& OS) const;
 
 private:
-    Dimension_t m_XMin{0};
-    Dimension_t m_XMax{0};
-    Dimension_t m_YMin{0};
-    Dimension_t m_YMax{0};
+    Box<Dimension_t> m_Box;
 };
 
 // Velocity statement class
