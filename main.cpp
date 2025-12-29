@@ -1,9 +1,11 @@
 #include <iostream>
 #include <fstream>
 #include <Runner.h>
+#include <cuda_utilities.cuh>
 
 int
 main(int argc, char* argv[]) {
+    CudaUtilities::queryGPU();
     if (argc < 2) {
         std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl;
         return 1;
