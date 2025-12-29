@@ -33,6 +33,7 @@ set(SOURCES
 set(CUDA_SOURCES
     add_arrays.cu
     simulator_kernels.cu
+    cuda_utilities.cu
 )
 
 # Header files
@@ -45,12 +46,15 @@ set(HEADERS
     Grid.h
     Simulator.h
     simulator_kernels.cuh
+    cuda_utilities.cuh
     CudaArray.h
     CudaDenseMatrix.h
 )
 
 # Add target for acoustic
 add_executable(acoustic ${SOURCES} ${CUDA_SOURCES} ${HEADERS})
+
+target_include_directories(acoustic PRIVATE ${CUDAToolkit_INCLUDE_DIRS})
 
 target_compile_options(acoustic PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--extended-lambda>)
 
