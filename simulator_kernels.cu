@@ -1,5 +1,6 @@
 #include <simulator_kernels.cuh>
 #include <cuda_runtime.h>
+#include <cuda_utilities.cuh>
 #include <iostream>
 #include <Simulator.h>
 #include <fstream>
@@ -69,29 +70,16 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
     m_Vy.resize(numRows, numCols - 1);
     
     // Initialize all matrices to zero using cudaMemset
-    cudaError_t err;
     if (m_Pres.size() > 0) {
-        err = cudaMemset(m_Pres.data(), 0, m_Pres.size() * sizeof(float));
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA memset failed for m_Pres: " << cudaGetErrorString(err) << std::endl;
-            return false;
-        }
+        CHECK_CUDA_ERROR(cudaMemset(m_Pres.data(), 0, m_Pres.size() * sizeof(float)));
     }
     
     if (m_Vx.size() > 0) {
-        err = cudaMemset(m_Vx.data(), 0, m_Vx.size() * sizeof(float));
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA memset failed for m_Vx: " << cudaGetErrorString(err) << std::endl;
-            return false;
-        }
+        CHECK_CUDA_ERROR(cudaMemset(m_Vx.data(), 0, m_Vx.size() * sizeof(float)));
     }
     
     if (m_Vy.size() > 0) {
-        err = cudaMemset(m_Vy.data(), 0, m_Vy.size() * sizeof(float));
-        if (err != cudaSuccess) {
-            std::cerr << "CUDA memset failed for m_Vy: " << cudaGetErrorString(err) << std::endl;
-            return false;
-        }
+        CHECK_CUDA_ERROR(cudaMemset(m_Vy.data(), 0, m_Vy.size() * sizeof(float)));
     }
     
     return true;
@@ -120,17 +108,10 @@ CudaWorkSpace::updateVx(float courantNb)
         m_Pres.cols(),
         courantNb
     );
+
+    CHECK_CUDA_ERROR(cudaGetLastError());
     
-    // Check for errors
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA kernel launch failed in updateVx: " << cudaGetErrorString(err) << std::endl;
-    }
-    
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA device synchronize failed in updateVx: " << cudaGetErrorString(err) << std::endl;
-    }
+    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 }
 
 // -----------------------------------------------------------------------------
@@ -158,15 +139,9 @@ CudaWorkSpace::updateVy(float courantNb)
     );
     
     // Check for errors
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA kernel launch failed in updateVy: " << cudaGetErrorString(err) << std::endl;
-    }
+    CHECK_CUDA_ERROR(cudaGetLastError());
     
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA device synchronize failed in updateVy: " << cudaGetErrorString(err) << std::endl;
-    }
+    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 }
 
 // -----------------------------------------------------------------------------
@@ -196,15 +171,9 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
     );
     
     // Check for errors
-    cudaError_t err = cudaGetLastError();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA kernel launch failed in updatepressure: " << cudaGetErrorString(err) << std::endl;
-    }
+    CHECK_CUDA_ERROR(cudaGetLastError());
     
-    err = cudaDeviceSynchronize();
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA device synchronize failed in updatepressure: " << cudaGetErrorString(err) << std::endl;
-    }
+    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 }
 
 // -----------------------------------------------------------------------------
@@ -219,10 +188,7 @@ CudaWorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float v
         return;
     }
     std::size_t index = GridIndexX * m_Pres.cols() + GridIndexY;
-    cudaError_t err = cudaMemcpy(m_Pres.data() + index, &val, sizeof(float), cudaMemcpyHostToDevice);
-    if (err != cudaSuccess) {
-        std::cerr << "CUDA memcpy failed in UpdateForSource: " << cudaGetErrorString(err) << std::endl;
-    }
+    CHECK_CUDA_ERROR(cudaMemcpy(m_Pres.data() + index, &val, sizeof(float), cudaMemcpyHostToDevice));
 }
 
 // -----------------------------------------------------------------------------

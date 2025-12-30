@@ -186,7 +186,7 @@ void querySpecificDevice(int deviceIndex) {
             _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
             _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) * deviceProp.multiProcessorCount);
     int clockRate;
-    checkCudaErrors(cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, deviceIndex));
+    CHECK_CUDA_ERROR(cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, deviceIndex));
     printf("  GPU Max Clock rate:                            %.0f MHz (%0.2f "
             "GHz)\n",
             clockRate * 1e-3f,
@@ -194,7 +194,7 @@ void querySpecificDevice(int deviceIndex) {
 #if CUDART_VERSION >= 5000
     int memoryClockRate;
 #if CUDART_VERSION >= 13000
-    checkCudaErrors(cudaDeviceGetAttribute(&memoryClockRate, cudaDevAttrMemoryClockRate, deviceIndex));
+    CHECK_CUDA_ERROR(cudaDeviceGetAttribute(&memoryClockRate, cudaDevAttrMemoryClockRate, deviceIndex));
 #else
     memoryClockRate = deviceProp.memoryClockRate;
 #endif
@@ -258,13 +258,13 @@ void querySpecificDevice(int deviceIndex) {
     printf("  Maximum memory pitch:                          %zu bytes\n", deviceProp.memPitch);
     printf("  Texture alignment:                             %zu bytes\n", deviceProp.textureAlignment);
     int gpuOverlap;
-    checkCudaErrors(cudaDeviceGetAttribute(&gpuOverlap, cudaDevAttrGpuOverlap, deviceIndex));
+    CHECK_CUDA_ERROR(cudaDeviceGetAttribute(&gpuOverlap, cudaDevAttrGpuOverlap, deviceIndex));
     printf("  Concurrent copy and kernel execution:          %s with %d copy "
             "engine(s)\n",
             (gpuOverlap ? "Yes" : "No"),
             deviceProp.asyncEngineCount);
     int kernelExecTimeout;
-    checkCudaErrors(cudaDeviceGetAttribute(&kernelExecTimeout, cudaDevAttrKernelExecTimeout, deviceIndex));
+    CHECK_CUDA_ERROR(cudaDeviceGetAttribute(&kernelExecTimeout, cudaDevAttrKernelExecTimeout, deviceIndex));
     printf("  Run time limit on kernels:                     %s\n", kernelExecTimeout ? "Yes" : "No");
     printf("  Integrated GPU sharing Host Memory:            %s\n", deviceProp.integrated ? "Yes" : "No");
     printf("  Support host page-locked memory mapping:       %s\n", deviceProp.canMapHostMemory ? "Yes" : "No");
@@ -300,7 +300,7 @@ void querySpecificDevice(int deviceIndex) {
                                     "Unknown",
                                     NULL};
     int         computeMode;
-    checkCudaErrors(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, deviceIndex));
+    CHECK_CUDA_ERROR(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, deviceIndex));
     printf("  Compute Mode:\n");
     printf("     < %s >\n", sComputeMode[computeMode]);
 }

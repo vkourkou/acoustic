@@ -21,7 +21,7 @@ namespace CudaUtilities {
 
 }
 
-#define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
+#define CHECK_CUDA_ERROR(val) CudaUtilities::check((val), #val, __FILE__, __LINE__)
 
 
 #endif // CUDA_UTILITIES_CUH_

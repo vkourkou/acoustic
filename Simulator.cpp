@@ -226,9 +226,10 @@ Simulator::save(std::ostream& OS) const
     OS << "BOX (real coordinates): " << m_Box.getXMin() << " " << m_Box.getXMax() << " " << m_Box.getYMin() << " " << m_Box.getYMax() << "\n";
     OS << "BOX (grid coordinates): " << computeDimensionGridSpace(m_Box.getXMin()) << " " << computeDimensionGridSpace(m_Box.getXMax()) << " " << computeDimensionGridSpace(m_Box.getYMin()) << " " << computeDimensionGridSpace(m_Box.getYMax()) << "\n"; 
     OS << "Grid points (start/end): " << m_Grids.get<X>().front() << " " << m_Grids.get<X>().back() << " " << m_Grids.get<Y>().front() << " " << m_Grids.get<Y>().back() << "\n";
+    OS << "#Grid points: (" << m_Grids.get<X>().size() << " x " << m_Grids.get<Y>().size() << ") = " << m_Grids.get<X>().size() * m_Grids.get<Y>().size() << "\n";
     OS << "Courant number: " << m_CourantNb << "\n";
-    OS << "Grids: " << "\n";
-    m_Grids.save(OS);
+    //OS << "Grids: " << "\n";
+    //m_Grids.save(OS);
 }
 
 // -----------------------------------------------------------------------------
