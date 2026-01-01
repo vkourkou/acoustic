@@ -224,6 +224,14 @@ CudaWorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float v
 
 // -----------------------------------------------------------------------------
 
+void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) {
+    updateVx(courantNb);
+    updateVy(courantNb);
+    updatepressure(crSquareTimesCourantNb);
+}
+
+// -----------------------------------------------------------------------------
+
 // Template specializations for CUDA workspace (PT=GPU)
 // These are defined here so they can access the full CudaWorkSpace definition
 
@@ -262,9 +270,7 @@ void
 Simulator::updateFields<GPU>()
 {
     if (m_CudaWorkSpace) {
-        m_CudaWorkSpace->updateVx(m_CourantNb);
-        m_CudaWorkSpace->updateVy(m_CourantNb);
-        m_CudaWorkSpace->updatepressure(m_CrSquareTimesCourantNb);
+        m_CudaWorkSpace->updateFields(m_CourantNb, m_CrSquareTimesCourantNb);
     }
 }
 
@@ -282,11 +288,12 @@ void
 Simulator::potentiallyTransferToDevice(DenseMatrix<float>& To)
 {
     if (m_CudaWorkSpace) {
-        m_CudaWorkSpace->m_Pres.transferTo(To);
+        m_CudaWorkSpace->getPres().transferTo(To);
     }
 }
 
 // -----------------------------------------------------------------------------
+
 
 
 } // namespace FDTD

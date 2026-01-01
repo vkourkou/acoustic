@@ -401,7 +401,7 @@ Simulator::potentiallySaveTheMatricesToDb()
         saveGrid(m_Grids.get<X>(), multiplier, file);
         saveGrid(m_Grids.get<Y>(), multiplier, file);
         if constexpr (PT == CPU) {
-            m_WorkSpace.m_Pres.save(file, /*bPrintTranspose*/ true);
+            m_WorkSpace.getPres().save(file, /*bPrintTranspose*/ true);
         } else {
             DenseMatrix<float> To;
             potentiallyTransferToDevice(To);
