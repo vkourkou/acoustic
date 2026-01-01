@@ -62,6 +62,25 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
 // -----------------------------------------------------------------------------
 
 
+void
+saveLaunchParameters(const std::string& name, const dim3& BlockDim, CudaDenseMatrix<float>& Mat, const void* func) 
+{
+    std::cout << "************************************************" << std::endl;
+    std::cout << "Saving launch parameters for " << name << std::endl;
+    const dim3 ElementDimension(Mat.cols(), Mat.rows(),1);
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
+    std::cout << "BlockDim: " << BlockDim.x << " " << BlockDim.y << " " << BlockDim.z << std::endl;
+    std::cout << "ElementDimension: " << ElementDimension.x << " " << ElementDimension.y << " " << ElementDimension.z << std::endl;
+    std::cout << "GridDim: " << GridDim.x << " " << GridDim.y << " " << GridDim.z << std::endl;
+    std::cout << "#Blocks launched: " << CudaUtilities::getSize(GridDim) << "\n";
+    size_t BlockSize = CudaUtilities::getSize(BlockDim);
+    int NbOfBlocksMaxOccupancy = CudaUtilities::getNbOfBlocksMaxOccupancy(func, BlockSize, /*size_t dynamicSMemSize*/0);
+    std::cout << "#Blocks for Max Occupancy: " << NbOfBlocksMaxOccupancy << "\n";
+    std::cout << "Max Occupancy: " << CudaUtilities::computeMaxOccupancy(NbOfBlocksMaxOccupancy, BlockSize) << "\n";
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 CudaWorkSpace::initialize(size_t numRows, size_t numCols)
 {
@@ -82,10 +101,22 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
         CHECK_CUDA_ERROR(cudaMemset(m_Vy.data(), 0, m_Vy.size() * sizeof(float)));
     }
     
+    saveLaunchParameters("Pres", getBlockDimension(), m_Pres, (void*)updatePressureKernel);
+    saveLaunchParameters("Vx", getBlockDimension(), m_Vx, (void*)updateVxKernel);
+    saveLaunchParameters("Vy", getBlockDimension(), m_Vy, (void*)updateVyKernel);
     return true;
 }
 
 // -----------------------------------------------------------------------------
+
+dim3 
+CudaWorkSpace::getBlockDimension()
+{
+    return dim3(16, 16);
+}
+
+// -----------------------------------------------------------------------------
+
 
 void
 CudaWorkSpace::updateVx(float courantNb)
@@ -95,12 +126,12 @@ CudaWorkSpace::updateVx(float courantNb)
     }
     
     // Configure kernel launch parameters
-    dim3 blockSize(16, 16);
-    dim3 gridSize((m_Vx.cols() + blockSize.x - 1) / blockSize.x,
-                  (m_Vx.rows() + blockSize.y - 1) / blockSize.y);
+    const dim3 BlockDim{getBlockDimension()};
+    const dim3 ElementDimension(m_Vx.cols(), m_Vx.rows(),1);
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     
     // Launch kernel
-    updateVxKernel<<<gridSize, blockSize>>>(
+    updateVxKernel<<<GridDim, BlockDim>>>(
         m_Pres.data(),
         m_Vx.data(),
         m_Vx.rows(),
@@ -124,12 +155,12 @@ CudaWorkSpace::updateVy(float courantNb)
     }
     
     // Configure kernel launch parameters
-    dim3 blockSize(16, 16);
-    dim3 gridSize((m_Vy.cols() + blockSize.x - 1) / blockSize.x,
-                  (m_Vy.rows() + blockSize.y - 1) / blockSize.y);
+    const dim3 BlockDim{getBlockDimension()};
+    const dim3 ElementDimension(m_Vy.cols(), m_Vy.rows(),1);
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     
     // Launch kernel
-    updateVyKernel<<<gridSize, blockSize>>>(
+    updateVyKernel<<<GridDim, BlockDim>>>(
         m_Pres.data(),
         m_Vy.data(),
         m_Vy.rows(),
@@ -154,12 +185,12 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
     }
     
     // Configure kernel launch parameters
-    dim3 blockSize(16, 16);
-    dim3 gridSize((m_Pres.cols() + blockSize.x - 1) / blockSize.x,
-                  (m_Pres.rows() + blockSize.y - 1) / blockSize.y);
+    const dim3 BlockDim{getBlockDimension()};
+    const dim3 ElementDimension(m_Pres.cols(), m_Pres.rows(),1);
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     
     // Launch kernel
-    updatePressureKernel<<<gridSize, blockSize>>>(
+    updatePressureKernel<<<GridDim, BlockDim>>>(
         m_Vx.data(),
         m_Vy.data(),
         m_Pres.data(),
