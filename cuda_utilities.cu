@@ -321,4 +321,44 @@ void queryGPU() {
 
 // -----------------------------------------------------------------------------
 
+size_t 
+getSize(const dim3& d)
+{
+    return d.x * d.y * d.z;
+}
+
+// -----------------------------------------------------------------------------
+
+dim3 
+getGridDimension(const dim3& ElementDimension, const dim3& BlockDimension)
+{
+    return dim3((ElementDimension.x + BlockDimension.x - 1) / BlockDimension.x,
+            (ElementDimension.y + BlockDimension.y - 1) / BlockDimension.y,
+            (ElementDimension.z + BlockDimension.z - 1) / BlockDimension.z);
+}
+
+// -----------------------------------------------------------------------------
+
+int
+getNbOfBlocksMaxOccupancy(const void* func, int  blockSize, size_t dynamicSMemSize )
+{
+    int numBlocks = 0;
+    CHECK_CUDA_ERROR(cudaOccupancyMaxActiveBlocksPerMultiprocessor(&numBlocks, func, blockSize, dynamicSMemSize));
+    return numBlocks;
+}
+
+// -----------------------------------------------------------------------------
+
+float
+computeMaxOccupancy(int numBlocks, int numBlockSize)
+{
+    int device;
+    cudaDeviceProp prop;
+    CHECK_CUDA_ERROR(cudaGetDevice(&device) );
+    CHECK_CUDA_ERROR(cudaGetDeviceProperties(&prop, device));
+    int ActiveWarps = numBlocks * numBlockSize / prop.warpSize;
+    int MaxWarps = prop.maxThreadsPerMultiProcessor / prop.warpSize;
+    return float(ActiveWarps) / float(MaxWarps);
+}
+
 }

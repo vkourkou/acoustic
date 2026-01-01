@@ -19,6 +19,14 @@ namespace CudaUtilities {
         }
     }
 
+    int getNbOfBlocksMaxOccupancy(const void* func, int  blockSize, size_t dynamicSMemSize );
+
+    float computeMaxOccupancy(int numBlocks, int numBlockSize);
+
+    size_t getSize(const dim3& d);
+
+    dim3 getGridDimension(const dim3& ElementDimension, const dim3& BlockDimension);
+
 }
 
 #define CHECK_CUDA_ERROR(val) CudaUtilities::check((val), #val, __FILE__, __LINE__)
