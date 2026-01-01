@@ -141,8 +141,7 @@ CudaWorkSpace::updateVx(float courantNb)
     );
 
     CHECK_CUDA_ERROR(cudaGetLastError());
-    
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+
 }
 
 // -----------------------------------------------------------------------------
@@ -172,7 +171,6 @@ CudaWorkSpace::updateVy(float courantNb)
     // Check for errors
     CHECK_CUDA_ERROR(cudaGetLastError());
     
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 }
 
 // -----------------------------------------------------------------------------
@@ -203,8 +201,7 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
     
     // Check for errors
     CHECK_CUDA_ERROR(cudaGetLastError());
-    
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+
 }
 
 // -----------------------------------------------------------------------------
@@ -227,7 +224,9 @@ CudaWorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float v
 void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) {
     updateVx(courantNb);
     updateVy(courantNb);
+    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
     updatepressure(crSquareTimesCourantNb);
+    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
 }
 
 // -----------------------------------------------------------------------------
