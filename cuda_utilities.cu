@@ -3,8 +3,33 @@
 #include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
+#include <optional>
 
 namespace CudaUtilities {
+
+// -----------------------------------------------------------------------------
+
+const std::vector<cudaDeviceProp>& getDeviceProperties()
+{
+    static std::optional<std::vector<cudaDeviceProp>> s_deviceProperties;
+    
+    if (!s_deviceProperties.has_value()) {
+        std::vector<cudaDeviceProp> deviceProperties;
+        int deviceCount = 0;
+        cudaError_t error = cudaGetDeviceCount(&deviceCount);
+        
+        if (error == cudaSuccess && deviceCount > 0) {
+            deviceProperties.resize(deviceCount);
+            for (int i = 0; i < deviceCount; ++i) {
+                cudaGetDeviceProperties(&deviceProperties[i], i);
+            }
+        }
+        s_deviceProperties = std::move(deviceProperties);
+    }
+    
+    return s_deviceProperties.value();
+}
 
 // -----------------------------------------------------------------------------
 

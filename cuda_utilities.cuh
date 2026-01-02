@@ -4,8 +4,11 @@
 #include <cuda_runtime.h>
 #include <cstdio>
 #include <cstdlib>
+#include <vector>
 
 namespace CudaUtilities {
+    
+    const std::vector<cudaDeviceProp>& getDeviceProperties();
     int getDeviceCount();
     void queryDeviceCount();
     void querySpecificDevice(int deviceIndex);
