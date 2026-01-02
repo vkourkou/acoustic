@@ -72,11 +72,14 @@ saveLaunchParameters(const std::string& name, const dim3& BlockDim, CudaDenseMat
     std::cout << "BlockDim: " << BlockDim.x << " " << BlockDim.y << " " << BlockDim.z << std::endl;
     std::cout << "ElementDimension: " << ElementDimension.x << " " << ElementDimension.y << " " << ElementDimension.z << std::endl;
     std::cout << "GridDim: " << GridDim.x << " " << GridDim.y << " " << GridDim.z << std::endl;
-    std::cout << "#Blocks launched: " << CudaUtilities::getSize(GridDim) << "\n";
+    const size_t NbBlocksLaunched = CudaUtilities::getSize(GridDim);
+    std::cout << "#Blocks launched: " << NbBlocksLaunched << "\n";
     size_t BlockSize = CudaUtilities::getSize(BlockDim);
     int NbOfBlocksMaxOccupancy = CudaUtilities::getNbOfBlocksMaxOccupancy(func, BlockSize, /*size_t dynamicSMemSize*/0);
-    std::cout << "#Blocks for Max Occupancy: " << NbOfBlocksMaxOccupancy << "\n";
+    std::cout << "#Blocks per SM for Max Occupancy: " << NbOfBlocksMaxOccupancy << "\n";
     std::cout << "Max Occupancy: " << CudaUtilities::computeMaxOccupancy(NbOfBlocksMaxOccupancy, BlockSize) << "\n";
+    const size_t NbOfBlocksForDeviceMaxOccupancy = CudaUtilities::getDeviceProperties()[0].multiProcessorCount * NbOfBlocksMaxOccupancy;
+    std::cout << "Waves of Blocks launched: " << float(NbBlocksLaunched) / float(NbOfBlocksForDeviceMaxOccupancy) << "\n"; 
 }
 
 // -----------------------------------------------------------------------------
