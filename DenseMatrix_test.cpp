@@ -1041,7 +1041,7 @@ TEST_F(DenseMatrixTest, Save_DefaultParameter) {
     matrix(1, 2) = 6.0f;
     
     std::ostringstream oss;
-    matrix.save(oss);  // Using default parameter
+    matrix.save(oss, false);  // Non-transpose
     
     std::string output = oss.str();
     std::stringstream ssRes;
@@ -1198,6 +1198,134 @@ TEST_F(DenseMatrixTest, Save_Transpose_NegativeValues) {
     ssRes << 2 << " " << 2 << "\n";  // cols become rows, rows become cols
     ssRes << matrix.data()[0] << " " << matrix.data()[2] << "\n";  // col 0: (0,0), (1,0)
     ssRes << matrix.data()[1] << " " << matrix.data()[3] << "\n";  // col 1: (0,1), (1,1)
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - with padding, non-transpose
+TEST_F(DenseMatrixTest, Save_WithPads_Normal) {
+    DenseMatrix<float> matrix(2, 2);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(1, 0) = 3.0f;
+    matrix(1, 1) = 4.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, false, 1);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    // Output dimensions: 2 + 2*1 = 4 rows, 2 + 2*1 = 4 cols
+    ssRes << 4 << " " << 4 << "\n";
+    // First pad row: 0 0 0 0
+    ssRes << "0 0 0 0\n";
+    // First data row: 0 1.0 2.0 0
+    ssRes << "0 " << matrix.data()[0] << " " << matrix.data()[1] << " 0\n";
+    // Second data row: 0 3.0 4.0 0
+    ssRes << "0 " << matrix.data()[2] << " " << matrix.data()[3] << " 0\n";
+    // Last pad row: 0 0 0 0
+    ssRes << "0 0 0 0\n";
+    
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - with padding, transpose
+TEST_F(DenseMatrixTest, Save_WithPads_Transpose) {
+    DenseMatrix<float> matrix(2, 2);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(1, 0) = 3.0f;
+    matrix(1, 1) = 4.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, true, 1);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    // Output dimensions (transposed): 2 + 2*1 = 4 rows, 2 + 2*1 = 4 cols
+    ssRes << 4 << " " << 4 << "\n";
+    // First pad row: 0 0 0 0
+    ssRes << "0 0 0 0\n";
+    // First data row (transposed col 0): 0 1.0 3.0 0
+    ssRes << "0 " << matrix.data()[0] << " " << matrix.data()[2] << " 0\n";
+    // Second data row (transposed col 1): 0 2.0 4.0 0
+    ssRes << "0 " << matrix.data()[1] << " " << matrix.data()[3] << " 0\n";
+    // Last pad row: 0 0 0 0
+    ssRes << "0 0 0 0\n";
+    
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - with larger padding value
+TEST_F(DenseMatrixTest, Save_WithLargePads) {
+    DenseMatrix<float> matrix(2, 2);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(1, 0) = 3.0f;
+    matrix(1, 1) = 4.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, false, 2);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    // Output dimensions: 2 + 2*2 = 6 rows, 2 + 2*2 = 6 cols
+    ssRes << 6 << " " << 6 << "\n";
+    // Two pad rows at the start
+    ssRes << "0 0 0 0 0 0\n";
+    ssRes << "0 0 0 0 0 0\n";
+    // First data row: 0 0 1.0 2.0 0 0
+    ssRes << "0 0 " << matrix.data()[0] << " " << matrix.data()[1] << " 0 0\n";
+    // Second data row: 0 0 3.0 4.0 0 0
+    ssRes << "0 0 " << matrix.data()[2] << " " << matrix.data()[3] << " 0 0\n";
+    // Two pad rows at the end
+    ssRes << "0 0 0 0 0 0\n";
+    ssRes << "0 0 0 0 0 0\n";
+    
+    std::string result = ssRes.str();
+    EXPECT_EQ(output, result);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test save function - with padding, rectangular matrix
+TEST_F(DenseMatrixTest, Save_WithPads_Rectangular) {
+    DenseMatrix<float> matrix(2, 3);
+    
+    matrix(0, 0) = 1.0f;
+    matrix(0, 1) = 2.0f;
+    matrix(0, 2) = 3.0f;
+    matrix(1, 0) = 4.0f;
+    matrix(1, 1) = 5.0f;
+    matrix(1, 2) = 6.0f;
+    
+    std::ostringstream oss;
+    matrix.save(oss, false, 1);
+    
+    std::string output = oss.str();
+    std::stringstream ssRes;
+    // Output dimensions: 2 + 2*1 = 4 rows, 3 + 2*1 = 5 cols
+    ssRes << 4 << " " << 5 << "\n";
+    // First pad row: 0 0 0 0 0
+    ssRes << "0 0 0 0 0\n";
+    // First data row: 0 1.0 2.0 3.0 0
+    ssRes << "0 " << matrix.data()[0] << " " << matrix.data()[1] << " " << matrix.data()[2] << " 0\n";
+    // Second data row: 0 4.0 5.0 6.0 0
+    ssRes << "0 " << matrix.data()[3] << " " << matrix.data()[4] << " " << matrix.data()[5] << " 0\n";
+    // Last pad row: 0 0 0 0 0
+    ssRes << "0 0 0 0 0\n";
+    
     std::string result = ssRes.str();
     EXPECT_EQ(output, result);
 }

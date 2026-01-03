@@ -161,30 +161,79 @@ public:
 
     // Save matrix to output stream
     void
-    save(std::ostream& OS, bool bPrintTranspose = false) const
+    save(std::ostream& OS, bool bPrintTranspose, std::size_t pads = 0) const
     {
+        auto printPadRows = [](std::ostream& os, std::size_t padCount, std::size_t cols) {
+            for (std::size_t padRow = 0; padRow < padCount; ++padRow) {
+                for (std::size_t j = 0; j < cols; ++j) {
+                    os << "0";
+                    if (j < cols - 1) {
+                        os << " ";
+                    }
+                }
+                os << "\n";
+            }
+        };
+        
+        auto printPadStartCol = [](std::ostream& os, std::size_t padCount) {
+            for (std::size_t padCol = 0; padCol < padCount; ++padCol) {
+                os << "0 ";
+            }
+        };
+
+        auto printPadEndCol = [](std::ostream& os, std::size_t padCount) {
+            for (std::size_t padCol = 0; padCol < padCount; ++padCol) {
+                os << " 0";
+            }
+        };
+        
         if (bPrintTranspose) {
-            OS << m_cols << " " << m_rows << "\n";
+            std::size_t outputRows = m_cols + 2 * pads;
+            std::size_t outputCols = m_rows + 2 * pads;
+            OS << outputRows << " " << outputCols << "\n";
+            
+            // Print pads rows of zeros at the start
+            printPadRows(OS, pads, outputCols);
+            // Print actual matrix data (transposed)
             for (std::size_t i = 0; i < m_cols; ++i) {
+                // Print pads columns of zeros at the start
+                printPadStartCol(OS, pads);
+                // Print actual data
                 for (std::size_t j = 0; j < m_rows; ++j) {
                     OS << m_data[j * m_cols + i];
                     if (j < m_rows - 1) {
                         OS << " ";
                     }
                 }
+                // Print pads columns of zeros at the end
+                printPadEndCol(OS, pads);
                 OS << "\n";
             }
+            // Print pads rows of zeros at the end
+            printPadRows(OS, pads, outputCols);
         } else {
-            OS << m_rows << " " << m_cols << "\n";
+            std::size_t outputRows = m_rows + 2 * pads;
+            std::size_t outputCols = m_cols + 2 * pads;
+            OS << outputRows << " " << outputCols << "\n";
+            // Print pads rows of zeros at the start
+            printPadRows(OS, pads, outputCols);
+            // Print actual matrix data
             for (std::size_t i = 0; i < m_rows; ++i) {
+                // Print pads columns of zeros at the start
+                printPadStartCol(OS, pads);
+                // Print actual data
                 for (std::size_t j = 0; j < m_cols; ++j) {
                     OS << m_data[i * m_cols + j];
                     if (j < m_cols - 1) {
                         OS << " ";
                     }
                 }
+                // Print pads columns of zeros at the end
+                printPadEndCol(OS, pads);
                 OS << "\n";
             }
+            // Print pads rows of zeros at the end
+            printPadRows(OS, pads, outputCols);
         }
     }
 
