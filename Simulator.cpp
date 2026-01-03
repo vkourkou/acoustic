@@ -23,8 +23,8 @@ bool
 Simulator::WorkSpace::initialize(size_t numRows, size_t numCols)
 {
     m_Pres.resize(numRows, numCols, 0.0e0);
-    m_Vx.resize(numRows - 1, numCols, 0.0e0);
-    m_Vy.resize(numRows, numCols - 1, 0.0e0);
+    m_Vx.resize(numRows - 1, numCols - 2, 0.0e0); //column j of vx corresponds to column j + 1 of pres
+    m_Vy.resize(numRows - 2, numCols - 1, 0.0e0); //row i of vy corresponds to row i + 1 of pres
     return true;
 }
 
@@ -35,7 +35,7 @@ Simulator::WorkSpace::updateVx(float courantNb)
 {
     for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
         for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
-            m_Vx(i,j) = m_Vx(i,j) - courantNb * (m_Pres(i+1,j) - m_Pres(i,j));
+            m_Vx(i,j) = m_Vx(i,j) - courantNb * (m_Pres(i+1,j+1) - m_Pres(i,j+1));
         }
     }
 }
@@ -47,7 +47,7 @@ Simulator::WorkSpace::updateVy(float courantNb)
 {
     for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
         for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
-            m_Vy(i,j) = m_Vy(i,j) - courantNb * (m_Pres(i,j+1) - m_Pres(i,j));
+            m_Vy(i,j) = m_Vy(i,j) - courantNb * (m_Pres(i+1,j+1) - m_Pres(i+1,j));
         }
     }
 }
@@ -60,7 +60,7 @@ Simulator::WorkSpace::updatepressure(float crSquareTimesCourantNb)
     //Boundaries are assume to have directlet condition
     for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
         for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
-            m_Pres(i,j) = m_Pres(i,j) - crSquareTimesCourantNb * (m_Vx(i,j) - m_Vx(i - 1,j) + m_Vy(i,j) - m_Vy(i,j - 1));
+            m_Pres(i,j) = m_Pres(i,j) - crSquareTimesCourantNb * (m_Vx(i,j-1) - m_Vx(i - 1,j-1) + m_Vy(i-1,j) - m_Vy(i-1,j - 1));
         }
     }
 }
