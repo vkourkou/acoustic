@@ -35,7 +35,7 @@ Simulator::WorkSpace::updateVx(float courantNb)
 {
     for (std::size_t i = 0, iE = m_Vx.rows(); i < iE; ++i) {
         for (std::size_t j = 0, jE = m_Vx.cols(); j < jE; ++j) {
-            m_Vx(i,j) = m_Vx(i,j) - courantNb * (m_Pres(i+1,j+1) - m_Pres(i,j+1));
+            m_Vx(i,j) -= courantNb * (m_Pres(i+1,j+1) - m_Pres(i,j+1));
         }
     }
 }
@@ -47,7 +47,7 @@ Simulator::WorkSpace::updateVy(float courantNb)
 {
     for (std::size_t i = 0, iE = m_Vy.rows(); i < iE; ++i) {
         for (std::size_t j = 0, jE = m_Vy.cols(); j < jE; ++j) {
-            m_Vy(i,j) = m_Vy(i,j) - courantNb * (m_Pres(i+1,j+1) - m_Pres(i+1,j));
+            m_Vy(i,j) -= courantNb * (m_Pres(i+1,j+1) - m_Pres(i+1,j));
         }
     }
 }
@@ -58,9 +58,9 @@ void
 Simulator::WorkSpace::updatepressure(float crSquareTimesCourantNb)
 {
     //Boundaries are assume to have directlet condition
-    for (std::size_t i = 1, iE = m_Pres.rows() - 1; i < iE; ++i) {
-        for (std::size_t j = 1, jE = m_Pres.cols() - 1; j < jE; ++j) {
-            m_Pres(i,j) = m_Pres(i,j) - crSquareTimesCourantNb * (m_Vx(i,j-1) - m_Vx(i - 1,j-1) + m_Vy(i-1,j) - m_Vy(i-1,j - 1));
+    for (std::size_t i = 0, iE = m_Pres.rows() - 2; i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Pres.cols() - 2; j < jE; ++j) {
+            m_Pres(i+1,j+1) -= crSquareTimesCourantNb * (m_Vx(i+1,j) - m_Vx(i,j) + m_Vy(i,j+1) - m_Vy(i,j));
         }
     }
 }
