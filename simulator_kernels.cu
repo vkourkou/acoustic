@@ -49,12 +49,12 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
     std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
 
     // Boundaries are assumed to have Dirichlet condition (skip boundary points)
-    if (i >= 1 && i < presRows - 1 && j >= 1 && j < presCols - 1) {
-        std::size_t presIdx = i * presCols + j;
-        std::size_t vxIdx1 = i * vxCols + j;
-        std::size_t vxIdx2 = (i - 1) * vxCols + j;
-        std::size_t vyIdx1 = i * vyCols + j;
-        std::size_t vyIdx2 = i * vyCols + (j - 1);
+    if (i < presRows - 2 && j < presCols - 2) {
+        std::size_t presIdx = (i + 1) * presCols + j + 1;
+        std::size_t vxIdx1 = (i + 1) * vxCols + j + 1;
+        std::size_t vxIdx2 = i * vxCols + j + 1;
+        std::size_t vyIdx1 = (i + 1) * vyCols + j + 1;
+        std::size_t vyIdx2 = (i + 1) * vyCols + j;
         pres[presIdx] = pres[presIdx] - crSquareTimesCourantNb * (vx[vxIdx1] - vx[vxIdx2] + vy[vyIdx1] - vy[vyIdx2]);
     }
 }
@@ -115,7 +115,7 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
 dim3 
 CudaWorkSpace::getBlockDimension()
 {
-    return dim3(16, 16);
+    return dim3(8, 8);
 }
 
 // -----------------------------------------------------------------------------
