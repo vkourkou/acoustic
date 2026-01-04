@@ -67,11 +67,10 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
 
 
 void
-saveLaunchParameters(const std::string& name, const dim3& BlockDim, CudaDenseMatrix<float>& Mat, const void* func) 
+saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& ElementDimension, const void* func) 
 {
     std::cout << "************************************************" << std::endl;
     std::cout << "Saving launch parameters for " << name << std::endl;
-    const dim3 ElementDimension(Mat.cols(), Mat.rows(),1);
     const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     std::cout << "BlockDim: " << BlockDim.x << " " << BlockDim.y << " " << BlockDim.z << std::endl;
     std::cout << "ElementDimension: " << ElementDimension.x << " " << ElementDimension.y << " " << ElementDimension.z << std::endl;
@@ -84,6 +83,30 @@ saveLaunchParameters(const std::string& name, const dim3& BlockDim, CudaDenseMat
     std::cout << "Max Occupancy: " << CudaUtilities::computeMaxOccupancy(NbOfBlocksMaxOccupancy, BlockSize) << "\n";
     const size_t NbOfBlocksForDeviceMaxOccupancy = CudaUtilities::getDeviceProperties()[0].multiProcessorCount * NbOfBlocksMaxOccupancy;
     std::cout << "Waves of Blocks launched: " << float(NbBlocksLaunched) / float(NbOfBlocksForDeviceMaxOccupancy) << "\n"; 
+}
+
+// -----------------------------------------------------------------------------
+
+dim3
+CudaWorkSpace::getPressureDimension() const
+{
+    return dim3(m_Pres.cols(), m_Pres.rows(),1);
+}
+
+// -----------------------------------------------------------------------------
+
+dim3 
+CudaWorkSpace::getVxDimension() const
+{
+    return dim3(m_Vx.cols(), m_Vx.rows(),1);
+}   
+
+// -----------------------------------------------------------------------------
+
+dim3
+CudaWorkSpace::getVyDimension() const
+{
+    return dim3(m_Vy.cols(), m_Vy.rows(),1);
 }
 
 // -----------------------------------------------------------------------------
@@ -108,9 +131,9 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
         CHECK_CUDA_ERROR(cudaMemset(m_Vy.data(), 0, m_Vy.size() * sizeof(float)));
     }
     
-    saveLaunchParameters("Pres", getBlockDimension(), m_Pres, (void*)updatePressureKernel);
-    saveLaunchParameters("Vx", getBlockDimension(), m_Vx, (void*)updateVxKernel);
-    saveLaunchParameters("Vy", getBlockDimension(), m_Vy, (void*)updateVyKernel);
+    saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updatePressureKernel);
+    saveLaunchParameters("Vx", getBlockDimension(), getVxDimension(), (void*)updateVxKernel);
+    saveLaunchParameters("Vy", getBlockDimension(), getVyDimension(), (void*)updateVyKernel);
     return true;
 }
 

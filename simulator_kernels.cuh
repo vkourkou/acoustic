@@ -22,6 +22,9 @@ public:
     bool initialize(size_t numRows, size_t numCols);
     void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
     void updateFields(float courantNb, float crSquareTimesCourantNb);
+    dim3 getPressureDimension() const;
+    dim3 getVxDimension() const;
+    dim3 getVyDimension() const;
 };
 
 
