@@ -28,7 +28,7 @@ namespace CudaUtilities {
 
     size_t getSize(const dim3& d);
 
-    dim3 getGridDimension(const dim3& ElementDimension, const dim3& BlockDimension);
+    dim3 getGridDimension(const dim3& ElementDimension, const dim3& BlockDimension, dim3 TileDimension = dim3(1, 1, 1));
 
 }
 

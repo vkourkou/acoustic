@@ -355,11 +355,11 @@ getSize(const dim3& d)
 // -----------------------------------------------------------------------------
 
 dim3 
-getGridDimension(const dim3& ElementDimension, const dim3& BlockDimension)
+getGridDimension(const dim3& ElementDimension, const dim3& BlockDimension, dim3 TileDimension)
 {
-    return dim3((ElementDimension.x + BlockDimension.x - 1) / BlockDimension.x,
-            (ElementDimension.y + BlockDimension.y - 1) / BlockDimension.y,
-            (ElementDimension.z + BlockDimension.z - 1) / BlockDimension.z);
+    return dim3((ElementDimension.x + BlockDimension.x * TileDimension.x - 1) / (BlockDimension.x * TileDimension.x),
+            (ElementDimension.y + BlockDimension.y * TileDimension.y - 1) / (BlockDimension.y * TileDimension.y),
+            (ElementDimension.z + BlockDimension.z * TileDimension.z - 1) / (BlockDimension.z * TileDimension.z));
 }
 
 // -----------------------------------------------------------------------------
