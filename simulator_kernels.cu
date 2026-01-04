@@ -90,7 +90,7 @@ saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& 
 dim3
 CudaWorkSpace::getPressureDimension() const
 {
-    return dim3(m_Pres.cols(), m_Pres.rows(),1);
+    return dim3(m_Pres.cols()-2, m_Pres.rows()-2,1);
 }
 
 // -----------------------------------------------------------------------------
