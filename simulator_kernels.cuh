@@ -14,7 +14,7 @@ class CudaWorkSpace {
     void updateVx(float courantNb);
     void updateVy(float courantNb);
     void updatepressure(float crSquareTimesCourantNb);
-    void updateAll(float courantNb, float crSquareTimesCourantNb);
+    void updateVelocity(float courantNb);
     static dim3 getBlockDimension();
 public:
     const CudaDenseMatrix<float>& getPres() const {
@@ -26,8 +26,8 @@ public:
     dim3 getPressureDimension() const;
     dim3 getVxDimension() const;
     dim3 getVyDimension() const;
-    dim3 getUpdateAllDimension() const;
-    const bool m_UpdateAllTogether{false};
+    dim3 getUpdateVelocityDimension() const;
+    const bool m_UpdateAllTogether{true};
 };
 
 
