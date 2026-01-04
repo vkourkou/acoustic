@@ -11,11 +11,12 @@ namespace FDTD {
 // -----------------------------------------------------------------------------
 
 __global__ void
-updateVxKernel(const float* pres, float* vx, std::size_t vxRows, std::size_t vxCols, std::size_t presCols, float courantNb)
+updateVxKernel(const float* pres, float* vx, std::size_t presRows, std::size_t presCols, float courantNb)
 {
     std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
     std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-
+    const std::size_t vxRows = presRows - 1;
+    const std::size_t vxCols = presCols - 2;
     if (i < vxRows && j < vxCols) {
          //column j of vx corresponds to column j + 1 of pres
         std::size_t vxIdx = i * vxCols + j;
@@ -28,11 +29,12 @@ updateVxKernel(const float* pres, float* vx, std::size_t vxRows, std::size_t vxC
 // -----------------------------------------------------------------------------
 
 __global__ void
-updateVyKernel(const float* pres, float* vy, std::size_t vyRows, std::size_t vyCols, std::size_t presCols, float courantNb)
+updateVyKernel(const float* pres, float* vy, std::size_t presRows, std::size_t presCols, float courantNb)
 {
     std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
     std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-
+    const std::size_t vyRows = presRows - 2;
+    const std::size_t vyCols = presCols - 1;
     if (i < vyRows && j < vyCols) {
         //row i of vy corresponds to row i + 1 of pres
         std::size_t vyIdx = i * vyCols + j;
@@ -45,11 +47,12 @@ updateVyKernel(const float* pres, float* vy, std::size_t vyRows, std::size_t vyC
 // -----------------------------------------------------------------------------
 
 __global__ void
-updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t presRows, std::size_t presCols, std::size_t vxCols, std::size_t vyCols, float crSquareTimesCourantNb)
+updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t presRows, std::size_t presCols, float crSquareTimesCourantNb)
 {
     std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
     std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-
+    const std::size_t vxCols = presCols - 2;
+    const std::size_t vyCols = presCols - 1;
     // Boundaries are assumed to have Dirichlet condition (skip boundary points)
     if (i < presRows - 2 && j < presCols - 2) {
         //row i of vy corresponds to row i + 1 of pres
@@ -164,8 +167,7 @@ CudaWorkSpace::updateVx(float courantNb)
     updateVxKernel<<<GridDim, BlockDim>>>(
         m_Pres.data(),
         m_Vx.data(),
-        m_Vx.rows(),
-        m_Vx.cols(),
+        m_Pres.rows(),
         m_Pres.cols(),
         courantNb
     );
@@ -192,8 +194,7 @@ CudaWorkSpace::updateVy(float courantNb)
     updateVyKernel<<<GridDim, BlockDim>>>(
         m_Pres.data(),
         m_Vy.data(),
-        m_Vy.rows(),
-        m_Vy.cols(),
+        m_Pres.rows(),
         m_Pres.cols(),
         courantNb
     );
@@ -224,8 +225,6 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
         m_Pres.data(),
         m_Pres.rows(),
         m_Pres.cols(),
-        m_Vx.cols(),
-        m_Vy.cols(),
         crSquareTimesCourantNb
     );
     
