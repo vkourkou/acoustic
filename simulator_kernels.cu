@@ -17,10 +17,11 @@ updateVxKernel(const float* pres, float* vx, std::size_t vxRows, std::size_t vxC
     std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (i < vxRows && j < vxCols) {
+         //column j of vx corresponds to column j + 1 of pres
         std::size_t vxIdx = i * vxCols + j;
-        std::size_t presIdx1 = (i + 1) * presCols + j;
-        std::size_t presIdx2 = i * presCols + j;
-        vx[vxIdx] = vx[vxIdx] - courantNb * (pres[presIdx1] - pres[presIdx2]);
+        std::size_t presIdx1 = (i + 1) * presCols + j + 1;
+        std::size_t presIdx2 = i * presCols + j + 1;
+        vx[vxIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
     }
 }
 
@@ -33,10 +34,11 @@ updateVyKernel(const float* pres, float* vy, std::size_t vyRows, std::size_t vyC
     std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (i < vyRows && j < vyCols) {
+        //row i of vy corresponds to row i + 1 of pres
         std::size_t vyIdx = i * vyCols + j;
-        std::size_t presIdx1 = i * presCols + (j + 1);
-        std::size_t presIdx2 = i * presCols + j;
-        vy[vyIdx] = vy[vyIdx] - courantNb * (pres[presIdx1] - pres[presIdx2]);
+        std::size_t presIdx1 = (i + 1) * presCols + (j + 1);
+        std::size_t presIdx2 = (i + 1) * presCols + j;
+        vy[vyIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
     }
 }
 
@@ -50,12 +52,14 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
 
     // Boundaries are assumed to have Dirichlet condition (skip boundary points)
     if (i < presRows - 2 && j < presCols - 2) {
+        //row i of vy corresponds to row i + 1 of pres
+        //column j of vx corresponds to column j + 1 of pres
         std::size_t presIdx = (i + 1) * presCols + j + 1;
-        std::size_t vxIdx1 = (i + 1) * vxCols + j + 1;
-        std::size_t vxIdx2 = i * vxCols + j + 1;
-        std::size_t vyIdx1 = (i + 1) * vyCols + j + 1;
-        std::size_t vyIdx2 = (i + 1) * vyCols + j;
-        pres[presIdx] = pres[presIdx] - crSquareTimesCourantNb * (vx[vxIdx1] - vx[vxIdx2] + vy[vyIdx1] - vy[vyIdx2]);
+        std::size_t vxIdx1 = (i + 1) * vxCols + j;
+        std::size_t vxIdx2 = i * vxCols + j;
+        std::size_t vyIdx1 = i * vyCols + j + 1;
+        std::size_t vyIdx2 = i * vyCols + j;
+        pres[presIdx] -= crSquareTimesCourantNb * (vx[vxIdx1] - vx[vxIdx2] + vy[vyIdx1] - vy[vyIdx2]);
     }
 }
 
@@ -88,8 +92,8 @@ bool
 CudaWorkSpace::initialize(size_t numRows, size_t numCols)
 {
     m_Pres.resize(numRows, numCols);
-    m_Vx.resize(numRows - 1, numCols);
-    m_Vy.resize(numRows, numCols - 1);
+    m_Vx.resize(numRows - 1, numCols - 2); //column j of vx corresponds to column j + 1 of pres
+    m_Vy.resize(numRows - 2, numCols - 1); //row i of vy corresponds to row i + 1 of pres
     
     // Initialize all matrices to zero using cudaMemset
     if (m_Pres.size() > 0) {
