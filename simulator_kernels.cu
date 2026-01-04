@@ -5,6 +5,7 @@
 #include <Simulator.h>
 #include <fstream>
 #include <vector>
+#include <cooperative_groups.h>
 
 namespace FDTD {
 
@@ -69,6 +70,50 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
 // -----------------------------------------------------------------------------
 
 
+__global__ void
+updateAllKernel(float* vx, float* vy, float* pres, 
+                std::size_t presRows, std::size_t presCols,
+                float courantNb, float crSquareTimesCourantNb)
+{
+    std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
+    std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
+    const std::size_t vxRows = presRows - 1;
+    const std::size_t vxCols = presCols - 2;
+    const std::size_t vyRows = presRows - 2;
+    const std::size_t vyCols = presCols - 1;
+    cooperative_groups::grid_group grid = cooperative_groups::this_grid();
+    if (i < vxRows && j < vxCols) {
+         //column j of vx corresponds to column j + 1 of pres
+        std::size_t vxIdx = i * vxCols + j;
+        std::size_t presIdx1 = (i + 1) * presCols + j + 1;
+        std::size_t presIdx2 = i * presCols + j + 1;
+        vx[vxIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
+    }
+
+    if (i < vyRows && j < vyCols) {
+        //row i of vy corresponds to row i + 1 of pres
+        std::size_t vyIdx = i * vyCols + j;
+        std::size_t presIdx1 = (i + 1) * presCols + (j + 1);
+        std::size_t presIdx2 = (i + 1) * presCols + j;
+        vy[vyIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
+    }
+    grid.sync();
+    // Boundaries are assumed to have Dirichlet condition (skip boundary points)
+    if (i < presRows - 2 && j < presCols - 2) {
+        //row i of vy corresponds to row i + 1 of pres
+        //column j of vx corresponds to column j + 1 of pres
+        std::size_t presIdx = (i + 1) * presCols + j + 1;
+        std::size_t vxIdx1 = (i + 1) * vxCols + j;
+        std::size_t vxIdx2 = i * vxCols + j;
+        std::size_t vyIdx1 = i * vyCols + j + 1;
+        std::size_t vyIdx2 = i * vyCols + j;
+        pres[presIdx] -= crSquareTimesCourantNb * (vx[vxIdx1] - vx[vxIdx2] + vy[vyIdx1] - vy[vyIdx2]);
+    }
+    grid.sync();
+}
+
+// -----------------------------------------------------------------------------
+
 void
 saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& ElementDimension, const void* func) 
 {
@@ -114,6 +159,14 @@ CudaWorkSpace::getVyDimension() const
 
 // -----------------------------------------------------------------------------
 
+dim3
+CudaWorkSpace::getUpdateAllDimension() const
+{
+    return dim3(m_Pres.cols()-1, m_Pres.rows()-1,1);
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 CudaWorkSpace::initialize(size_t numRows, size_t numCols)
 {
@@ -133,10 +186,14 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
     if (m_Vy.size() > 0) {
         CHECK_CUDA_ERROR(cudaMemset(m_Vy.data(), 0, m_Vy.size() * sizeof(float)));
     }
-    
-    saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updatePressureKernel);
-    saveLaunchParameters("Vx", getBlockDimension(), getVxDimension(), (void*)updateVxKernel);
-    saveLaunchParameters("Vy", getBlockDimension(), getVyDimension(), (void*)updateVyKernel);
+    if (m_UpdateAllTogether) {
+        saveLaunchParameters("All kernel", getBlockDimension(), getUpdateAllDimension(), (void*)updateAllKernel);
+    }
+    else {
+        saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updatePressureKernel);
+        saveLaunchParameters("Vx", getBlockDimension(), getVxDimension(), (void*)updateVxKernel);
+        saveLaunchParameters("Vy", getBlockDimension(), getVyDimension(), (void*)updateVyKernel);
+    }
     return true;
 }
 
@@ -160,7 +217,7 @@ CudaWorkSpace::updateVx(float courantNb)
     
     // Configure kernel launch parameters
     const dim3 BlockDim{getBlockDimension()};
-    const dim3 ElementDimension(m_Vx.cols(), m_Vx.rows(),1);
+    const dim3 ElementDimension(getVxDimension());
     const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     
     // Launch kernel
@@ -187,7 +244,7 @@ CudaWorkSpace::updateVy(float courantNb)
     
     // Configure kernel launch parameters
     const dim3 BlockDim{getBlockDimension()};
-    const dim3 ElementDimension(m_Vy.cols(), m_Vy.rows(),1);
+    const dim3 ElementDimension(getVyDimension());
     const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     
     // Launch kernel
@@ -215,7 +272,7 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
     
     // Configure kernel launch parameters
     const dim3 BlockDim{getBlockDimension()};
-    const dim3 ElementDimension(m_Pres.cols(), m_Pres.rows(),1);
+    const dim3 ElementDimension(getPressureDimension());
     const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
     
     // Launch kernel
@@ -236,6 +293,37 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
 // -----------------------------------------------------------------------------
 
 void
+CudaWorkSpace::updateAll(float courantNb, float crSquareTimesCourantNb)
+{
+    if (m_Pres.size() == 0 || m_Vx.size() == 0 || m_Vy.size() == 0) {
+        return;
+    }
+    
+    // Configure kernel launch parameters
+    const dim3 BlockDim{getBlockDimension()};
+    const dim3 ElementDimension(getUpdateAllDimension());
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
+    
+    // Launch kernel
+    updateAllKernel<<<GridDim, BlockDim>>>(
+        m_Vx.data(),
+        m_Vy.data(),
+        m_Pres.data(),
+        m_Pres.rows(),
+        m_Pres.cols(),
+        courantNb,
+        crSquareTimesCourantNb
+    );
+    
+    // Check for errors
+    //CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+    CHECK_CUDA_ERROR(cudaGetLastError());
+}
+
+// -----------------------------------------------------------------------------
+
+
+void
 CudaWorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)
 {
     if (m_Pres.empty()) {
@@ -251,11 +339,17 @@ CudaWorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float v
 // -----------------------------------------------------------------------------
 
 void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) {
-    updateVx(courantNb);
-    updateVy(courantNb);
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
-    updatepressure(crSquareTimesCourantNb);
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+    if (m_UpdateAllTogether) {
+        updateAll(courantNb, crSquareTimesCourantNb);
+        
+    }
+    else {
+        updateVx(courantNb);
+        updateVy(courantNb);
+        CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+        updatepressure(crSquareTimesCourantNb);
+        CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+    }
 }
 
 // -----------------------------------------------------------------------------
