@@ -72,10 +72,6 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
 
 // -----------------------------------------------------------------------------
 
-constexpr std::size_t s_PresCol = BLOCK_SIZE * TILE_SIZE + 1;
-
-// -----------------------------------------------------------------------------
-
 __global__ void
 updateVelocityKernelShared(const float* pres, float* vx, float* vy,
                            std::size_t presRows, std::size_t presCols,
@@ -86,38 +82,23 @@ updateVelocityKernelShared(const float* pres, float* vx, float* vy,
     const std::size_t vxCols = presCols - 2;
     const std::size_t vyRows = presRows - 2;
     const std::size_t vyCols = presCols - 1;
-    __shared__ float s_pres[s_PresCol][s_PresCol];
-    const size_t iOffset = blockIdx.y * blockDim.y * TILE_SIZE;
-    const size_t jOffset = blockIdx.x * blockDim.x * TILE_SIZE;
-    for (std::size_t iT = 0; iT <= TILE_SIZE; ++iT) {
-        const std::size_t i = threadIdx.y + iT * BLOCK_SIZE;
-        for (std::size_t jT = 0; jT <= TILE_SIZE; ++jT) {
-            const std::size_t j = threadIdx.x + jT * BLOCK_SIZE;
-            if (i < s_PresCol && j < s_PresCol && i + iOffset < presRows && j + jOffset < presCols) {
-                s_pres[i][j] 
-                = pres[(i + iOffset) * presCols + (j + jOffset)];
-            }
-        }
-    }
-    __syncthreads();
-    for (std::size_t iT = 0; iT < TILE_SIZE; ++iT) {
-        const std::size_t i = threadIdx.y + iT * BLOCK_SIZE;
-        for (std::size_t jT = 0; jT < TILE_SIZE; ++jT) {
-            const std::size_t j = threadIdx.x + jT * BLOCK_SIZE;
-            if (i + iOffset < vxRows && j + jOffset< vxCols) {
-                vx[(i + iOffset) * vxCols + j + jOffset] -= courantNb * (s_pres[i+1][j+1] - s_pres[i][j+1]);
-            }
-        }
+    __shared__ float s_pres[BLOCK_SIZE][BLOCK_SIZE + 1];
+    const size_t iOffset = blockIdx.y * (blockDim.y - 1);
+    const size_t jOffset = blockIdx.x * (blockDim.x - 1);
+    std::size_t i = threadIdx.y;
+    std::size_t j = threadIdx.x;
+    if (i + iOffset < presRows && j + jOffset < presCols) {
+        s_pres[i][j] 
+        = pres[(i + iOffset) * presCols + (j + jOffset)];
     }
 
-    for (std::size_t iT = 0; iT < TILE_SIZE; ++iT) {
-        const std::size_t i = threadIdx.y + iT * BLOCK_SIZE;
-        for (std::size_t jT = 0; jT < TILE_SIZE; ++jT) {
-            const std::size_t j = threadIdx.x + jT * BLOCK_SIZE;
-            if (i + iOffset < vyRows && j + jOffset< vyCols) {
-                vy[(i + iOffset) * vyCols + j + jOffset] -= courantNb * (s_pres[i+1][j+1] - s_pres[i+1][j]);
-            }
-        }
+    __syncthreads();
+    if (i + iOffset < vxRows && j + jOffset< vxCols && i < BLOCK_SIZE - 1 && j < BLOCK_SIZE - 1) {
+        vx[(i + iOffset) * vxCols + j + jOffset] -= courantNb * (s_pres[i+1][j+1] - s_pres[i][j+1]);
+    }
+
+    if (i + iOffset < vyRows && j + jOffset< vyCols && i < BLOCK_SIZE - 1 && j < BLOCK_SIZE - 1) {
+        vy[(i + iOffset) * vyCols + j + jOffset] -= courantNb * (s_pres[i+1][j+1] - s_pres[i+1][j]);
     }
 
 }
@@ -156,11 +137,10 @@ updateVelocityKernel(const float* pres, float* vx, float* vy,
 // -----------------------------------------------------------------------------
 
 void
-saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& ElementDimension, const dim3 TileDimension, const void* func) 
+saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& ElementDimension, const void* func, const dim3& GridDim) 
 {
     std::cout << "************************************************" << std::endl;
     std::cout << "Saving launch parameters for " << name << std::endl;
-    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim, TileDimension)};
     std::cout << "BlockDim: " << BlockDim.x << " " << BlockDim.y << " " << BlockDim.z << std::endl;
     std::cout << "ElementDimension: " << ElementDimension.x << " " << ElementDimension.y << " " << ElementDimension.z << std::endl;
     std::cout << "GridDim: " << GridDim.x << " " << GridDim.y << " " << GridDim.z << std::endl;
@@ -172,6 +152,15 @@ saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& 
     std::cout << "Max Occupancy: " << CudaUtilities::computeMaxOccupancy(NbOfBlocksMaxOccupancy, BlockSize) << "\n";
     const size_t NbOfBlocksForDeviceMaxOccupancy = CudaUtilities::getDeviceProperties()[0].multiProcessorCount * NbOfBlocksMaxOccupancy;
     std::cout << "Waves of Blocks launched: " << float(NbBlocksLaunched) / float(NbOfBlocksForDeviceMaxOccupancy) << "\n"; 
+}
+
+// -----------------------------------------------------------------------------
+
+void
+saveLaunchParameters(const std::string& name, const dim3& BlockDim, const dim3& ElementDimension, const void* func) 
+{
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
+    saveLaunchParameters(name, BlockDim, ElementDimension, func, GridDim);
 }
 
 // -----------------------------------------------------------------------------
@@ -228,20 +217,20 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
         CHECK_CUDA_ERROR(cudaMemset(m_Vy.data(), 0, m_Vy.size() * sizeof(float)));
     }
     if (m_UpdateAllTogether) {
-        saveLaunchParameters("Velocoity kernel", getBlockDimension(), getUpdateVelocityDimension(), dim3(1, 1, 1), (void*)updateVelocityKernel);
-        saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), dim3(1, 1, 1), (void*)updatePressureKernel);
+        saveLaunchParameters("Velocity kernel", getBlockDimension(), getUpdateVelocityDimension(), (void*)updateVelocityKernel, getGridDimensionForVelocity());
+        saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updatePressureKernel);
     }
     else {
-        saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), dim3(1, 1, 1), (void*)updatePressureKernel);
-        saveLaunchParameters("Vx", getBlockDimension(), getVxDimension(), dim3(1, 1, 1), (void*)updateVxKernel);
-        saveLaunchParameters("Vy", getBlockDimension(), getVyDimension(), dim3(1, 1, 1), (void*)updateVyKernel);
+        saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updatePressureKernel);
+        saveLaunchParameters("Vx", getBlockDimension(), getVxDimension(), (void*)updateVxKernel);
+        saveLaunchParameters("Vy", getBlockDimension(), getVyDimension(), (void*)updateVyKernel);
     }
     return true;
 }
 
 // -----------------------------------------------------------------------------
 
-dim3 
+constexpr dim3 
 CudaWorkSpace::getBlockDimension()
 {
     return dim3(BLOCK_SIZE, BLOCK_SIZE);
@@ -249,6 +238,14 @@ CudaWorkSpace::getBlockDimension()
 
 // -----------------------------------------------------------------------------
 
+
+constexpr dim3 
+CudaWorkSpace::getBlockDimensionMinusOne()
+{
+    return dim3(BLOCK_SIZE-1, BLOCK_SIZE-1);
+}
+
+// -----------------------------------------------------------------------------
 
 void
 CudaWorkSpace::updateVx(float courantNb)
@@ -334,6 +331,18 @@ CudaWorkSpace::updatepressure(float crSquareTimesCourantNb)
 
 // -----------------------------------------------------------------------------
 
+dim3 
+CudaWorkSpace::getGridDimensionForVelocity() const
+{
+    if (m_bShared) {
+        return CudaUtilities::getGridDimension(getUpdateVelocityDimension(), getBlockDimensionMinusOne());
+    }
+    else {
+        return CudaUtilities::getGridDimension(getUpdateVelocityDimension(), getBlockDimension());
+    }
+}
+
+// -----------------------------------------------------------------------------
 void
 CudaWorkSpace::updateVelocity(float courantNb)
 {
@@ -343,19 +352,29 @@ CudaWorkSpace::updateVelocity(float courantNb)
     
     // Configure kernel launch parameters
     const dim3 BlockDim{getBlockDimension()};
-    const dim3 ElementDimension(getUpdateVelocityDimension());
-    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, BlockDim)};
+    const dim3 GridDim{getGridDimensionForVelocity()};
     
     // Launch kernel
-    updateVelocityKernel<<<GridDim, BlockDim>>>(
-        m_Pres.data(),
-        m_Vx.data(),
-        m_Vy.data(),
-        m_Pres.rows(),
-        m_Pres.cols(),
-        courantNb
-    );
-    
+    if (m_bShared) {
+        updateVelocityKernelShared<<<GridDim, BlockDim>>>(
+            m_Pres.data(),
+            m_Vx.data(),
+            m_Vy.data(),
+            m_Pres.rows(),
+            m_Pres.cols(),
+            courantNb
+        );
+    }
+    else {
+        updateVelocityKernel<<<GridDim, BlockDim>>>(
+            m_Pres.data(),
+            m_Vx.data(),
+            m_Vy.data(),
+            m_Pres.rows(),
+            m_Pres.cols(),
+            courantNb
+        );
+    }
     // Check for errors
     CHECK_CUDA_ERROR(cudaGetLastError());
 }

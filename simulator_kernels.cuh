@@ -15,7 +15,9 @@ class CudaWorkSpace {
     void updateVy(float courantNb);
     void updatepressure(float crSquareTimesCourantNb);
     void updateVelocity(float courantNb);
-    static dim3 getBlockDimension();
+    constexpr static dim3 getBlockDimension();
+    constexpr static dim3 getBlockDimensionMinusOne();
+    dim3 getGridDimensionForVelocity() const;
 public:
     const CudaDenseMatrix<float>& getPres() const {
         return m_Pres;
@@ -28,6 +30,7 @@ public:
     dim3 getVyDimension() const;
     dim3 getUpdateVelocityDimension() const;
     const bool m_UpdateAllTogether{true};
+    const bool m_bShared{false};
 };
 
 
