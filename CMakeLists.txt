@@ -13,7 +13,12 @@ if(ENABLE_CUDA_DEBUG)
 else()
     set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo") # add line information to all builds for debug tools (exclusive to -G option)
 endif()
-
+if ( NOT CMAKE_BUILD_TYPE )
+    message("Build Type not set, default to Debug")
+    set(CMAKE_BUILD_TYPE Debug)
+else()
+    message("Build Type is set to: " ${CMAKE_BUILD_TYPE})
+endif()
 # Include directories
 include_directories(${CMAKE_SOURCE_DIR})
 
