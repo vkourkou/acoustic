@@ -29,6 +29,17 @@ class Simulator {
         void updateFields(float courantNb, float crSquareTimesCourantNb);
         void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
     };
+    class WorkSpaceUnified {
+        DenseMatrix<float> m_Pres;
+        DenseMatrix<float> m_DeltaPres;
+    public:
+        const DenseMatrix<float>& getPres() const {
+            return m_Pres;
+        }
+        bool initialize(size_t numRows, size_t numCols);
+        void updateFields(float courantNb, float crSquareTimesCourantNb);
+        void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
+    };
 public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
               const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
@@ -53,7 +64,7 @@ private:
     float m_Cr{1.0e0};
     float m_CrSquareTimesCourantNb{1.0e0};
     Grid2D m_Grids;
-    WorkSpace m_WorkSpace;
+    WorkSpaceUnified m_WorkSpace;
     CudaWorkSpace* m_CudaWorkSpace;  // Only used when PT=GPU, managed in CUDA code
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point

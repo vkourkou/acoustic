@@ -85,6 +85,44 @@ Simulator::WorkSpace::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, 
 
 // -----------------------------------------------------------------------------
 
+bool
+Simulator::WorkSpaceUnified::initialize(size_t numRows, size_t numCols)
+{
+    m_Pres.resize(numRows, numCols, 0.0e0);
+    m_DeltaPres.resize(numRows, numCols, 0.0e0);
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::WorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb)
+{
+    float factor = courantNb * crSquareTimesCourantNb;
+    for (std::size_t i = 0, iE = m_Pres.rows() - 2; i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Pres.cols() - 2; j < jE; ++j) {
+            m_DeltaPres(i+1,j+1) -= factor * (m_Pres(i+2,j+1) + m_Pres(i,j+1) + m_Pres(i+1,j+2) + m_Pres(i+1,j) - 4 * m_Pres(i+1,j+1));
+        }
+    }
+    for (std::size_t i = 0, iE = m_Pres.rows() - 2; i < iE; ++i) {
+        for (std::size_t j = 0, jE = m_Pres.cols() - 2; j < jE; ++j) {
+            m_Pres(i+1,j+1) -= m_DeltaPres(i+1,j+1);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+void
+Simulator::WorkSpaceUnified::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)
+{
+    //std::cout << "Updating source at (" << GridIndexX << ", " << GridIndexY << ") with value " << val << std::endl;
+    m_Pres(GridIndexX, GridIndexY) = val;
+}
+
+// -----------------------------------------------------------------------------
+
+
 Simulator::Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source,
                      const Input::VelocityStatement& Velocity, const Input::SimulationParamStatement& SimulationParam, 
                      Dimension_t SpatialStep, Time_t TemporalStep, const std::string& dbFolderPath,
