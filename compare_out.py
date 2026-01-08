@@ -157,6 +157,26 @@ def compare_files(file1_path, file2_path):
     significant_diffs = np.sum(relative_errors > threshold)
     print(f"  Values with error > {threshold}: {significant_diffs} ({100.0 * significant_diffs / len(relative_errors):.2f}%)")
     
+    # Compute absolute errors and normalize by max absolute value
+    absolute_errors = np.abs(data1 - data2)
+    max_absolute_error = np.max(absolute_errors)
+    min_absolute_error = np.min(absolute_errors)
+    
+    # Find maximum absolute value across both matrices
+    max_abs_value = max(np.max(np.abs(data1)), np.max(np.abs(data2)))
+    
+    # Normalized errors
+    max_normalized_error = max_absolute_error / max_abs_value if max_abs_value > 0 else 0.0
+    min_normalized_error = min_absolute_error / max_abs_value if max_abs_value > 0 else 0.0
+    
+    print()
+    print("Error Normalized by Maximum Absolute Value:")
+    print(f"  Maximum absolute error: {max_absolute_error:.10e}")
+    print(f"  Minimum absolute error: {min_absolute_error:.10e}")
+    print(f"  Maximum absolute value (across both matrices): {max_abs_value:.10e}")
+    print(f"  Max error / Max value: {max_normalized_error:.10e} ({max_normalized_error * 100:.4f}%)")
+    print(f"  Min error / Max value: {min_normalized_error:.10e} ({min_normalized_error * 100:.4f}%)")
+    
     return True
 
 
