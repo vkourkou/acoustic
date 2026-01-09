@@ -12,6 +12,7 @@ namespace FDTD {
 
 // Forward declaration for CUDA workspace (defined in simulator_kernels.cuh)
 struct CudaWorkSpace;
+struct CudaWorkSpaceUnified;
 
 class Simulator {
     class WorkSpace {
@@ -65,7 +66,7 @@ private:
     float m_CrSquareTimesCourantNb{1.0e0};
     Grid2D m_Grids;
     WorkSpaceUnified m_WorkSpace;
-    CudaWorkSpace* m_CudaWorkSpace;  // Only used when PT=GPU, managed in CUDA code
+    CudaWorkSpaceUnified* m_CudaWorkSpace;  // Only used when PT=GPU, managed in CUDA code
     unsigned m_SourceGridIndex_X{0};       
     unsigned m_SourceGridIndex_Y{0};        //The source is located at the center of the grid point
     size_t m_iteration{0};

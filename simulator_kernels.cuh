@@ -34,6 +34,40 @@ public:
 };
 
 
+class CudaWorkSpaceUnified {
+    CudaDenseMatrix<float> m_PresA;
+    CudaDenseMatrix<float> m_PresB;
+    CudaDenseMatrix<float>* m_CurrentPres;
+    CudaDenseMatrix<float>* m_PreviousPres;
+    CudaDenseMatrix<float> m_PresDelta;
+    constexpr static dim3 getBlockDimension();
+    constexpr static dim3 getBlockDimensionMinusTwo();
+    dim3 getPressureDimension() const;
+    dim3 getGridDimension() const;
+public:
+    const CudaDenseMatrix<float>& getPres() const {
+        return *m_CurrentPres;
+    }
+    bool initialize(size_t numRows, size_t numCols);
+    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
+    void updateFields(float courantNb, float crSquareTimesCourantNb);
+};
+
+void
+cleanupCudaWorkSpace(CudaWorkSpaceUnified* ws) {
+    if (ws) {
+        delete ws;
+    }
+}
+
+void
+cleanupCudaWorkSpace(CudaWorkSpace* ws) {
+    if (ws) {
+        delete ws;
+    }
+}
+
+
 } // namespace FDTD
 
 #endif // SIMULATOR_KERNELS_CUH

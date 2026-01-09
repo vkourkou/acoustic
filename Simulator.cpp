@@ -11,7 +11,9 @@
 // Forward declaration for cleanup function (defined in simulator_kernels.cu)
 namespace FDTD {
     struct CudaWorkSpace;
+    struct CudaWorkSpaceUnified;
     void cleanupCudaWorkSpace(CudaWorkSpace* ws);
+    void cleanupCudaWorkSpace(CudaWorkSpaceUnified* ws);
 }
 
 // -----------------------------------------------------------------------------

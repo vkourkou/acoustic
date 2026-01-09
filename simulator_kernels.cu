@@ -415,6 +415,133 @@ void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) 
 
 // -----------------------------------------------------------------------------
 
+template<size_t BlockSize>
+__global__ void
+updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
+                    std::size_t presRows, std::size_t presCols,
+                    float factor)
+{
+    
+    __shared__ float s_pres[BlockSize][BlockSize + 1];
+    const size_t iOffset = blockIdx.y * (blockDim.y - 2);
+    const size_t jOffset = blockIdx.x * (blockDim.x - 2);
+    std::size_t i = threadIdx.y;
+    std::size_t j = threadIdx.x;
+    if (i + iOffset < presRows && j + jOffset < presCols) {
+        s_pres[i][j] 
+        = prev[(i + iOffset) * presCols + (j + jOffset)];
+    }
+
+    __syncthreads();
+    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< presCols - 1 && i < BlockSize - 1 && j < BlockSize - 1) {
+        float delta = factor * (s_pres[i+1][j] + s_pres[i-1][j] + s_pres[i][j+1] + s_pres[i][j-1] - 4 * s_pres[i][j]);
+        presdelta[(i + iOffset) * presCols + j + jOffset] -= delta;
+        pres[(i + iOffset) * presCols + j + jOffset] = s_pres[i][j] - presdelta[(i + iOffset) * presCols + j + jOffset];
+    }
+
+}
+
+// -----------------------------------------------------------------------------
+
+dim3
+CudaWorkSpaceUnified::getPressureDimension() const
+{
+    return dim3(m_PresA.cols()-2, m_PresA.rows()-2,1);
+}
+
+// -----------------------------------------------------------------------------
+
+bool
+CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
+{
+    m_PresA.resize(numRows, numCols);
+    m_PresB.resize(numRows, numCols);
+    m_PresDelta.resize(numRows, numCols);
+    
+    // Initialize all matrices to zero using cudaMemset
+    if (m_PresA.size() > 0) {
+        CHECK_CUDA_ERROR(cudaMemset(m_PresA.data(), 0, m_PresA.size() * sizeof(float)));
+    }
+
+    if (m_PresB.size() > 0) {
+        CHECK_CUDA_ERROR(cudaMemset(m_PresB.data(), 0, m_PresB.size() * sizeof(float)));
+    }
+    
+    if (m_PresDelta.size() > 0) {
+        CHECK_CUDA_ERROR(cudaMemset(m_PresDelta.data(), 0, m_PresDelta.size() * sizeof(float)));
+    }
+    
+    m_CurrentPres = &m_PresA;
+    m_PreviousPres = &m_PresB;
+
+    saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updateUnifiedKernel<BLOCK_SIZE>);
+    
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+constexpr dim3 
+CudaWorkSpaceUnified::getBlockDimension()
+{
+    return dim3(BLOCK_SIZE, BLOCK_SIZE);
+}
+
+// -----------------------------------------------------------------------------
+
+
+constexpr dim3 
+CudaWorkSpaceUnified::getBlockDimensionMinusTwo()
+{
+    return dim3(BLOCK_SIZE-2, BLOCK_SIZE-2);
+}
+
+// -----------------------------------------------------------------------------
+
+void
+CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb)
+{
+    if (m_PresA.size() == 0 || m_PresB.size() == 0 || m_PresDelta.size() == 0) {
+        return;
+    }
+    std::swap(m_CurrentPres, m_PreviousPres);
+    const float factor = courantNb * crSquareTimesCourantNb;
+    // Configure kernel launch parameters
+    const dim3 BlockDim{getBlockDimension()};
+    const dim3 ElementDimension(getPressureDimension());
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, getBlockDimensionMinusTwo())};
+    
+    // Launch kernel
+    updateUnifiedKernel<BLOCK_SIZE><<<GridDim, BlockDim>>>(
+        m_PreviousPres->data(),
+        m_PresDelta.data(),
+        m_CurrentPres->data(),
+        m_CurrentPres->rows(),
+        m_CurrentPres->cols(),
+        factor
+    );
+    
+    // Check for errors
+    CHECK_CUDA_ERROR(cudaGetLastError());
+}
+
+// -----------------------------------------------------------------------------
+
+void
+CudaWorkSpaceUnified::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)
+{
+    if (m_CurrentPres->empty()) {
+        return;
+    }
+    if (GridIndexX >= m_CurrentPres->rows() || GridIndexY >= m_CurrentPres->cols()) {
+        return;
+    }
+    std::size_t index = GridIndexX * m_CurrentPres->cols() + GridIndexY;
+    CHECK_CUDA_ERROR(cudaMemcpy(m_CurrentPres->data() + index, &val, sizeof(float), cudaMemcpyHostToDevice));
+}
+
+// -----------------------------------------------------------------------------
+
 // Template specializations for CUDA workspace (PT=GPU)
 // These are defined here so they can access the full CudaWorkSpace definition
 
@@ -428,22 +555,10 @@ Simulator::initializeMatrices<GPU>()
     std::size_t numCols = m_Grids.get<Y>().size();
     
     if (!m_CudaWorkSpace) {
-        m_CudaWorkSpace = new CudaWorkSpace();
+        m_CudaWorkSpace = new CudaWorkSpaceUnified();
     }
     
     return m_CudaWorkSpace->initialize(numRows, numCols);
-}
-
-// -----------------------------------------------------------------------------
-
-// Helper function to cleanup CUDA workspace
-// This is called from Simulator destructor when CUDA workspace exists
-void
-cleanupCudaWorkSpace(CudaWorkSpace* ws)
-{
-    if (ws) {
-        delete ws;
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -476,6 +591,7 @@ Simulator::potentiallyTransferToDevice(DenseMatrix<float>& To)
 }
 
 // -----------------------------------------------------------------------------
+
 
 
 
