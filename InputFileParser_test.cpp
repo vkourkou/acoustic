@@ -2,8 +2,96 @@
 #include <gtest/gtest.h>
 #include <sstream>
 #include <string>
+#include <cstdlib>
+#include <cstring>
+#include <memory>
 
 using Input::InputFileTokenizer;
+
+// -----------------------------------------------------------------------------
+
+// RAII class for managing environment variables in tests
+class EnvVarGuard {
+public:
+    // Set environment variable to given value
+    // If value is nullptr, the variable will be unset
+    EnvVarGuard(const char* varName, const char* value) 
+        : m_varName(varName ? std::string(varName) : std::string()),
+          m_originalValue(nullptr),
+          m_wasSet(false) {
+        if (!m_varName.empty()) {
+            // Save original value if it exists
+            const char* original = std::getenv(m_varName.c_str());
+            if (original != nullptr) {
+                m_originalValue = std::make_unique<std::string>(original);
+                m_wasSet = true;
+            }
+            
+            // Set new value or unset
+            if (value != nullptr) {
+                setenv(m_varName.c_str(), value, 1);
+            } else {
+                unsetenv(m_varName.c_str());
+            }
+        }
+    }
+    
+    // Destructor restores original value
+    ~EnvVarGuard() {
+        if (!m_varName.empty()) {
+            if (m_wasSet && m_originalValue != nullptr) {
+                // Restore original value
+                setenv(m_varName.c_str(), m_originalValue->c_str(), 1);
+            } else {
+                // Variable was not set originally, unset it
+                unsetenv(m_varName.c_str());
+            }
+        }
+    }
+    
+    // Delete copy constructor and assignment
+    EnvVarGuard(const EnvVarGuard&) = delete;
+    EnvVarGuard& operator=(const EnvVarGuard&) = delete;
+    
+    // Move constructor
+    EnvVarGuard(EnvVarGuard&& other) noexcept
+        : m_varName(std::move(other.m_varName)),
+          m_originalValue(std::move(other.m_originalValue)),
+          m_wasSet(other.m_wasSet) {
+        other.m_varName.clear();
+        other.m_wasSet = false;
+    }
+    
+    // Move assignment
+    EnvVarGuard& operator=(EnvVarGuard&& other) noexcept {
+        if (this != &other) {
+            // Restore current state first
+            if (!m_varName.empty()) {
+                if (m_wasSet && m_originalValue != nullptr) {
+                    setenv(m_varName.c_str(), m_originalValue->c_str(), 1);
+                } else {
+                    unsetenv(m_varName.c_str());
+                }
+            }
+            
+            // Move from other
+            m_varName = std::move(other.m_varName);
+            m_originalValue = std::move(other.m_originalValue);
+            m_wasSet = other.m_wasSet;
+            
+            other.m_varName.clear();
+            other.m_wasSet = false;
+        }
+        return *this;
+    }
+
+private:
+    std::string m_varName;
+    std::unique_ptr<std::string> m_originalValue;
+    bool m_wasSet;
+};
+
+// -----------------------------------------------------------------------------
 
 // Test fixture for InputFileTokenizer tests
 class InputFileTokenizerTest : public ::testing::Test {
@@ -517,5 +605,153 @@ TEST_F(InputFileTokenizerTest, TokenizationMultipleComments) {
     ASSERT_EQ(2, tokens3.size());
     EXPECT_EQ("//", tokens3[0]);
     EXPECT_EQ("Third comment", tokens3[1]);
+}
+
+// -----------------------------------------------------------------------------
+
+// Test environment variable unwrapping - token starting with '$' gets replaced
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_ExistingVar) {
+    // Set a test environment variable (RAII will clean up automatically)
+    const char* testVarName = "TEST_UNWRAP_VAR";
+    const char* testVarValue = "test_value_123";
+    EnvVarGuard guard(testVarName, testVarValue);
+    
+    std::istringstream iss("$TEST_UNWRAP_VAR");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ(testVarValue, tokens[0]);
+}
+
+// Test environment variable unwrapping - token not starting with '$' remains unchanged
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_NoDollarSign) {
+    std::istringstream iss("NORMAL_TOKEN");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ("NORMAL_TOKEN", tokens[0]);
+}
+
+// Test environment variable unwrapping - non-existent environment variable becomes empty
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_NonExistentVar) {
+    // Ensure the variable doesn't exist (RAII will ensure cleanup)
+    const char* testVarName = "TEST_NONEXISTENT_VAR_XYZ";
+    EnvVarGuard guard(testVarName, nullptr);  // nullptr means unset
+    
+    std::istringstream iss("$TEST_NONEXISTENT_VAR_XYZ");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ("", tokens[0]);  // Should be empty string when env var not found
+}
+
+// Test environment variable unwrapping - multiple tokens, some with '$', some without
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_MixedTokens) {
+    // Set a test environment variable (RAII will clean up automatically)
+    const char* testVarName = "TEST_MIXED_VAR";
+    const char* testVarValue = "mixed_value";
+    EnvVarGuard guard(testVarName, testVarValue);
+    
+    std::istringstream iss("normal_token $TEST_MIXED_VAR another_token");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ("normal_token", tokens[0]);
+    EXPECT_EQ(testVarValue, tokens[1]);
+    EXPECT_EQ("another_token", tokens[2]);
+}
+
+// Test environment variable unwrapping - multiple environment variables
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_MultipleEnvVars) {
+    // Set test environment variables (RAII will clean up automatically)
+    const char* testVar1Name = "TEST_VAR1";
+    const char* testVar1Value = "value1";
+    const char* testVar2Name = "TEST_VAR2";
+    const char* testVar2Value = "value2";
+    EnvVarGuard guard1(testVar1Name, testVar1Value);
+    EnvVarGuard guard2(testVar2Name, testVar2Value);
+    
+    std::istringstream iss("$TEST_VAR1 $TEST_VAR2");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ(testVar1Value, tokens[0]);
+    EXPECT_EQ(testVar2Value, tokens[1]);
+}
+
+// Test environment variable unwrapping - mixed existing and non-existent variables
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_MixedExistingAndNonExistent) {
+    // Set one test environment variable (RAII will clean up automatically)
+    const char* testVarName = "TEST_EXISTS_VAR";
+    const char* testVarValue = "exists_value";
+    EnvVarGuard guard1(testVarName, testVarValue);
+    
+    // Ensure another doesn't exist (RAII will ensure cleanup)
+    const char* nonExistentVar = "TEST_NONEXISTENT_VAR_ABC";
+    EnvVarGuard guard2(nonExistentVar, nullptr);  // nullptr means unset
+    
+    std::istringstream iss("$TEST_EXISTS_VAR $TEST_NONEXISTENT_VAR_ABC normal");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(3, tokens.size());
+    EXPECT_EQ(testVarValue, tokens[0]);
+    EXPECT_EQ("", tokens[1]);  // Non-existent should be empty
+    EXPECT_EQ("normal", tokens[2]);
+}
+
+// Test environment variable unwrapping - token with only '$' (edge case)
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_OnlyDollarSign) {
+    std::istringstream iss("$");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    // Token is just "$", substr(1) would be empty, getenv("") might return nullptr
+    // So token should become empty
+    EXPECT_EQ("", tokens[0]);
+}
+
+// Test environment variable unwrapping - empty token (edge case, should be safe)
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_EmptyToken) {
+    // Empty string is handled by tokenize, but let's test with spaces only
+    std::istringstream iss("   ");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    // After trimming and tokenizing, should have no tokens
+    EXPECT_EQ(0, tokens.size());
+}
+
+// Test environment variable unwrapping - token starting with '$' but with spaces
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_DollarSignWithSpaces) {
+    // Tokenization should handle spaces, so "$ VAR" would be two tokens: "$" and "VAR"
+    // Let's test this
+    std::istringstream iss("$ VAR");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(2, tokens.size());
+    EXPECT_EQ("", tokens[0]);  // "$" becomes empty (no env var with empty name)
+    EXPECT_EQ("VAR", tokens[1]);  // "VAR" is not an env var (no $ prefix)
+}
+
+// Test environment variable unwrapping - environment variable with empty value
+TEST_F(InputFileTokenizerTest, EnvironmentVariableUnwrap_EmptyValue) {
+    // Set environment variable to empty string (RAII will clean up automatically)
+    const char* testVarName = "TEST_EMPTY_VAR";
+    EnvVarGuard guard(testVarName, "");  // Empty string value
+    
+    std::istringstream iss("$TEST_EMPTY_VAR");
+    InputFileTokenizer parser(iss);
+    
+    const std::vector<std::string>& tokens = parser.getTokens();
+    ASSERT_EQ(1, tokens.size());
+    EXPECT_EQ("", tokens[0]);  // Should be empty string
 }
 

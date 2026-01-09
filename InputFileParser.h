@@ -43,6 +43,8 @@ private:
     
     // Helper method to tokenize a string by spaces and tabs
     void tokenize(const std::string& str);
+
+    void unwrapEnvironmentVariablesForTokens();
 };
 
 } // namespace Input

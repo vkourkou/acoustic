@@ -1,4 +1,5 @@
 #include <InputFileParser.h>
+#include <cstdlib>
 
 namespace Input {
 
@@ -137,7 +138,28 @@ InputFileTokenizer::tokenize(const std::string& str) {
             m_vTokens.push_back(str.substr(start, pos - start));
         }
     }
+    unwrapEnvironmentVariablesForTokens();
 }
+
+// -----------------------------------------------------------------------------
+
+void
+InputFileTokenizer::unwrapEnvironmentVariablesForTokens() {
+    for (auto& token : m_vTokens) {
+        if (!token.empty() && token[0] == '$') {
+            const char* envValue = std::getenv(token.substr(1).c_str());
+            if (envValue != nullptr) {
+                token = std::string(envValue);
+            } else {
+                // Environment variable not found, leave token as is or set to empty?
+                // For now, setting to empty string
+                token = std::string();
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 
 } // namespace Input
 
