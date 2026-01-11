@@ -11,7 +11,7 @@ namespace FDTD {
 
 // -----------------------------------------------------------------------------
 
-#define BLOCK_SIZE 8
+#define BLOCK_SIZE 16
 #define TILE_SIZE 4
 
 __global__ void
@@ -415,28 +415,32 @@ void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) 
 
 // -----------------------------------------------------------------------------
 
-template<size_t BlockSize>
+template<int BlockSize>
 __global__ void
 updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
-                    std::size_t presRows, std::size_t presCols,
+                    int presRows, int presCols,
                     float factor)
 {
     
     __shared__ float s_pres[BlockSize][BlockSize + 1];
-    const size_t iOffset = blockIdx.y * (blockDim.y - 2);
-    const size_t jOffset = blockIdx.x * (blockDim.x - 2);
-    std::size_t i = threadIdx.y;
-    std::size_t j = threadIdx.x;
+    __shared__ float s_presdelta[BlockSize][BlockSize + 1];
+    const int iOffset = blockIdx.y * (blockDim.y - 2);
+    const int jOffset = blockIdx.x * (blockDim.x - 2);
+    int i = threadIdx.y;
+    int j = threadIdx.x;
     if (i + iOffset < presRows && j + jOffset < presCols) {
         s_pres[i][j] 
         = prev[(i + iOffset) * presCols + (j + jOffset)];
+        s_presdelta[i][j] 
+        = presdelta[(i + iOffset) * presCols + (j + jOffset)];
     }
 
     __syncthreads();
     if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< presCols - 1 && i < BlockSize - 1 && j < BlockSize - 1) {
         float delta = factor * (s_pres[i+1][j] + s_pres[i-1][j] + s_pres[i][j+1] + s_pres[i][j-1] - 4 * s_pres[i][j]);
-        presdelta[(i + iOffset) * presCols + j + jOffset] -= delta;
-        pres[(i + iOffset) * presCols + j + jOffset] = s_pres[i][j] - presdelta[(i + iOffset) * presCols + j + jOffset];
+        s_presdelta[i][j] -= delta;
+        presdelta[(i + iOffset) * presCols + j + jOffset] = s_presdelta[i][j];
+        pres[(i + iOffset) * presCols + j + jOffset] = s_pres[i][j] - s_presdelta[i][j];
     }
 
 }
