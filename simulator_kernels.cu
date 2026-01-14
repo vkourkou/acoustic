@@ -416,7 +416,22 @@ void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) 
 
 // -----------------------------------------------------------------------------
 
-template<int BlockSizeX, int BlockSizeY>
+template< int BlockSizeX, int BlockSizeY>
+struct UnifiedKernelParams {
+    static constexpr int m_BlockSizeX = BlockSizeX;
+    static constexpr int m_BlockSizeY = BlockSizeY;
+    static constexpr dim3 getBlockDimension() {
+        return dim3(m_BlockSizeX, m_BlockSizeY);
+    }
+    static constexpr dim3 getBlockDimensionMinusTwo() {
+        return dim3(m_BlockSizeX-2, m_BlockSizeY-2);
+    }
+};
+
+// -----------------------------------------------------------------------------
+
+
+template< typename Params>
 __global__ void
 updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
                     int presRows, int presCols,
@@ -426,8 +441,8 @@ updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
     //presCols is the number of columns for the matrix without padding
     //numColsWithPadding.
 
-    __shared__ float s_pres[BlockSizeY][BlockSizeX + 1];
-    __shared__ float s_presdelta[BlockSizeY][BlockSizeX + 1];
+    __shared__ float s_pres[Params::m_BlockSizeY][Params::m_BlockSizeX + 1];
+    __shared__ float s_presdelta[Params::m_BlockSizeY][Params::m_BlockSizeX + 1];
     const int iOffset = blockIdx.y * (blockDim.y - 2);
     const int jOffset = blockIdx.x * (blockDim.x - 2);
     int i = threadIdx.y;
@@ -440,7 +455,7 @@ updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
     }
 
     __syncthreads();
-    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< nbColsWithoutPadding - 1 && i < BlockSizeY - 1 && j < BlockSizeX - 1) {
+    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< nbColsWithoutPadding - 1 && i < Params::m_BlockSizeY - 1 && j < Params::m_BlockSizeX - 1) {
         float delta = factor * (s_pres[i+1][j] + s_pres[i-1][j] + s_pres[i][j+1] + s_pres[i][j-1] - 4 * s_pres[i][j]);
         s_presdelta[i][j] -= delta;
         presdelta[(i + iOffset) * presCols + j + jOffset] = s_presdelta[i][j];
@@ -459,8 +474,9 @@ CudaWorkSpaceUnified::getPressureDimension() const
 
 // -----------------------------------------------------------------------------
 
+template< typename Params>
 bool
-CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
+CudaWorkSpaceUnified::initializeTemplated(size_t numRows, size_t numCols)
 {
     m_nbColsWithoutPadding = numCols;
     if (m_ShouldPad) {
@@ -486,32 +502,24 @@ CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
     m_CurrentPres = &m_PresA;
     m_PreviousPres = &m_PresB;
 
-    saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updateUnifiedKernel<BLOCK_SIZE_X, BLOCK_SIZE_Y>);
+    saveLaunchParameters("Pres", Params::getBlockDimension(), getPressureDimension(), (void*)updateUnifiedKernel<Params>);
     
     return true;
 }
 
 // -----------------------------------------------------------------------------
 
-constexpr dim3 
-CudaWorkSpaceUnified::getBlockDimension()
+bool
+CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
 {
-    return dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y);
+    return initializeTemplated<UnifiedKernelParams<BLOCK_SIZE_X, BLOCK_SIZE_Y>>(numRows, numCols);
 }
 
 // -----------------------------------------------------------------------------
 
-
-constexpr dim3 
-CudaWorkSpaceUnified::getBlockDimensionMinusTwo()
-{
-    return dim3(BLOCK_SIZE_X-2, BLOCK_SIZE_Y-2);
-}
-
-// -----------------------------------------------------------------------------
-
+template< typename Params>
 void
-CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb)
+CudaWorkSpaceUnified::updateFieldsTemplated(float courantNb, float crSquareTimesCourantNb)
 {
     if (m_PresA.size() == 0 || m_PresB.size() == 0 || m_PresDelta.size() == 0) {
         return;
@@ -519,12 +527,12 @@ CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb
     std::swap(m_CurrentPres, m_PreviousPres);
     const float factor = courantNb * crSquareTimesCourantNb;
     // Configure kernel launch parameters
-    const dim3 BlockDim{getBlockDimension()};
+    constexpr dim3 BlockDim{Params::getBlockDimension()};
     const dim3 ElementDimension(getPressureDimension());
-    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, getBlockDimensionMinusTwo())};
+    const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, Params::getBlockDimensionMinusTwo())};
     
     // Launch kernel
-    updateUnifiedKernel<BLOCK_SIZE_X, BLOCK_SIZE_Y><<<GridDim, BlockDim>>>(
+    updateUnifiedKernel<Params><<<GridDim, BlockDim>>>(
         m_PreviousPres->data(),
         m_PresDelta.data(),
         m_CurrentPres->data(),
@@ -539,6 +547,15 @@ CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb
 }
 
 // -----------------------------------------------------------------------------
+
+void
+CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb)
+{
+    updateFieldsTemplated<UnifiedKernelParams<BLOCK_SIZE_X, BLOCK_SIZE_Y>>(courantNb, crSquareTimesCourantNb);
+}
+
+// -----------------------------------------------------------------------------
+
 
 void
 CudaWorkSpaceUnified::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)

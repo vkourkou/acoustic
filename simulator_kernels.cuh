@@ -42,11 +42,12 @@ class CudaWorkSpaceUnified {
     CudaDenseMatrix<float> m_PresDelta;
     size_t m_nbColsWithoutPadding;
     bool m_ShouldPad{true};
-    constexpr static dim3 getBlockDimension();
-    constexpr static dim3 getBlockDimensionMinusTwo();
     dim3 getPressureDimension() const;
     dim3 getGridDimension() const;
-    
+    template< typename Params>
+    void updateFieldsTemplated(float courantNb, float crSquareTimesCourantNb);
+    template< typename Params>
+    bool initializeTemplated(size_t numRows, size_t numCols);
 public:
     int getNbColsWithPadding() const {
         return m_PresA.cols() - m_nbColsWithoutPadding;
