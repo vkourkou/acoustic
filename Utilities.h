@@ -47,6 +47,10 @@ std::optional<size_t>
 convertTo<size_t>(const std::string& str);
 
 template<>
+std::optional<int>
+convertTo<int>(const std::string& str);
+
+template<>
 std::optional<long>
 convertTo<long>(const std::string& str);
 

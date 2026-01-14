@@ -66,6 +66,45 @@ convertTo<size_t>(const std::string& str) {
 
 // -----------------------------------------------------------------------------
 
+// Template specialization for int
+template<>
+std::optional<int>
+convertTo<int>(const std::string& str) {
+    if (str.empty()) {
+        return std::nullopt;
+    }
+    
+    try {
+        // Check for leading whitespace
+        if (std::isspace(static_cast<unsigned char>(str[0]))) {
+            return std::nullopt;
+        }
+        
+        // Convert using stol and check if entire string was consumed
+        size_t pos = 0;
+        long longVal = std::stol(str, &pos);
+        
+        // Check if entire string was consumed
+        if (pos != str.length()) {
+            return std::nullopt;
+        }
+        
+        // Check if value fits within int range
+        if (longVal < std::numeric_limits<int>::min() || longVal > std::numeric_limits<int>::max()) {
+            return std::nullopt;
+        }
+        
+        int value = static_cast<int>(longVal);
+        return value;
+    } catch (const std::invalid_argument&) {
+        return std::nullopt;
+    } catch (const std::out_of_range&) {
+        return std::nullopt;
+    }
+}
+
+// -----------------------------------------------------------------------------
+
 // Template specialization for long
 template<>
 std::optional<long>

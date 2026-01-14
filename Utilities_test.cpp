@@ -147,6 +147,116 @@ TEST_F(UtilitiesTest, ConvertToLong_LargeNumbers) {
 
 // -----------------------------------------------------------------------------
 
+// Test convertTo<int> with valid positive integers
+TEST_F(UtilitiesTest, ConvertToInt_ValidPositive) {
+    auto result = Utilities::convertTo<int>("0");
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(0, result.value());
+    
+    result = Utilities::convertTo<int>("42");
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(42, result.value());
+    
+    result = Utilities::convertTo<int>("1000");
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(1000, result.value());
+}
+
+// Test convertTo<int> with valid negative integers
+TEST_F(UtilitiesTest, ConvertToInt_ValidNegative) {
+    auto result = Utilities::convertTo<int>("-1");
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(-1, result.value());
+    
+    result = Utilities::convertTo<int>("-42");
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(-42, result.value());
+    
+    result = Utilities::convertTo<int>("-1000");
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(-1000, result.value());
+}
+
+// Test convertTo<int> with empty string (should fail)
+TEST_F(UtilitiesTest, ConvertToInt_EmptyString) {
+    auto result = Utilities::convertTo<int>("");
+    EXPECT_FALSE(result.has_value());
+}
+
+// Test convertTo<int> with invalid format (should fail)
+TEST_F(UtilitiesTest, ConvertToInt_InvalidFormat) {
+    auto result = Utilities::convertTo<int>("abc");
+    EXPECT_FALSE(result.has_value());
+    
+    result = Utilities::convertTo<int>("12abc");
+    EXPECT_FALSE(result.has_value());
+    
+    result = Utilities::convertTo<int>("12.5");
+    EXPECT_FALSE(result.has_value());
+}
+
+// Test convertTo<int> with whitespace (should fail)
+TEST_F(UtilitiesTest, ConvertToInt_WithWhitespace) {
+    auto result = Utilities::convertTo<int>(" 42");
+    EXPECT_FALSE(result.has_value());
+    
+    result = Utilities::convertTo<int>("42 ");
+    EXPECT_FALSE(result.has_value());
+    
+    result = Utilities::convertTo<int>(" 42 ");
+    EXPECT_FALSE(result.has_value());
+}
+
+// Test convertTo<int> with int range limits
+TEST_F(UtilitiesTest, ConvertToInt_RangeLimits) {
+    // Test INT_MAX
+    auto result = Utilities::convertTo<int>(std::to_string(std::numeric_limits<int>::max()));
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(std::numeric_limits<int>::max(), result.value());
+    
+    // Test INT_MIN
+    result = Utilities::convertTo<int>(std::to_string(std::numeric_limits<int>::min()));
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(std::numeric_limits<int>::min(), result.value());
+}
+
+// Test convertTo<int> with values outside int range (should fail)
+TEST_F(UtilitiesTest, ConvertToInt_OutOfRange) {
+    // Test value larger than INT_MAX
+    long longVal = static_cast<long>(std::numeric_limits<int>::max()) + 1;
+    auto result = Utilities::convertTo<int>(std::to_string(longVal));
+    EXPECT_FALSE(result.has_value());
+    
+    // Test value smaller than INT_MIN
+    longVal = static_cast<long>(std::numeric_limits<int>::min()) - 1;
+    result = Utilities::convertTo<int>(std::to_string(longVal));
+    EXPECT_FALSE(result.has_value());
+    
+    // Test with a very large number
+    result = Utilities::convertTo<int>("2147483648");  // INT_MAX + 1
+    EXPECT_FALSE(result.has_value());
+    
+    result = Utilities::convertTo<int>("-2147483649");  // INT_MIN - 1
+    EXPECT_FALSE(result.has_value());
+}
+
+// Test convertTo<int> with boundary values
+TEST_F(UtilitiesTest, ConvertToInt_BoundaryValues) {
+    // Test INT_MAX - 1
+    int maxMinusOne = std::numeric_limits<int>::max() - 1;
+    auto result = Utilities::convertTo<int>(std::to_string(maxMinusOne));
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(maxMinusOne, result.value());
+    
+    // Test INT_MIN + 1
+    int minPlusOne = std::numeric_limits<int>::min() + 1;
+    result = Utilities::convertTo<int>(std::to_string(minPlusOne));
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(minPlusOne, result.value());
+}
+
+// -----------------------------------------------------------------------------
+
 // Test convertTo<float> with valid positive floats
 TEST_F(UtilitiesTest, ConvertToFloat_ValidPositive) {
     auto result = Utilities::convertTo<float>("0.0");
