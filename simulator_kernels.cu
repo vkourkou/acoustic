@@ -509,10 +509,15 @@ CudaWorkSpaceUnified::initializeTemplated(size_t numRows, size_t numCols)
 
 // -----------------------------------------------------------------------------
 
+#define ListOfUnifiedKernelParams \
+    UnifiedKernelParams<128, 4>, \
+    UnifiedKernelParams<16, 16>, \
+    UnifiedKernelParams<8, 8>
+    
 bool
 CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
 {
-    return initializeTemplated<UnifiedKernelParams<BLOCK_SIZE_X, BLOCK_SIZE_Y>>(numRows, numCols);
+    return variadicInitialize<ListOfUnifiedKernelParams>(numRows, numCols);
 }
 
 // -----------------------------------------------------------------------------
@@ -551,7 +556,9 @@ CudaWorkSpaceUnified::updateFieldsTemplated(float courantNb, float crSquareTimes
 void
 CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb)
 {
-    updateFieldsTemplated<UnifiedKernelParams<BLOCK_SIZE_X, BLOCK_SIZE_Y>>(courantNb, crSquareTimesCourantNb);
+    // Try dispatching to template instances - add more UnifiedKernelParams as needed
+    variadicUpdateFields<ListOfUnifiedKernelParams>(courantNb, crSquareTimesCourantNb);
+    
 }
 
 // -----------------------------------------------------------------------------
