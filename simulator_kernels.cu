@@ -510,9 +510,48 @@ CudaWorkSpaceUnified::initializeTemplated(size_t numRows, size_t numCols)
 // -----------------------------------------------------------------------------
 
 #define ListOfUnifiedKernelParams \
-    UnifiedKernelParams<128, 4>, \
+    UnifiedKernelParams<4, 4>, \
+    UnifiedKernelParams<4, 8>, \
+    UnifiedKernelParams<4, 16>, \
+    UnifiedKernelParams<4, 32>, \
+    UnifiedKernelParams<4, 64>, \
+    UnifiedKernelParams<4, 128>, \
+    UnifiedKernelParams<4, 256>, \
+    UnifiedKernelParams<4, 512>, \
+    UnifiedKernelParams<8, 4>, \
+    UnifiedKernelParams<8, 8>, \
+    UnifiedKernelParams<8, 16>, \
+    UnifiedKernelParams<8, 32>, \
+    UnifiedKernelParams<8, 64>, \
+    UnifiedKernelParams<8, 128>, \
+    UnifiedKernelParams<8, 256>, \
+    UnifiedKernelParams<16, 4>, \
+    UnifiedKernelParams<16, 8>, \
     UnifiedKernelParams<16, 16>, \
-    UnifiedKernelParams<8, 8>
+    UnifiedKernelParams<16, 32>, \
+    UnifiedKernelParams<16, 64>, \
+    UnifiedKernelParams<16, 128>, \
+    UnifiedKernelParams<16, 256>, \
+    UnifiedKernelParams<32, 4>, \
+    UnifiedKernelParams<32, 8>, \
+    UnifiedKernelParams<32, 16>, \
+    UnifiedKernelParams<32, 32>, \
+    UnifiedKernelParams<32, 64>, \
+    UnifiedKernelParams<32, 128>, \
+    UnifiedKernelParams<64, 4>, \
+    UnifiedKernelParams<64, 8>, \
+    UnifiedKernelParams<64, 16>, \
+    UnifiedKernelParams<64, 32>, \
+    UnifiedKernelParams<64, 64>, \
+    UnifiedKernelParams<128, 4>, \
+    UnifiedKernelParams<128, 8>, \
+    UnifiedKernelParams<128, 16>, \
+    UnifiedKernelParams<128, 32>, \
+    UnifiedKernelParams<256, 4>, \
+    UnifiedKernelParams<256, 8>, \
+    UnifiedKernelParams<256, 16>, \
+    UnifiedKernelParams<512, 4>, \
+    UnifiedKernelParams<1024, 4>
     
 bool
 CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
@@ -584,6 +623,15 @@ CudaWorkSpaceUnified::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, 
 
 // -----------------------------------------------------------------------------
 
+void
+CudaWorkSpaceUnified::setBlockSize(int blockSizeX, int blockSizeY)
+{
+    m_BlockSizeX = blockSizeX;
+    m_BlockSizeY = blockSizeY;
+}
+
+// -----------------------------------------------------------------------------
+
 template<>
 bool
 Simulator::initializeMatrices<GPU>()
@@ -593,6 +641,9 @@ Simulator::initializeMatrices<GPU>()
     
     if (!m_CudaWorkSpace) {
         m_CudaWorkSpace = new CudaWorkSpaceUnified();
+        if (m_SimulationParam.getBlockSizeX() != 0 && m_SimulationParam.getBlockSizeY() != 0) {
+            m_CudaWorkSpace->setBlockSize(m_SimulationParam.getBlockSizeX(), m_SimulationParam.getBlockSizeY());
+        }
     }
     
     return m_CudaWorkSpace->initialize(numRows, numCols);

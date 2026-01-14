@@ -64,6 +64,7 @@ public:
     bool initialize(size_t numRows, size_t numCols);
     void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
     void updateFields(float courantNb, float crSquareTimesCourantNb);
+    void setBlockSize(int blockSizeX, int blockSizeY);
 };
 
 // Variadic template function to try multiple UnifiedKernelParams
