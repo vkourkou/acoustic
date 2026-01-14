@@ -4197,4 +4197,418 @@ TEST_F(SimulationParamStatementTest, Process_SevenTokensInvalidProcessingType) {
 
 // -----------------------------------------------------------------------------
 
+// Test process with BLOCK_X and BLOCK_Y for GPU
+TEST_F(SimulationParamStatementTest, Process_WithBlockSizesGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(1000, simParam.getMaxIteration());
+    EXPECT_EQ(200, simParam.getBatchSize());
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+}
+
+// Test process with BLOCK_X and BLOCK_Y case insensitive
+TEST_F(SimulationParamStatementTest, Process_BlockSizesCaseInsensitive) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "block_x", "16", "block_y", "16"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(16, simParam.getBlockSizeX());
+    EXPECT_EQ(16, simParam.getBlockSizeY());
+}
+
+// Test process with BLOCK_X and BLOCK_Y mixed case
+TEST_F(SimulationParamStatementTest, Process_BlockSizesMixedCase) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "Block_X", "8", "Block_Y", "8"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(8, simParam.getBlockSizeX());
+    EXPECT_EQ(8, simParam.getBlockSizeY());
+}
+
+// Test process with BLOCK_X and BLOCK_Y optional (missing when GPU)
+TEST_F(SimulationParamStatementTest, Process_BlockSizesOptional) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(0, simParam.getBlockSizeX());
+    EXPECT_EQ(0, simParam.getBlockSizeY());
+}
+
+// Test process with only BLOCK_X (missing BLOCK_Y) - should fail validation
+TEST_F(SimulationParamStatementTest, Process_OnlyBlockX) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because BLOCK_Y is not provided
+}
+
+// Test process with only BLOCK_Y (missing BLOCK_X) - should fail validation
+TEST_F(SimulationParamStatementTest, Process_OnlyBlockY) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because BLOCK_X is not provided
+}
+
+// Test process with BLOCK_X and BLOCK_Y with CPU (should be allowed but not validated)
+TEST_F(SimulationParamStatementTest, Process_BlockSizesWithCPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "CPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(CPU, simParam.getProcessingType());
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+}
+
+// Test process with invalid BLOCK_X value
+TEST_F(SimulationParamStatementTest, Process_InvalidBlockX) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "abc", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with invalid BLOCK_Y value
+TEST_F(SimulationParamStatementTest, Process_InvalidBlockY) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "xyz"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test process with negative BLOCK_X
+TEST_F(SimulationParamStatementTest, Process_NegativeBlockX) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "-128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Process succeeds, but validation should fail
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test process with negative BLOCK_Y
+TEST_F(SimulationParamStatementTest, Process_NegativeBlockY) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "-4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Process succeeds, but validation should fail
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test process with zero BLOCK_X
+TEST_F(SimulationParamStatementTest, Process_ZeroBlockX) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "0", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Process succeeds, but validation should fail
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test process with zero BLOCK_Y
+TEST_F(SimulationParamStatementTest, Process_ZeroBlockY) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "0"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Process succeeds, but validation should fail
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test isValid with valid BLOCK_X and BLOCK_Y for GPU
+TEST_F(SimulationParamStatementTest, IsValid_ValidBlockSizesGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(simParam.isValid());
+}
+
+// Test isValid with missing BLOCK_X and BLOCK_Y for GPU (should be valid since optional)
+TEST_F(SimulationParamStatementTest, IsValid_MissingBlockSizesGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(simParam.isValid());  // Should be valid since BLOCK_X and BLOCK_Y are optional
+}
+
+// Test isValid with negative BLOCK_X for GPU
+TEST_F(SimulationParamStatementTest, IsValid_NegativeBlockXGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "-128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because BLOCK_X is negative
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test isValid with negative BLOCK_Y for GPU
+TEST_F(SimulationParamStatementTest, IsValid_NegativeBlockYGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "-4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because BLOCK_Y is negative
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test isValid with zero BLOCK_X for GPU
+TEST_F(SimulationParamStatementTest, IsValid_ZeroBlockXGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "0", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because BLOCK_X is zero but BLOCK_Y is provided
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test isValid with zero BLOCK_Y for GPU
+TEST_F(SimulationParamStatementTest, IsValid_ZeroBlockYGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "0"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);  // Should fail because BLOCK_Y is zero but BLOCK_X is provided
+    EXPECT_FALSE(simParam.isValid());
+}
+
+// Test isValid with negative BLOCK_X for CPU (should be valid since not validated for CPU)
+TEST_F(SimulationParamStatementTest, IsValid_NegativeBlockXCPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "CPU", "BLOCK_X", "-128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(simParam.isValid());  // Should be valid since BLOCK_X/BLOCK_Y not validated for CPU
+}
+
+// Test accessors for BLOCK_X and BLOCK_Y default values
+TEST_F(SimulationParamStatementTest, Accessors_BlockSizesDefaultValues) {
+    SimulationParamStatement simParam;
+    
+    EXPECT_EQ(0, simParam.getBlockSizeX());
+    EXPECT_EQ(0, simParam.getBlockSizeY());
+}
+
+// Test accessors for BLOCK_X and BLOCK_Y after processing
+TEST_F(SimulationParamStatementTest, Accessors_BlockSizesAfterProcessing) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+}
+
+// Test accessors for BLOCK_X and BLOCK_Y const
+TEST_F(SimulationParamStatementTest, Accessors_BlockSizesConst) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    simParam.process(tokens);
+    
+    const SimulationParamStatement& constSimParam = simParam;
+    EXPECT_EQ(128, constSimParam.getBlockSizeX());
+    EXPECT_EQ(4, constSimParam.getBlockSizeY());
+}
+
+// Test process with BLOCK_X and BLOCK_Y in different order
+TEST_F(SimulationParamStatementTest, Process_BlockSizesDifferentOrder) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_Y", "4", "BLOCK_X", "128"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+}
+
+// Test process with BLOCK_X and BLOCK_Y before ProcessingType
+TEST_F(SimulationParamStatementTest, Process_BlockSizesBeforeProcessingType) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BLOCK_X", "128", "BLOCK_Y", "4", "ProcessingType", "GPU"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+}
+
+// Test process with 11 tokens (all parameters including BLOCK_X and BLOCK_Y)
+TEST_F(SimulationParamStatementTest, Process_ElevenTokens) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "BatchSize", "200", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(1000, simParam.getMaxIteration());
+    EXPECT_EQ(200, simParam.getBatchSize());
+    EXPECT_EQ(GPU, simParam.getProcessingType());
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+}
+
+// Test process with 9 tokens (with one block size)
+TEST_F(SimulationParamStatementTest, Process_NineTokens) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_TRUE(result);
+    EXPECT_EQ(128, simParam.getBlockSizeX());
+    EXPECT_EQ(4, simParam.getBlockSizeY());
+}
+
+// Test process with wrong block size parameter name
+TEST_F(SimulationParamStatementTest, Process_WrongBlockSizeParameterName) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCKX", "128", "BLOCK_Y", "4"};
+    
+    bool result = simParam.process(tokens);
+    EXPECT_FALSE(result);
+}
+
+// Test save with BLOCK_X and BLOCK_Y for GPU
+TEST_F(SimulationParamStatementSaveTest, Save_WithBlockSizesGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType GPU"));
+    EXPECT_NE(std::string::npos, output.find("BLOCK_X 128"));
+    EXPECT_NE(std::string::npos, output.find("BLOCK_Y 4"));
+}
+
+// Test save without BLOCK_X and BLOCK_Y for GPU (should not save them)
+TEST_F(SimulationParamStatementSaveTest, Save_WithoutBlockSizesGPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType GPU"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_X"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_Y"));
+}
+
+// Test save with only BLOCK_X (should not save since both must be set)
+TEST_F(SimulationParamStatementSaveTest, Save_WithOnlyBlockX) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType GPU"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_X"));  // Should not save since BLOCK_Y is missing
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_Y"));
+}
+
+// Test save with only BLOCK_Y (should not save since both must be set)
+TEST_F(SimulationParamStatementSaveTest, Save_WithOnlyBlockY) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_Y", "4"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType GPU"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_X"));  // Should not save since BLOCK_X is missing
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_Y"));
+}
+
+// Test save with BLOCK_X and BLOCK_Y for CPU (should not save them)
+TEST_F(SimulationParamStatementSaveTest, Save_WithBlockSizesCPU) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "CPU", "BLOCK_X", "128", "BLOCK_Y", "4"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType CPU"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_X"));  // Should not save for CPU
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_Y"));
+}
+
+// Test save with zero BLOCK_X (should not save since not positive)
+TEST_F(SimulationParamStatementSaveTest, Save_WithZeroBlockX) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "0", "BLOCK_Y", "4"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType GPU"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_X"));  // Should not save since BLOCK_X is zero
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_Y"));
+}
+
+// Test save with zero BLOCK_Y (should not save since not positive)
+TEST_F(SimulationParamStatementSaveTest, Save_WithZeroBlockY) {
+    SimulationParamStatement simParam;
+    std::vector<std::string> tokens = {"SimulationParam", "MaxIteration", "1000", "ProcessingType", "GPU", "BLOCK_X", "128", "BLOCK_Y", "0"};
+    simParam.process(tokens);
+    
+    std::ostringstream oss;
+    simParam.save(oss);
+    std::string output = oss.str();
+    
+    EXPECT_NE(std::string::npos, output.find("SimulationParam"));
+    EXPECT_NE(std::string::npos, output.find("MaxIteration 1000"));
+    EXPECT_NE(std::string::npos, output.find("ProcessingType GPU"));
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_X"));  // Should not save since BLOCK_Y is zero
+    EXPECT_EQ(std::string::npos, output.find("BLOCK_Y"));
+}
+
+// -----------------------------------------------------------------------------
+
 
