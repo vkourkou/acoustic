@@ -420,7 +420,7 @@ template<int BlockSizeX, int BlockSizeY>
 __global__ void
 updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
                     int presRows, int presCols,
-                    int numColsWithPadding,
+                    int nbColsWithoutPadding,
                     float factor)
 {
     //presCols is the number of columns for the matrix without padding
@@ -432,19 +432,19 @@ updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
     const int jOffset = blockIdx.x * (blockDim.x - 2);
     int i = threadIdx.y;
     int j = threadIdx.x;
-    if (i + iOffset < presRows && j + jOffset < presCols) {
+    if (i + iOffset < presRows && j + jOffset < nbColsWithoutPadding) {
         s_pres[i][j] 
-        = prev[(i + iOffset) * numColsWithPadding + (j + jOffset)];
+        = prev[(i + iOffset) * presCols + (j + jOffset)];
         s_presdelta[i][j] 
-        = presdelta[(i + iOffset) * numColsWithPadding + (j + jOffset)];
+        = presdelta[(i + iOffset) * presCols + (j + jOffset)];
     }
 
     __syncthreads();
-    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< presCols - 1 && i < BlockSizeY - 1 && j < BlockSizeX - 1) {
+    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< nbColsWithoutPadding - 1 && i < BlockSizeY - 1 && j < BlockSizeX - 1) {
         float delta = factor * (s_pres[i+1][j] + s_pres[i-1][j] + s_pres[i][j+1] + s_pres[i][j-1] - 4 * s_pres[i][j]);
         s_presdelta[i][j] -= delta;
-        presdelta[(i + iOffset) * numColsWithPadding + j + jOffset] = s_presdelta[i][j];
-        pres[(i + iOffset) * numColsWithPadding + j + jOffset] = s_pres[i][j] - s_presdelta[i][j];
+        presdelta[(i + iOffset) * presCols + j + jOffset] = s_presdelta[i][j];
+        pres[(i + iOffset) * presCols + j + jOffset] = s_pres[i][j] - s_presdelta[i][j];
     }
 
 }
@@ -462,10 +462,10 @@ CudaWorkSpaceUnified::getPressureDimension() const
 bool
 CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
 {
+    m_nbColsWithoutPadding = numCols;
     if (m_ShouldPad) {
         numCols = (numCols  + 31) / 32 * 32; //That will make this the number of columns with padding
     }
-    m_nbColsWithPadding = numCols;
     m_PresA.resize(numRows, numCols);
     m_PresB.resize(numRows, numCols);
     m_PresDelta.resize(numRows, numCols);
@@ -530,7 +530,7 @@ CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb
         m_CurrentPres->data(),
         m_CurrentPres->rows(),
         m_CurrentPres->cols(),
-        m_nbColsWithPadding,
+        m_nbColsWithoutPadding,
         factor
     );
     
@@ -600,6 +600,7 @@ Simulator::potentiallyTransferToDevice(DenseMatrix<float>& To)
 {
     if (m_CudaWorkSpace) {
         m_CudaWorkSpace->getPres().transferTo(To);
+        To.eraseLastCols(m_CudaWorkSpace->getNbColsWithPadding());
     }
 }
 

@@ -40,13 +40,17 @@ class CudaWorkSpaceUnified {
     CudaDenseMatrix<float>* m_CurrentPres;
     CudaDenseMatrix<float>* m_PreviousPres;
     CudaDenseMatrix<float> m_PresDelta;
-    size_t m_nbColsWithPadding;
+    size_t m_nbColsWithoutPadding;
     bool m_ShouldPad{true};
     constexpr static dim3 getBlockDimension();
     constexpr static dim3 getBlockDimensionMinusTwo();
     dim3 getPressureDimension() const;
     dim3 getGridDimension() const;
+    
 public:
+    int getNbColsWithPadding() const {
+        return m_PresA.cols() - m_nbColsWithoutPadding;
+    }
     const CudaDenseMatrix<float>& getPres() const {
         return *m_CurrentPres;
     }
