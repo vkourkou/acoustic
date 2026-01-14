@@ -159,6 +159,39 @@ public:
 
     // -----------------------------------------------------------------------------
 
+    // Erase the last nCols columns from the matrix
+    void
+    eraseLastCols(std::size_t nCols)
+    {
+        if (nCols > m_cols) {
+            throw std::out_of_range("DenseMatrix::eraseLastCols: cannot erase " + 
+                                    std::to_string(nCols) + " columns from matrix with only " + 
+                                    std::to_string(m_cols) + " columns");
+        }
+        if (nCols == 0) {
+            return;  // Nothing to erase
+        }
+        
+        std::size_t newCols = m_cols - nCols;
+        
+        // Since data is stored in row-major order, we need to remove the last nCols elements
+        // from each row. We'll create a new vector with the remaining data.
+        std::vector<Elem_t> newData;
+        newData.reserve(m_rows * newCols);
+        
+        for (std::size_t i = 0; i < m_rows; ++i) {
+            // Copy all columns except the last nCols for this row
+            for (std::size_t j = 0; j < newCols; ++j) {
+                newData.push_back(m_data[i * m_cols + j]);
+            }
+        }
+        
+        m_cols = newCols;
+        m_data = std::move(newData);
+    }
+
+    // -----------------------------------------------------------------------------
+
     // Save matrix to output stream
     void
     save(std::ostream& OS, bool bPrintTranspose, std::size_t pads = 0) const

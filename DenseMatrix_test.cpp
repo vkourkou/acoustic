@@ -1332,3 +1332,267 @@ TEST_F(DenseMatrixTest, Save_WithPads_Rectangular) {
 
 // -----------------------------------------------------------------------------
 
+
+// Test eraseLastCols - erase one column
+TEST_F(DenseMatrixTest, EraseLastCols_OneColumn) {
+    DenseMatrix<float> matrix(3, 4);
+    
+    // Fill matrix with values
+    for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t j = 0; j < 4; ++j) {
+            matrix(i, j) = static_cast<float>(i * 4 + j + 1);
+        }
+    }
+    
+    // Expected matrix before erase:
+    // 1  2  3  4
+    // 5  6  7  8
+    // 9 10 11 12
+    
+    matrix.eraseLastCols(1);
+    
+    EXPECT_EQ(3, matrix.rows());
+    EXPECT_EQ(3, matrix.cols());
+    EXPECT_EQ(9, matrix.size());
+    
+    // Expected matrix after erase:
+    // 1  2  3
+    // 5  6  7
+    // 9 10 11
+    EXPECT_FLOAT_EQ(1.0f, matrix(0, 0));
+    EXPECT_FLOAT_EQ(2.0f, matrix(0, 1));
+    EXPECT_FLOAT_EQ(3.0f, matrix(0, 2));
+    EXPECT_FLOAT_EQ(5.0f, matrix(1, 0));
+    EXPECT_FLOAT_EQ(6.0f, matrix(1, 1));
+    EXPECT_FLOAT_EQ(7.0f, matrix(1, 2));
+    EXPECT_FLOAT_EQ(9.0f, matrix(2, 0));
+    EXPECT_FLOAT_EQ(10.0f, matrix(2, 1));
+    EXPECT_FLOAT_EQ(11.0f, matrix(2, 2));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - erase multiple columns
+TEST_F(DenseMatrixTest, EraseLastCols_MultipleColumns) {
+    DenseMatrix<float> matrix(2, 5);
+    
+    // Fill matrix with values
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 5; ++j) {
+            matrix(i, j) = static_cast<float>(i * 5 + j + 1);
+        }
+    }
+    
+    // Expected matrix before erase:
+    // 1  2  3  4  5
+    // 6  7  8  9 10
+    
+    matrix.eraseLastCols(3);
+    
+    EXPECT_EQ(2, matrix.rows());
+    EXPECT_EQ(2, matrix.cols());
+    EXPECT_EQ(4, matrix.size());
+    
+    // Expected matrix after erase:
+    // 1  2
+    // 6  7
+    EXPECT_FLOAT_EQ(1.0f, matrix(0, 0));
+    EXPECT_FLOAT_EQ(2.0f, matrix(0, 1));
+    EXPECT_FLOAT_EQ(6.0f, matrix(1, 0));
+    EXPECT_FLOAT_EQ(7.0f, matrix(1, 1));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - erase all columns (edge case)
+TEST_F(DenseMatrixTest, EraseLastCols_AllColumns) {
+    DenseMatrix<float> matrix(3, 4);
+    
+    // Fill matrix with values
+    for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t j = 0; j < 4; ++j) {
+            matrix(i, j) = static_cast<float>(i * 4 + j + 1);
+        }
+    }
+    
+    matrix.eraseLastCols(4);
+    
+    EXPECT_EQ(3, matrix.rows());
+    EXPECT_EQ(0, matrix.cols());
+    EXPECT_EQ(0, matrix.size());
+    EXPECT_TRUE(matrix.empty());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - erase zero columns (edge case, should do nothing)
+TEST_F(DenseMatrixTest, EraseLastCols_ZeroColumns) {
+    DenseMatrix<float> matrix(2, 3);
+    
+    // Fill matrix with values
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            matrix(i, j) = static_cast<float>(i * 3 + j + 1);
+        }
+    }
+    
+    matrix.eraseLastCols(0);
+    
+    EXPECT_EQ(2, matrix.rows());
+    EXPECT_EQ(3, matrix.cols());
+    EXPECT_EQ(6, matrix.size());
+    
+    // Verify all values are unchanged
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 3; ++j) {
+            EXPECT_FLOAT_EQ(static_cast<float>(i * 3 + j + 1), matrix(i, j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - error case: try to erase more columns than exist
+TEST_F(DenseMatrixTest, EraseLastCols_TooManyColumns) {
+    DenseMatrix<float> matrix(3, 4);
+    
+    // Fill matrix with values
+    for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t j = 0; j < 4; ++j) {
+            matrix(i, j) = static_cast<float>(i * 4 + j + 1);
+        }
+    }
+    
+    // Try to erase more columns than exist
+    EXPECT_THROW(matrix.eraseLastCols(5), std::out_of_range);
+    
+    // Matrix should be unchanged
+    EXPECT_EQ(3, matrix.rows());
+    EXPECT_EQ(4, matrix.cols());
+    EXPECT_EQ(12, matrix.size());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - verify data integrity with larger matrix
+TEST_F(DenseMatrixTest, EraseLastCols_LargeMatrix) {
+    DenseMatrix<float> matrix(10, 20);
+    
+    // Fill matrix with unique values
+    for (std::size_t i = 0; i < 10; ++i) {
+        for (std::size_t j = 0; j < 20; ++j) {
+            matrix(i, j) = static_cast<float>(i * 20 + j);
+        }
+    }
+    
+    matrix.eraseLastCols(5);
+    
+    EXPECT_EQ(10, matrix.rows());
+    EXPECT_EQ(15, matrix.cols());
+    EXPECT_EQ(150, matrix.size());
+    
+    // Verify all remaining values are correct
+    for (std::size_t i = 0; i < 10; ++i) {
+        for (std::size_t j = 0; j < 15; ++j) {
+            EXPECT_FLOAT_EQ(static_cast<float>(i * 20 + j), matrix(i, j));
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - single row matrix
+TEST_F(DenseMatrixTest, EraseLastCols_SingleRow) {
+    DenseMatrix<float> matrix(1, 5);
+    
+    // Fill matrix
+    for (std::size_t j = 0; j < 5; ++j) {
+        matrix(0, j) = static_cast<float>(j + 1);
+    }
+    
+    matrix.eraseLastCols(2);
+    
+    EXPECT_EQ(1, matrix.rows());
+    EXPECT_EQ(3, matrix.cols());
+    EXPECT_EQ(3, matrix.size());
+    
+    EXPECT_FLOAT_EQ(1.0f, matrix(0, 0));
+    EXPECT_FLOAT_EQ(2.0f, matrix(0, 1));
+    EXPECT_FLOAT_EQ(3.0f, matrix(0, 2));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - single column matrix
+TEST_F(DenseMatrixTest, EraseLastCols_SingleColumn) {
+    DenseMatrix<float> matrix(4, 1);
+    
+    // Fill matrix
+    for (std::size_t i = 0; i < 4; ++i) {
+        matrix(i, 0) = static_cast<float>(i + 1);
+    }
+    
+    matrix.eraseLastCols(1);
+    
+    EXPECT_EQ(4, matrix.rows());
+    EXPECT_EQ(0, matrix.cols());
+    EXPECT_EQ(0, matrix.size());
+    EXPECT_TRUE(matrix.empty());
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - multiple erase operations
+TEST_F(DenseMatrixTest, EraseLastCols_MultipleOperations) {
+    DenseMatrix<float> matrix(3, 6);
+    
+    // Fill matrix
+    for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t j = 0; j < 6; ++j) {
+            matrix(i, j) = static_cast<float>(i * 6 + j + 1);
+        }
+    }
+    
+    // First erase: 6 -> 4 columns
+    matrix.eraseLastCols(2);
+    EXPECT_EQ(3, matrix.rows());
+    EXPECT_EQ(4, matrix.cols());
+    
+    // Second erase: 4 -> 2 columns
+    matrix.eraseLastCols(2);
+    EXPECT_EQ(3, matrix.rows());
+    EXPECT_EQ(2, matrix.cols());
+    
+    // Verify remaining values
+    EXPECT_FLOAT_EQ(1.0f, matrix(0, 0));
+    EXPECT_FLOAT_EQ(2.0f, matrix(0, 1));
+    EXPECT_FLOAT_EQ(7.0f, matrix(1, 0));
+    EXPECT_FLOAT_EQ(8.0f, matrix(1, 1));
+    EXPECT_FLOAT_EQ(13.0f, matrix(2, 0));
+    EXPECT_FLOAT_EQ(14.0f, matrix(2, 1));
+}
+
+// -----------------------------------------------------------------------------
+
+// Test eraseLastCols - verify row-major order is preserved
+TEST_F(DenseMatrixTest, EraseLastCols_RowMajorOrder) {
+    DenseMatrix<float> matrix(2, 4);
+    
+    // Fill matrix
+    for (std::size_t i = 0; i < 2; ++i) {
+        for (std::size_t j = 0; j < 4; ++j) {
+            matrix(i, j) = static_cast<float>(i * 4 + j + 1);
+        }
+    }
+    
+    matrix.eraseLastCols(2);
+    
+    // Verify data is still in row-major order
+    const float* data = matrix.data();
+    EXPECT_FLOAT_EQ(1.0f, data[0]);  // (0,0)
+    EXPECT_FLOAT_EQ(2.0f, data[1]);  // (0,1)
+    EXPECT_FLOAT_EQ(5.0f, data[2]);  // (1,0)
+    EXPECT_FLOAT_EQ(6.0f, data[3]);  // (1,1)
+}
+
+// -----------------------------------------------------------------------------
