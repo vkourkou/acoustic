@@ -748,8 +748,10 @@ MaxResolutionStatement::save(std::ostream& OS) const
 bool
 SimulationParamStatement::process(const std::vector<std::string>& tokens) {
     // Must have at least 3 tokens (SimulationParam + at least one key-value pair)
-    // Can have 3, 5, or 7 tokens: "SimulationParam", "MaxIteration", value, "BatchSize", value, "ProcessingType", value
-    if (tokens.size() != 3 && tokens.size() != 5 && tokens.size() != 7) {
+    // Can have 3, 5, 7, 9, or 11 tokens:
+    // "SimulationParam", "MaxIteration", value, "BatchSize", value, "ProcessingType", value, "BLOCK_X", value, "BLOCK_Y", value
+    // BLOCK_X and BLOCK_Y are only valid when ProcessingType is GPU
+    if (tokens.size() < 3 || tokens.size() % 2 == 0 || tokens.size() > 11) {
         return false;
     }
     
@@ -800,6 +802,26 @@ SimulationParamStatement::process(const std::vector<std::string>& tokens) {
                 return false;
             }
         }
+        // Check for BLOCK_X (only valid when ProcessingType is GPU)
+        else if (Utilities::caseInsensitiveEquals(key, "BLOCK_X")) {
+            auto convertedValue = Utilities::convertTo<int>(value);
+            if (convertedValue.has_value()) {
+                m_BlockSizeX = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
+        // Check for BLOCK_Y (only valid when ProcessingType is GPU)
+        else if (Utilities::caseInsensitiveEquals(key, "BLOCK_Y")) {
+            auto convertedValue = Utilities::convertTo<int>(value);
+            if (convertedValue.has_value()) {
+                m_BlockSizeY = convertedValue.value();
+            }
+            else {
+                return false;
+            }
+        }
         else {
             return false;
         }
@@ -834,6 +856,22 @@ SimulationParamStatement::getProcessingType() const
 
 // -----------------------------------------------------------------------------
 
+int
+SimulationParamStatement::getBlockSizeX() const
+{
+    return m_BlockSizeX;
+}
+
+// -----------------------------------------------------------------------------
+
+int
+SimulationParamStatement::getBlockSizeY() const
+{
+    return m_BlockSizeY;
+}
+
+// -----------------------------------------------------------------------------
+
 bool
 SimulationParamStatement::isValid() const
 {
@@ -847,6 +885,23 @@ SimulationParamStatement::isValid() const
         std::cout << "Invalid SimulationParam: BatchSize (" << m_BatchSize << ") must be positive" << std::endl;
         return false;
     }
+    // BLOCK_X and BLOCK_Y are optional, but if either is provided, both must be provided and positive
+    // Only validate if ProcessingType is GPU
+    if (m_PT == GPU) {
+        
+        // If any are provided they must both be positive
+        if (m_BlockSizeX != 0 || m_BlockSizeY != 0) {
+            if (m_BlockSizeX <= 0) {
+                std::cout << "Invalid SimulationParam: BLOCK_X (" << m_BlockSizeX << ") must be positive if provided" << std::endl;
+                return false;
+            }
+            if (m_BlockSizeY <= 0) {
+                std::cout << "Invalid SimulationParam: BLOCK_Y (" << m_BlockSizeY << ") must be positive if provided" << std::endl;
+                return false;
+            }
+        }
+        // If both are zero, that's OK (they're optional)
+    }
     return true;
 }
 
@@ -857,6 +912,10 @@ SimulationParamStatement::save(std::ostream& OS) const
 {
     OS << "SimulationParam MaxIteration " << m_MaxIteration << " BatchSize " << m_BatchSize;
     OS << " ProcessingType " << (m_PT == CPU ? "CPU" : "GPU");
+    // Only save BLOCK_X and BLOCK_Y if they were set (non-zero) and ProcessingType is GPU
+    if (m_PT == GPU && m_BlockSizeX > 0 && m_BlockSizeY > 0) {
+        OS << " BLOCK_X " << m_BlockSizeX << " BLOCK_Y " << m_BlockSizeY;
+    }
 }
 
 // -----------------------------------------------------------------------------

@@ -174,6 +174,8 @@ public:
     size_t getMaxIteration() const;
     size_t getBatchSize() const;
     ProcessingType getProcessingType() const;
+    int getBlockSizeX() const;
+    int getBlockSizeY() const;
     
     bool isValid() const;
     
@@ -183,6 +185,8 @@ private:
     size_t m_MaxIteration{0};
     size_t m_BatchSize{100};
     ProcessingType m_PT{CPU};
+    int m_BlockSizeX{0};  // Only used when ProcessingType is GPU
+    int m_BlockSizeY{0};  // Only used when ProcessingType is GPU
 };
 
 // Class to hold a tuple of SourceStatement, BBoxStatement, WallStatement, VelocityStatement, MaxResolutionStatement, and SimulationParamStatement
