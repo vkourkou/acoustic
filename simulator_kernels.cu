@@ -11,7 +11,8 @@ namespace FDTD {
 
 // -----------------------------------------------------------------------------
 
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE_X 16
+#define BLOCK_SIZE_Y 16
 #define TILE_SIZE 4
 
 __global__ void
@@ -82,7 +83,7 @@ updateVelocityKernelShared(const float* pres, float* vx, float* vy,
     const std::size_t vxCols = presCols - 2;
     const std::size_t vyRows = presRows - 2;
     const std::size_t vyCols = presCols - 1;
-    __shared__ float s_pres[BLOCK_SIZE][BLOCK_SIZE + 1];
+    __shared__ float s_pres[BLOCK_SIZE_Y][BLOCK_SIZE_X + 1];
     const size_t iOffset = blockIdx.y * (blockDim.y - 1);
     const size_t jOffset = blockIdx.x * (blockDim.x - 1);
     std::size_t i = threadIdx.y;
@@ -93,11 +94,11 @@ updateVelocityKernelShared(const float* pres, float* vx, float* vy,
     }
 
     __syncthreads();
-    if (i + iOffset < vxRows && j + jOffset< vxCols && i < BLOCK_SIZE - 1 && j < BLOCK_SIZE - 1) {
+    if (i + iOffset < vxRows && j + jOffset< vxCols && i < BLOCK_SIZE_Y - 1 && j < BLOCK_SIZE_X - 1) {
         vx[(i + iOffset) * vxCols + j + jOffset] -= courantNb * (s_pres[i+1][j+1] - s_pres[i][j+1]);
     }
 
-    if (i + iOffset < vyRows && j + jOffset< vyCols && i < BLOCK_SIZE - 1 && j < BLOCK_SIZE - 1) {
+    if (i + iOffset < vyRows && j + jOffset< vyCols && i < BLOCK_SIZE_Y - 1 && j < BLOCK_SIZE_X - 1) {
         vy[(i + iOffset) * vyCols + j + jOffset] -= courantNb * (s_pres[i+1][j+1] - s_pres[i+1][j]);
     }
 
@@ -233,7 +234,7 @@ CudaWorkSpace::initialize(size_t numRows, size_t numCols)
 constexpr dim3 
 CudaWorkSpace::getBlockDimension()
 {
-    return dim3(BLOCK_SIZE, BLOCK_SIZE);
+    return dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y);
 }
 
 // -----------------------------------------------------------------------------
@@ -242,7 +243,7 @@ CudaWorkSpace::getBlockDimension()
 constexpr dim3 
 CudaWorkSpace::getBlockDimensionMinusOne()
 {
-    return dim3(BLOCK_SIZE-1, BLOCK_SIZE-1);
+    return dim3(BLOCK_SIZE_X-1, BLOCK_SIZE_Y-1);
 }
 
 // -----------------------------------------------------------------------------
@@ -415,32 +416,35 @@ void CudaWorkSpace::updateFields(float courantNb, float crSquareTimesCourantNb) 
 
 // -----------------------------------------------------------------------------
 
-template<int BlockSize>
+template<int BlockSizeX, int BlockSizeY>
 __global__ void
 updateUnifiedKernel(const float* prev, float* presdelta, float* pres,
                     int presRows, int presCols,
+                    int numColsWithPadding,
                     float factor)
 {
-    
-    __shared__ float s_pres[BlockSize][BlockSize + 1];
-    __shared__ float s_presdelta[BlockSize][BlockSize + 1];
+    //presCols is the number of columns for the matrix without padding
+    //numColsWithPadding.
+
+    __shared__ float s_pres[BlockSizeY][BlockSizeX + 1];
+    __shared__ float s_presdelta[BlockSizeY][BlockSizeX + 1];
     const int iOffset = blockIdx.y * (blockDim.y - 2);
     const int jOffset = blockIdx.x * (blockDim.x - 2);
     int i = threadIdx.y;
     int j = threadIdx.x;
     if (i + iOffset < presRows && j + jOffset < presCols) {
         s_pres[i][j] 
-        = prev[(i + iOffset) * presCols + (j + jOffset)];
+        = prev[(i + iOffset) * numColsWithPadding + (j + jOffset)];
         s_presdelta[i][j] 
-        = presdelta[(i + iOffset) * presCols + (j + jOffset)];
+        = presdelta[(i + iOffset) * numColsWithPadding + (j + jOffset)];
     }
 
     __syncthreads();
-    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< presCols - 1 && i < BlockSize - 1 && j < BlockSize - 1) {
+    if (i > 0 && j > 0 && i + iOffset < presRows - 1 && j + jOffset< presCols - 1 && i < BlockSizeY - 1 && j < BlockSizeX - 1) {
         float delta = factor * (s_pres[i+1][j] + s_pres[i-1][j] + s_pres[i][j+1] + s_pres[i][j-1] - 4 * s_pres[i][j]);
         s_presdelta[i][j] -= delta;
-        presdelta[(i + iOffset) * presCols + j + jOffset] = s_presdelta[i][j];
-        pres[(i + iOffset) * presCols + j + jOffset] = s_pres[i][j] - s_presdelta[i][j];
+        presdelta[(i + iOffset) * numColsWithPadding + j + jOffset] = s_presdelta[i][j];
+        pres[(i + iOffset) * numColsWithPadding + j + jOffset] = s_pres[i][j] - s_presdelta[i][j];
     }
 
 }
@@ -458,6 +462,10 @@ CudaWorkSpaceUnified::getPressureDimension() const
 bool
 CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
 {
+    if (m_ShouldPad) {
+        numCols = (numCols  + 31) / 32 * 32; //That will make this the number of columns with padding
+    }
+    m_nbColsWithPadding = numCols;
     m_PresA.resize(numRows, numCols);
     m_PresB.resize(numRows, numCols);
     m_PresDelta.resize(numRows, numCols);
@@ -478,7 +486,7 @@ CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
     m_CurrentPres = &m_PresA;
     m_PreviousPres = &m_PresB;
 
-    saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updateUnifiedKernel<BLOCK_SIZE>);
+    saveLaunchParameters("Pres", getBlockDimension(), getPressureDimension(), (void*)updateUnifiedKernel<BLOCK_SIZE_X, BLOCK_SIZE_Y>);
     
     return true;
 }
@@ -488,7 +496,7 @@ CudaWorkSpaceUnified::initialize(size_t numRows, size_t numCols)
 constexpr dim3 
 CudaWorkSpaceUnified::getBlockDimension()
 {
-    return dim3(BLOCK_SIZE, BLOCK_SIZE);
+    return dim3(BLOCK_SIZE_X, BLOCK_SIZE_Y);
 }
 
 // -----------------------------------------------------------------------------
@@ -497,7 +505,7 @@ CudaWorkSpaceUnified::getBlockDimension()
 constexpr dim3 
 CudaWorkSpaceUnified::getBlockDimensionMinusTwo()
 {
-    return dim3(BLOCK_SIZE-2, BLOCK_SIZE-2);
+    return dim3(BLOCK_SIZE_X-2, BLOCK_SIZE_Y-2);
 }
 
 // -----------------------------------------------------------------------------
@@ -516,12 +524,13 @@ CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb
     const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, getBlockDimensionMinusTwo())};
     
     // Launch kernel
-    updateUnifiedKernel<BLOCK_SIZE><<<GridDim, BlockDim>>>(
+    updateUnifiedKernel<BLOCK_SIZE_X, BLOCK_SIZE_Y><<<GridDim, BlockDim>>>(
         m_PreviousPres->data(),
         m_PresDelta.data(),
         m_CurrentPres->data(),
         m_CurrentPres->rows(),
         m_CurrentPres->cols(),
+        m_nbColsWithPadding,
         factor
     );
     
