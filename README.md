@@ -172,6 +172,35 @@ This is useful when validating numerical changes, GPU vs CPU implementations, or
 
 ---
 
+## Visualizing acoustic pressure (colormaps)
+
+The script `create_colormap.py` can be used to visualize the acoustic pressure fields saved
+by the simulator as DenseMatrix `.db` files.
+
+- **Single file:**
+
+  ```bash
+  python3 create_colormap.py iteration_10.db [output.png]
+  ```
+
+  If `output.png` is omitted, the script will open an interactive window instead of saving to disk.
+
+- **All `.db` files in a directory:**
+
+  ```bash
+  python3 create_colormap.py --all [output_dir]
+  ```
+
+  This will scan the current directory for `*.db` files, create a colormap image for each, and
+  write them into `output_dir` (or the current directory if `output_dir` is omitted).
+
+Each colormap uses the grid information stored in the file (x/y coordinates) to label axes and
+colors represent pressure values, giving a quick visual overview of the simulated acoustic field.
+
+![Acoustic pressure colormap example](sample_colormap.png)
+
+---
+
 ## Tests
 
 Unit tests are built into the `ut` executable via CMake. After configuring the project:
