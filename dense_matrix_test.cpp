@@ -1,4 +1,4 @@
-#include <DenseMatrix.h>
+#include <dense_matrix.h>
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <stdexcept>

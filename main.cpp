@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
-#include <Runner.h>
+#include <runner.h>
 #include <cuda_utilities.cuh>
-#include <Utilities.h>
+#include <utilities.h>
 
 int
 main(int argc, char* argv[]) {

@@ -6,7 +6,7 @@
 #include <cassert>
 #include <tuple>
 #include <ostream>
-#include <Utilities.h>
+#include <utilities.h>
 
 using Grid_t = int;
 

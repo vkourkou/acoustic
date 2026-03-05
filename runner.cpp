@@ -1,5 +1,5 @@
-#include <Runner.h>
-#include <Simulator.h>
+#include <runner.h>
+#include <simulator.h>
 #include <iostream>
 #include <cassert>
 #include <filesystem>

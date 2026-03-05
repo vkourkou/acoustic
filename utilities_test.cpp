@@ -1,4 +1,4 @@
-#include <Utilities.h>
+#include <utilities.h>
 #include <gtest/gtest.h>
 #include <string>
 #include <limits>

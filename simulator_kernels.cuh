@@ -2,7 +2,7 @@
 #define SIMULATOR_KERNELS_CUH
 
 #include <cuda_runtime.h>
-#include <CudaDenseMatrix.h>
+#include <cuda_dense_matrix.h>
 #include <cstddef>
 
 namespace FDTD {

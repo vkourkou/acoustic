@@ -7,9 +7,9 @@
 #include <vector>
 #include <tuple>
 #include <limits>
-#include <InputFileParser.h>
-#include <Utilities.h>
-#include <Box.h>
+#include <input_file_parser.h>
+#include <utilities.h>
+#include <box.h>
 
 namespace Input {
 

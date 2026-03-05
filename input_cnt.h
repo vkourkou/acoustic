@@ -1,7 +1,7 @@
 #ifndef INPUT_CNT_H
 #define INPUT_CNT_H
 
-#include <InputCompiler.h>
+#include <input_compiler.h>
 #include <tuple>
 #include <type_traits>
 #include <ostream>

@@ -1,4 +1,4 @@
-#include <InputCompiler.h>
+#include <input_compiler.h>
 #include <cctype>
 #include <stdexcept>
 #include <iostream>

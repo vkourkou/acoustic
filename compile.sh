@@ -1,12 +1,12 @@
 # Configure the build (creates the build directory)
-cmake -B build
+#cmake -B build
 # Build the project
-cmake --build build
+#cmake --build build
 
 
 #For release
-#cmake -B build -DCMAKE_BUILD_TYPE=Release
-#cmake --build build
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 
 #For debug
 #cmake -B build -DCMAKE_BUILD_TYPE=Debug

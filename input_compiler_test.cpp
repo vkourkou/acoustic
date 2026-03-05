@@ -1,4 +1,4 @@
-#include <InputCompiler.h>
+#include <input_compiler.h>
 #include <gtest/gtest.h>
 #include <vector>
 #include <string>

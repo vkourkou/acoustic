@@ -25,13 +25,13 @@ include_directories(${CMAKE_SOURCE_DIR})
 # Source files
 set(SOURCES
     main.cpp
-    Runner.cpp
-    InputCnt.cpp
-    InputFileParser.cpp
-    InputCompiler.cpp
-    Utilities.cpp
-    Grid.cpp
-    Simulator.cpp
+    runner.cpp
+    input_cnt.cpp
+    input_file_parser.cpp
+    input_compiler.cpp
+    utilities.cpp
+    grid.cpp
+    simulator.cpp
 )
 
 # CUDA source files
@@ -43,17 +43,17 @@ set(CUDA_SOURCES
 
 # Header files
 set(HEADERS
-    Runner.h
-    InputCnt.h
-    InputFileParser.h
-    InputCompiler.h
-    Utilities.h
-    Grid.h
-    Simulator.h
+    runner.h
+    input_cnt.h
+    input_file_parser.h
+    input_compiler.h
+    utilities.h
+    grid.h
+    simulator.h
     simulator_kernels.cuh
     cuda_utilities.cuh
-    CudaArray.h
-    CudaDenseMatrix.h
+    cuda_array.h
+    cuda_dense_matrix.h
 )
 
 # Add target for acoustic
@@ -94,10 +94,10 @@ file(GLOB_RECURSE TEST_SOURCES "${CMAKE_SOURCE_DIR}/*_test.cpp")
 # Add target for unit tests
 add_executable(ut
     ${TEST_SOURCES}
-    InputFileParser.cpp
-    InputCompiler.cpp
-    Utilities.cpp
-    Grid.cpp
+    input_file_parser.cpp
+    input_compiler.cpp
+    utilities.cpp
+    grid.cpp
 )
 
 target_link_libraries(ut PRIVATE GTest::gtest GTest::gtest_main)

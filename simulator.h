@@ -1,10 +1,10 @@
 #ifndef SIMULATOR_H
 #define SIMULATOR_H
 
-#include <Grid.h>
-#include <InputCompiler.h>
-#include <Utilities.h>
-#include <DenseMatrix.h>
+#include <grid.h>
+#include <input_compiler.h>
+#include <utilities.h>
+#include <dense_matrix.h>
 #include <ostream>
 #include <vector>
 

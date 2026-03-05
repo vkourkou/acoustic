@@ -1,4 +1,4 @@
-#include <Grid.h>
+#include <grid.h>
 #include <gtest/gtest.h>
 #include <cstddef>
 #include <sstream>

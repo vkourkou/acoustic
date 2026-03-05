@@ -1,8 +1,8 @@
 #ifndef CUDA_DENSE_MATRIX_H
 #define CUDA_DENSE_MATRIX_H
 
-#include <CudaArray.h>
-#include <DenseMatrix.h>
+#include <cuda_array.h>
+#include <dense_matrix.h>
 #include <cstddef>
 #include <stdexcept>
 #include <ostream>

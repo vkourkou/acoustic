@@ -2,8 +2,8 @@
 #define RUNNER_H
 
 #include <istream>
-#include <InputCompiler.h>
-#include <InputCnt.h>
+#include <input_compiler.h>
+#include <input_cnt.h>
 
 class Runner {
 public:

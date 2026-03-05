@@ -1,4 +1,4 @@
-#include <InputCnt.h>
+#include <input_cnt.h>
 #include <iostream>
 
 namespace input {

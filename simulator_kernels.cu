@@ -2,7 +2,7 @@
 #include <cuda_runtime.h>
 #include <cuda_utilities.cuh>
 #include <iostream>
-#include <Simulator.h>
+#include <simulator.h>
 #include <fstream>
 #include <vector>
 #include <cooperative_groups.h>
