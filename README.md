@@ -241,3 +241,11 @@ components such as the input parsing, utilities, and grid logic.
 
 Legacy or auxiliary scripts for other platforms may exist in the repository, but the **primary,
 supported, and tested environment is Linux with CMake and CUDA**.
+
+---
+
+## TODO / Future work
+
+- [ ] Currently, GPU is heavily under-utilized (a bit natural given the relatively small number of grid points; 2D). Explore doing multiple time steps at each kernel launch. It should increase compute intensity.
+- [ ] Every timestep the control switches between CPU to GPU and back. Explore graphs.
+- [ ] Run-time block parameters get translated to compile-time using the variadic template trick. Move it higher to the hierarchy.
