@@ -90,6 +90,14 @@ The program will:
 - Run the simulation (CPU or GPU, depending on the `SimulationParam` line).
 - Save data into the `acoustic.db` directory and print some diagnostic information to stdout.
 
+**Input variables and `$NAME` expansion**
+
+The input parser understands tokens that start with `$` and replaces them using environment
+variables before interpretation. For example, if the input file contains `$PROCESSING_TYPE` and
+the environment variable `PROCESSING_TYPE` is set to `GPU`, the parser will substitute
+`$PROCESSING_TYPE` with `GPU`. The provided `sample_input.txt` uses this mechanism for
+`$MAX_ITERATION`, `$PROCESSING_TYPE`, `$BLOCK_X_SIZE`, and `$BLOCK_Y_SIZE`.
+
 ### Convenience run script
 
 There is a small helper script `run.sh` which wraps the executable and sets a few environment
