@@ -1,0 +1,23 @@
+// Acoustic simulation input file
+// This file defines the source, bounding box, velocity, and resolution parameters
+
+// Define the acoustic source with frequency and amplitude
+Source Frequency 150.0 Amplitude 1 X 15 Y -10 DURATION 0.00667
+
+// Define the bounding box for the simulation domain
+BBox XMin -10 XMax 20 YMin -20 YMax 20
+
+// Set the propagation velocity
+Velocity 343.0
+
+// Set the maximum resolution for spatial and temporal discretization
+MaxResolution Spatial 0.050 Temporal 0.03
+
+// Set the parameters of the simularion
+//SimulationParam MaxIteration 90 Batchsize 100000 Processingtype GPU
+SimulationParam MaxIteration $MAX_ITERATION Batchsize 1000000 Processingtype $PROCESSING_TYPE BLOCK_X $BLOCK_X_SIZE BLOCK_Y $BLOCK_Y_SIZE
+
+
+WALL Xmin -5.0 XMax 5.0 YMin -5.0 YMax 5.0
+// End of input file
+
