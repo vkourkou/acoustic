@@ -16,17 +16,17 @@ namespace FDTD {
 #define TILE_SIZE 4
 
 __global__ void
-updateVxKernel(const float* pres, float* vx, std::size_t presRows, std::size_t presCols, float courantNb)
+updateVxKernel(const float* pres, float* vx, int presRows, int presCols, float courantNb)
 {
-    std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
-    std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-    const std::size_t vxRows = presRows - 1;
-    const std::size_t vxCols = presCols - 2;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vxRows = presRows - 1;
+    const int vxCols = presCols - 2;
     if (i < vxRows && j < vxCols) {
          //column j of vx corresponds to column j + 1 of pres
-        std::size_t vxIdx = i * vxCols + j;
-        std::size_t presIdx1 = (i + 1) * presCols + j + 1;
-        std::size_t presIdx2 = i * presCols + j + 1;
+        int vxIdx = i * vxCols + j;
+        int presIdx1 = (i + 1) * presCols + j + 1;
+        int presIdx2 = i * presCols + j + 1;
         vx[vxIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
     }
 }
@@ -34,17 +34,17 @@ updateVxKernel(const float* pres, float* vx, std::size_t presRows, std::size_t p
 // -----------------------------------------------------------------------------
 
 __global__ void
-updateVyKernel(const float* pres, float* vy, std::size_t presRows, std::size_t presCols, float courantNb)
+updateVyKernel(const float* pres, float* vy, int presRows, int presCols, float courantNb)
 {
-    std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
-    std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-    const std::size_t vyRows = presRows - 2;
-    const std::size_t vyCols = presCols - 1;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vyRows = presRows - 2;
+    const int vyCols = presCols - 1;
     if (i < vyRows && j < vyCols) {
         //row i of vy corresponds to row i + 1 of pres
-        std::size_t vyIdx = i * vyCols + j;
-        std::size_t presIdx1 = (i + 1) * presCols + (j + 1);
-        std::size_t presIdx2 = (i + 1) * presCols + j;
+        int vyIdx = i * vyCols + j;
+        int presIdx1 = (i + 1) * presCols + (j + 1);
+        int presIdx2 = (i + 1) * presCols + j;
         vy[vyIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
     }
 }
@@ -52,21 +52,21 @@ updateVyKernel(const float* pres, float* vy, std::size_t presRows, std::size_t p
 // -----------------------------------------------------------------------------
 
 __global__ void
-updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t presRows, std::size_t presCols, float crSquareTimesCourantNb)
+updatePressureKernel(const float* vx, const float* vy, float* pres, int presRows, int presCols, float crSquareTimesCourantNb)
 {
-    std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
-    std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-    const std::size_t vxCols = presCols - 2;
-    const std::size_t vyCols = presCols - 1;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vxCols = presCols - 2;
+    const int vyCols = presCols - 1;
     // Boundaries are assumed to have Dirichlet condition (skip boundary points)
     if (i < presRows - 2 && j < presCols - 2) {
         //row i of vy corresponds to row i + 1 of pres
         //column j of vx corresponds to column j + 1 of pres
-        std::size_t presIdx = (i + 1) * presCols + j + 1;
-        std::size_t vxIdx1 = (i + 1) * vxCols + j;
-        std::size_t vxIdx2 = i * vxCols + j;
-        std::size_t vyIdx1 = i * vyCols + j + 1;
-        std::size_t vyIdx2 = i * vyCols + j;
+        int presIdx = (i + 1) * presCols + j + 1;
+        int vxIdx1 = (i + 1) * vxCols + j;
+        int vxIdx2 = i * vxCols + j;
+        int vyIdx1 = i * vyCols + j + 1;
+        int vyIdx2 = i * vyCols + j;
         pres[presIdx] -= crSquareTimesCourantNb * (vx[vxIdx1] - vx[vxIdx2] + vy[vyIdx1] - vy[vyIdx2]);
     }
 }
@@ -75,19 +75,19 @@ updatePressureKernel(const float* vx, const float* vy, float* pres, std::size_t 
 
 __global__ void
 updateVelocityKernelShared(const float* pres, float* vx, float* vy,
-                           std::size_t presRows, std::size_t presCols,
+                           int presRows, int presCols,
                            float courantNb)
 {
     
-    const std::size_t vxRows = presRows - 1;
-    const std::size_t vxCols = presCols - 2;
-    const std::size_t vyRows = presRows - 2;
-    const std::size_t vyCols = presCols - 1;
+    const int vxRows = presRows - 1;
+    const int vxCols = presCols - 2;
+    const int vyRows = presRows - 2;
+    const int vyCols = presCols - 1;
     __shared__ float s_pres[BLOCK_SIZE_Y][BLOCK_SIZE_X + 1];
-    const size_t iOffset = blockIdx.y * (blockDim.y - 1);
-    const size_t jOffset = blockIdx.x * (blockDim.x - 1);
-    std::size_t i = threadIdx.y;
-    std::size_t j = threadIdx.x;
+    const int iOffset = blockIdx.y * (blockDim.y - 1);
+    const int jOffset = blockIdx.x * (blockDim.x - 1);
+    int i = threadIdx.y;
+    int j = threadIdx.x;
     if (i + iOffset < presRows && j + jOffset < presCols) {
         s_pres[i][j] 
         = pres[(i + iOffset) * presCols + (j + jOffset)];
@@ -108,29 +108,29 @@ updateVelocityKernelShared(const float* pres, float* vx, float* vy,
 
 __global__ void
 updateVelocityKernel(const float* pres, float* vx, float* vy,
-                     std::size_t presRows, std::size_t presCols,
+                     int presRows, int presCols,
                      float courantNb)
 {
-    std::size_t i = blockIdx.y * blockDim.y + threadIdx.y;
-    std::size_t j = blockIdx.x * blockDim.x + threadIdx.x;
-    const std::size_t vxRows = presRows - 1;
-    const std::size_t vxCols = presCols - 2;
-    const std::size_t vyRows = presRows - 2;
-    const std::size_t vyCols = presCols - 1;
+    int i = blockIdx.y * blockDim.y + threadIdx.y;
+    int j = blockIdx.x * blockDim.x + threadIdx.x;
+    const int vxRows = presRows - 1;
+    const int vxCols = presCols - 2;
+    const int vyRows = presRows - 2;
+    const int vyCols = presCols - 1;
     
     if (i < vxRows && j < vxCols) {
          //column j of vx corresponds to column j + 1 of pres
-        std::size_t vxIdx = i * vxCols + j;
-        std::size_t presIdx1 = (i + 1) * presCols + j + 1;
-        std::size_t presIdx2 = i * presCols + j + 1;
+        int vxIdx = i * vxCols + j;
+        int presIdx1 = (i + 1) * presCols + j + 1;
+        int presIdx2 = i * presCols + j + 1;
         vx[vxIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
     }
 
     if (i < vyRows && j < vyCols) {
         //row i of vy corresponds to row i + 1 of pres
-        std::size_t vyIdx = i * vyCols + j;
-        std::size_t presIdx1 = (i + 1) * presCols + (j + 1);
-        std::size_t presIdx2 = (i + 1) * presCols + j;
+        int vyIdx = i * vyCols + j;
+        int presIdx1 = (i + 1) * presCols + (j + 1);
+        int presIdx2 = (i + 1) * presCols + j;
         vy[vyIdx] -= courantNb * (pres[presIdx1] - pres[presIdx2]);
     }
 }
