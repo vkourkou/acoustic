@@ -89,7 +89,9 @@ template<typename T>
 CudaArray<T>::~CudaArray()
 {
     if (m_devicePtr != nullptr) {
-        cudaFree(m_devicePtr);
+        cudaError_t err = cudaFree(m_devicePtr);
+        if (err != cudaSuccess)
+            std::cerr << "cudaFree failed: " << cudaGetErrorString(err) << "\n";
         m_devicePtr = nullptr;
     }
 }
