@@ -502,8 +502,12 @@ CudaWorkSpaceUnified::initializeTemplated(size_t numRows, size_t numCols)
     m_CurrentPres = &m_PresA;
     m_PreviousPres = &m_PresB;
 
+    if (!m_stream) {
+        CHECK_CUDA_ERROR(cudaStreamCreate(&m_stream));
+    }
+
     saveLaunchParameters("Pres", Params::getBlockDimension(), getPressureDimension(), (void*)updateUnifiedKernel<Params>);
-    
+
     return true;
 }
 
@@ -576,7 +580,7 @@ CudaWorkSpaceUnified::updateFieldsTemplated(float courantNb, float crSquareTimes
     const dim3 GridDim{CudaUtilities::getGridDimension(ElementDimension, Params::getBlockDimensionMinusTwo())};
     
     // Launch kernel
-    updateUnifiedKernel<Params><<<GridDim, BlockDim>>>(
+    updateUnifiedKernel<Params><<<GridDim, BlockDim, 0, m_stream>>>(
         m_PreviousPres->data(),
         m_PresDelta.data(),
         m_CurrentPres->data(),
@@ -585,7 +589,7 @@ CudaWorkSpaceUnified::updateFieldsTemplated(float courantNb, float crSquareTimes
         m_nbColsWithoutPadding,
         factor
     );
-    
+
     // Check for errors
     CHECK_CUDA_ERROR(cudaGetLastError());
 }
@@ -602,21 +606,6 @@ CudaWorkSpaceUnified::updateFields(float courantNb, float crSquareTimesCourantNb
 
 // -----------------------------------------------------------------------------
 
-
-void
-CudaWorkSpaceUnified::UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val)
-{
-    if (m_CurrentPres->empty()) {
-        return;
-    }
-    if (GridIndexX >= m_CurrentPres->rows() || GridIndexY >= m_CurrentPres->cols()) {
-        return;
-    }
-    std::size_t index = GridIndexX * m_CurrentPres->cols() + GridIndexY;
-    CHECK_CUDA_ERROR(cudaMemcpy(m_CurrentPres->data() + index, &val, sizeof(float), cudaMemcpyHostToDevice));
-}
-
-// -----------------------------------------------------------------------------
 
 // Template specializations for CUDA workspace (PT=GPU)
 // These are defined here so they can access the full CudaWorkSpace definition
@@ -656,13 +645,48 @@ CudaWorkSpaceUnified::runBatch(size_t numIterations, float courantNb, float crSq
                                 unsigned sourceGridX, unsigned sourceGridY,
                                 const std::vector<float>& sourceValues)
 {
+    if (!m_stream) {
+        std::cerr << "CudaWorkSpaceUnified::runBatch called before initialize()\n";
+        return false;
+    }
+
+    if (sourceGridX >= m_CurrentPres->rows() || sourceGridY >= m_CurrentPres->cols()) {
+        std::cerr << "CudaWorkSpaceUnified::runBatch: source index out of bounds\n";
+        return false;
+    }
+
+    // Pre-stage all source values in pinned memory so each element remains stable
+    // for the duration of its async memcpy (avoids race from reusing a single buffer).
+    // m_pinnedSourceBuf grows on demand and is reused across batches.
+    if (!sourceValues.empty()) {
+        m_pinnedSourceBuf.copyFrom(sourceValues);
+    }
+
+    const std::size_t sourceIndex = sourceGridX * m_CurrentPres->cols() + sourceGridY;
     for (size_t i = 0; i < numIterations; ++i) {
         updateFields(courantNb, crSquareTimesCourantNb);
-        if (i < sourceValues.size())
-            UpdateForSource(sourceGridX, sourceGridY, sourceValues[i]);
+        if (i < sourceValues.size()) {
+            CHECK_CUDA_ERROR(cudaMemcpyAsync(m_CurrentPres->data() + sourceIndex,
+                                             m_pinnedSourceBuf.data() + i,
+                                             sizeof(float),
+                                             cudaMemcpyHostToDevice,
+                                             m_stream));
+        }
     }
-    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+
+    CHECK_CUDA_ERROR(cudaStreamSynchronize(m_stream));
     return true;
+}
+
+// -----------------------------------------------------------------------------
+
+CudaWorkSpaceUnified::~CudaWorkSpaceUnified()
+{
+    if (m_stream) {
+        cudaError_t err = cudaStreamDestroy(m_stream);
+        if (err != cudaSuccess)
+            std::cerr << "cudaStreamDestroy failed: " << cudaGetErrorString(err) << "\n";
+    }
 }
 
 // -----------------------------------------------------------------------------

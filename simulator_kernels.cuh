@@ -3,6 +3,7 @@
 
 #include <cuda_runtime.h>
 #include <cuda_dense_matrix.h>
+#include <cuda_pinned_array.h>
 #include <cstddef>
 #include <vector>
 
@@ -45,6 +46,8 @@ class CudaWorkSpaceUnified {
     int m_BlockSizeY{4};
     size_t m_nbColsWithoutPadding;
     bool m_ShouldPad{true};
+    cudaStream_t m_stream{nullptr};
+    PinnedArray<float> m_pinnedSourceBuf;
     dim3 getPressureDimension() const;
     dim3 getGridDimension() const;
     template< typename Params>
@@ -55,9 +58,9 @@ class CudaWorkSpaceUnified {
     bool variadicInitialize(size_t numRows, size_t numCols);
     template< typename Params>
     bool initializeTemplated(size_t numRows, size_t numCols);
-    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
     void updateFields(float courantNb, float crSquareTimesCourantNb);
 public:
+    ~CudaWorkSpaceUnified();
     int getNbColsWithPadding() const {
         return m_PresA.cols() - m_nbColsWithoutPadding;
     }
