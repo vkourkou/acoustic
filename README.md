@@ -232,7 +232,7 @@ components such as the input parsing, utilities, and grid logic.
 - `input_cnt.{h,cpp}` – container for input statements and derived quantities.
 - `grid.{h,cpp}` – spatial grid representation.
 - `simulator.{h,cpp}` – main simulation loop and interaction with CUDA kernels.
-- `simulator_kernels.cu` / `cuda_utilities.cu` / `cuda_array.h` / `cuda_dense_matrix.h` – CUDA-side
+- `simulator_kernels.cu` / `cuda_utilities.cu` / `cuda_array.h` / `cuda_dense_matrix.h` / `cuda_pinned_array.h` – CUDA-side
   data structures and kernels.
 - `utilities.{h,cpp}` – miscellaneous helpers (including performance timing).
 - `sample_input.txt` – example input file used by the helper scripts.
@@ -247,6 +247,5 @@ supported, and tested environment is Linux with CMake and CUDA**.
 ## TODO / Future work
 
 - [ ] Currently, GPU is heavily under-utilized (a bit natural given the relatively small number of grid points; 2D). Explore doing multiple time steps at each kernel launch. It should increase compute intensity.
-- [ ] Every timestep the control switches between CPU to GPU and back. Explore graphs? Or events?
+- [ ] Investigate CUDA graphs to further reduce CPU↔GPU control switching per timestep (stream-based async already implemented).
 - [ ] Run-time block parameters get translated to compile-time using the variadic template trick. Move it higher to the hierarchy.
-- [ ] Revisit the CUDA allocation under the light of the read for unified memory
