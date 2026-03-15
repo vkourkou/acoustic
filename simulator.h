@@ -5,7 +5,6 @@
 #include <input_compiler.h>
 #include <utilities.h>
 #include <dense_matrix.h>
-#include <optional>
 #include <ostream>
 #include <vector>
 
@@ -43,7 +42,7 @@ class Simulator {
         bool initialize(size_t numRows, size_t numCols);
         bool runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
                       unsigned sourceGridX, unsigned sourceGridY,
-                      const std::vector<std::optional<float>>& sourceValues);
+                      const std::vector<float>& sourceValues);
     };
 public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
@@ -95,7 +94,7 @@ private:
     template<ProcessingType PT>
     bool potentiallySaveTheMatricesToDb();
 
-    std::vector<std::optional<float>> computeSourceValues(size_t numIterations) const;
+    std::vector<float> computeSourceValues(size_t numIterations) const;
 
     void potentiallyTransferToDevice(DenseMatrix<float>& To);
 

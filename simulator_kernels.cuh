@@ -4,7 +4,6 @@
 #include <cuda_runtime.h>
 #include <cuda_dense_matrix.h>
 #include <cstddef>
-#include <optional>
 #include <vector>
 
 namespace FDTD {
@@ -69,7 +68,7 @@ public:
     void setBlockSize(int blockSizeX, int blockSizeY);
     bool runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
                   unsigned sourceGridX, unsigned sourceGridY,
-                  const std::vector<std::optional<float>>& sourceValues);
+                  const std::vector<float>& sourceValues);
 };
 
 // Variadic template function to try multiple UnifiedKernelParams

@@ -302,15 +302,16 @@ calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulation
 
 // -----------------------------------------------------------------------------
 
-std::vector<std::optional<float>>
+std::vector<float>
 Simulator::computeSourceValues(size_t numIterations) const
 {
-    std::vector<std::optional<float>> values(numIterations);
+    std::vector<float> values;
     for (size_t i = 0; i < numIterations; ++i) {
         Time_t time = (m_iteration + i) * m_TemporalStep;
-        if (time <= m_Source.getDuration()) {
-            values[i] = m_Source.getValue(time);
-        }
+        if (time <= m_Source.getDuration())
+            values.push_back(m_Source.getValue(time));
+        else
+            break;
     }
     return values;
 }
@@ -320,13 +321,12 @@ Simulator::computeSourceValues(size_t numIterations) const
 bool
 Simulator::WorkSpaceUnified::runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
                                       unsigned sourceGridX, unsigned sourceGridY,
-                                      const std::vector<std::optional<float>>& sourceValues)
+                                      const std::vector<float>& sourceValues)
 {
     for (size_t i = 0; i < numIterations; ++i) {
         updateFields(courantNb, crSquareTimesCourantNb);
-        if (sourceValues[i].has_value()) {
-            UpdateForSource(sourceGridX, sourceGridY, *sourceValues[i]);
-        }
+        if (i < sourceValues.size())
+            UpdateForSource(sourceGridX, sourceGridY, sourceValues[i]);
     }
     return true;
 }

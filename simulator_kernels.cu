@@ -654,13 +654,12 @@ Simulator::initializeMatrices<GPU>()
 bool
 CudaWorkSpaceUnified::runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
                                 unsigned sourceGridX, unsigned sourceGridY,
-                                const std::vector<std::optional<float>>& sourceValues)
+                                const std::vector<float>& sourceValues)
 {
     for (size_t i = 0; i < numIterations; ++i) {
         updateFields(courantNb, crSquareTimesCourantNb);
-        if (sourceValues[i].has_value()) {
-            UpdateForSource(sourceGridX, sourceGridY, *sourceValues[i]);
-        }
+        if (i < sourceValues.size())
+            UpdateForSource(sourceGridX, sourceGridY, sourceValues[i]);
     }
     CHECK_CUDA_ERROR(cudaDeviceSynchronize());
     return true;
