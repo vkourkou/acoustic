@@ -651,21 +651,55 @@ Simulator::initializeMatrices<GPU>()
 
 // -----------------------------------------------------------------------------
 
-template<>
-void
-Simulator::updateFields<GPU>()
+bool
+CudaWorkSpaceUnified::runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
+                                unsigned sourceGridX, unsigned sourceGridY,
+                                const std::vector<std::optional<float>>& sourceValues)
 {
-    if (m_CudaWorkSpace) {
-        m_CudaWorkSpace->updateFields(m_CourantNb, m_CrSquareTimesCourantNb);
+    for (size_t i = 0; i < numIterations; ++i) {
+        updateFields(courantNb, crSquareTimesCourantNb);
+        if (sourceValues[i].has_value()) {
+            UpdateForSource(sourceGridX, sourceGridY, *sourceValues[i]);
+        }
+    }
+    CHECK_CUDA_ERROR(cudaDeviceSynchronize());
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+void
+cleanupCudaWorkSpace(CudaWorkSpaceUnified* ws)
+{
+    if (ws) {
+        delete ws;
+    }
+}
+
+void
+cleanupCudaWorkSpace(CudaWorkSpace* ws)
+{
+    if (ws) {
+        delete ws;
     }
 }
 
 // -----------------------------------------------------------------------------
 
 template<>
-void
-Simulator::UpdateForSource<GPU>(unsigned GridIndexX, unsigned GridIndexY, float val) {
-    m_CudaWorkSpace->UpdateForSource(GridIndexX, GridIndexY, val);
+bool
+Simulator::runBatchIterations<GPU>(size_t numIterations)
+{
+    try {
+        auto sourceValues = computeSourceValues(numIterations);
+        bool ok = m_CudaWorkSpace->runBatch(numIterations, m_CourantNb, m_CrSquareTimesCourantNb,
+                                             m_SourceGridIndex_X, m_SourceGridIndex_Y, sourceValues);
+        m_iteration += numIterations;
+        return ok;
+    } catch (const std::exception& e) {
+        std::cerr << "Exception in runBatchIterations: " << e.what() << std::endl;
+        return false;
+    }
 }
 
 // -----------------------------------------------------------------------------

@@ -4,6 +4,8 @@
 #include <cuda_runtime.h>
 #include <cuda_dense_matrix.h>
 #include <cstddef>
+#include <optional>
+#include <vector>
 
 namespace FDTD {
 
@@ -54,6 +56,8 @@ class CudaWorkSpaceUnified {
     bool variadicInitialize(size_t numRows, size_t numCols);
     template< typename Params>
     bool initializeTemplated(size_t numRows, size_t numCols);
+    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
+    void updateFields(float courantNb, float crSquareTimesCourantNb);
 public:
     int getNbColsWithPadding() const {
         return m_PresA.cols() - m_nbColsWithoutPadding;
@@ -62,9 +66,10 @@ public:
         return *m_CurrentPres;
     }
     bool initialize(size_t numRows, size_t numCols);
-    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
-    void updateFields(float courantNb, float crSquareTimesCourantNb);
     void setBlockSize(int blockSizeX, int blockSizeY);
+    bool runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
+                  unsigned sourceGridX, unsigned sourceGridY,
+                  const std::vector<std::optional<float>>& sourceValues);
 };
 
 // Variadic template function to try multiple UnifiedKernelParams
@@ -107,19 +112,8 @@ CudaWorkSpaceUnified::variadicInitialize(size_t numRows, size_t numCols)
 // -----------------------------------------------------------------------------
 
 
-void
-cleanupCudaWorkSpace(CudaWorkSpaceUnified* ws) {
-    if (ws) {
-        delete ws;
-    }
-}
-
-void
-cleanupCudaWorkSpace(CudaWorkSpace* ws) {
-    if (ws) {
-        delete ws;
-    }
-}
+void cleanupCudaWorkSpace(CudaWorkSpaceUnified* ws);
+void cleanupCudaWorkSpace(CudaWorkSpace* ws);
 
 
 } // namespace FDTD

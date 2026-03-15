@@ -5,6 +5,7 @@
 #include <input_compiler.h>
 #include <utilities.h>
 #include <dense_matrix.h>
+#include <optional>
 #include <ostream>
 #include <vector>
 
@@ -33,13 +34,16 @@ class Simulator {
     class WorkSpaceUnified {
         DenseMatrix<float> m_Pres;
         DenseMatrix<float> m_DeltaPres;
+        void updateFields(float courantNb, float crSquareTimesCourantNb);
+        void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
     public:
         const DenseMatrix<float>& getPres() const {
             return m_Pres;
         }
         bool initialize(size_t numRows, size_t numCols);
-        void updateFields(float courantNb, float crSquareTimesCourantNb);
-        void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
+        bool runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
+                      unsigned sourceGridX, unsigned sourceGridY,
+                      const std::vector<std::optional<float>>& sourceValues);
     };
 public:
     Simulator(const Input::BBoxStatement& Box, const Input::SourceStatement& Source, 
@@ -80,9 +84,6 @@ private:
     bool runBatchIterations(size_t numIterations);
 
     template<ProcessingType PT>
-    void updateFields();
-
-    template<ProcessingType PT>
     bool executeForType();
 
     template<ProcessingType PT>
@@ -92,13 +93,9 @@ private:
     bool runIterations();
 
     template<ProcessingType PT>
-    void updatePressurePointsForSource();
-
-    template<ProcessingType PT>
-    void UpdateForSource(unsigned GridIndexX, unsigned GridIndexY, float val);
-
-    template<ProcessingType PT>
     bool potentiallySaveTheMatricesToDb();
+
+    std::vector<std::optional<float>> computeSourceValues(size_t numIterations) const;
 
     void potentiallyTransferToDevice(DenseMatrix<float>& To);
 

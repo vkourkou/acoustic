@@ -302,26 +302,47 @@ calculateNumIterationsForBatch(const Input::SimulationParamStatement& simulation
 
 // -----------------------------------------------------------------------------
 
-template<>
-void
-Simulator::updateFields<CPU>()
+std::vector<std::optional<float>>
+Simulator::computeSourceValues(size_t numIterations) const
 {
-    m_WorkSpace.updateFields(m_CourantNb, m_CrSquareTimesCourantNb);
+    std::vector<std::optional<float>> values(numIterations);
+    for (size_t i = 0; i < numIterations; ++i) {
+        Time_t time = (m_iteration + i) * m_TemporalStep;
+        if (time <= m_Source.getDuration()) {
+            values[i] = m_Source.getValue(time);
+        }
+    }
+    return values;
 }
 
 // -----------------------------------------------------------------------------
 
-template<ProcessingType PT>
 bool
-Simulator::runBatchIterations(size_t numIterations)
+Simulator::WorkSpaceUnified::runBatch(size_t numIterations, float courantNb, float crSquareTimesCourantNb,
+                                      unsigned sourceGridX, unsigned sourceGridY,
+                                      const std::vector<std::optional<float>>& sourceValues)
 {
-    // Dummy implementation
-    try {
-        for (size_t i = 0; i < numIterations; ++i, ++m_iteration) {
-            updateFields<PT>();
-            updatePressurePointsForSource<PT>();
+    for (size_t i = 0; i < numIterations; ++i) {
+        updateFields(courantNb, crSquareTimesCourantNb);
+        if (sourceValues[i].has_value()) {
+            UpdateForSource(sourceGridX, sourceGridY, *sourceValues[i]);
         }
-        return true;
+    }
+    return true;
+}
+
+// -----------------------------------------------------------------------------
+
+template<>
+bool
+Simulator::runBatchIterations<CPU>(size_t numIterations)
+{
+    try {
+        auto sourceValues = computeSourceValues(numIterations);
+        bool ok = m_WorkSpace.runBatch(numIterations, m_CourantNb, m_CrSquareTimesCourantNb,
+                                       m_SourceGridIndex_X, m_SourceGridIndex_Y, sourceValues);
+        m_iteration += numIterations;
+        return ok;
     } catch (const std::exception& e) {
         std::cerr << "Exception in runBatchIterations: " << e.what() << std::endl;
         return false;
@@ -382,28 +403,6 @@ Simulator::execute()
             return executeForType<GPU>();
         default:
             return executeForType<CPU>();
-    }
-}
-
-// -----------------------------------------------------------------------------
-
-template<>
-void
-Simulator::UpdateForSource<CPU>(unsigned GridIndexX, unsigned GridIndexY, float val) {
-    m_WorkSpace.UpdateForSource(GridIndexX, GridIndexY, val);
-}
-
-// -----------------------------------------------------------------------------
-
-template<ProcessingType PT>
-void
-Simulator::updatePressurePointsForSource()
-{
-    Time_t time = getTime();
-    if (time <= m_Source.getDuration()) {
-        //If the source stops being applied we would like the point to become "free"
-        float val = m_Source.getValue(getTime());
-        UpdateForSource<PT>(m_SourceGridIndex_X, m_SourceGridIndex_Y, val);
     }
 }
 
